@@ -45,21 +45,43 @@ export default function Onboarding() {
   const messagesEndRef = useRef(null)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) router.push('/login')
-      else setUser(session.user)
+    const isReset = window.location.search.includes('reset=1')
+
+    if (isReset) {
+      sessionStorage.removeItem('onboarding_phase')
+      sessionStorage.removeItem('onboarding_messages')
+      sessionStorage.removeItem('onboarding_complete')
+      sessionStorage.removeItem('onboarding_personas')
+      sessionStorage.removeItem('checkin_done')
+    } else {
+      // Restore conversation from sessionStorage if it exists
+      const savedPhase = sessionStorage.getItem('onboarding_phase')
+      const savedMessages = sessionStorage.getItem('onboarding_messages')
+      const savedComplete = sessionStorage.getItem('onboarding_complete')
+      const savedPersonas = sessionStorage.getItem('onboarding_personas')
+
+      if (savedPhase) setPhase(savedPhase)
+      if (savedMessages) setMessages(JSON.parse(savedMessages))
+      if (savedComplete === 'true') setIsComplete(true)
+      if (savedPersonas) setSelectedPersonas(JSON.parse(savedPersonas))
+    }
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) { router.push('/login'); return }
+      setUser(session.user)
+
+      // If already onboarded and this isn't a reset, skip to dashboard
+      if (!isReset) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('onboarded')
+          .eq('id', session.user.id)
+          .single()
+        if (profile?.onboarded) {
+          router.push('/dashboard')
+        }
+      }
     })
-
-    // Restore conversation from sessionStorage if it exists
-    const savedPhase = sessionStorage.getItem('onboarding_phase')
-    const savedMessages = sessionStorage.getItem('onboarding_messages')
-    const savedComplete = sessionStorage.getItem('onboarding_complete')
-    const savedPersonas = sessionStorage.getItem('onboarding_personas')
-
-    if (savedPhase) setPhase(savedPhase)
-    if (savedMessages) setMessages(JSON.parse(savedMessages))
-    if (savedComplete === 'true') setIsComplete(true)
-    if (savedPersonas) setSelectedPersonas(JSON.parse(savedPersonas))
   }, [])
 
   useEffect(() => {
@@ -228,7 +250,8 @@ export default function Onboarding() {
         created_at: new Date().toISOString()
       }
 
-      await supabase.from('profiles').upsert(profile)
+      const { error: upsertError } = await supabase.from('profiles').upsert(profile)
+      if (upsertError) throw new Error(upsertError.message)
 
       // Clear onboarding session data
       sessionStorage.removeItem('onboarding_phase')

@@ -34,6 +34,18 @@
   color: rgba(240,234,214,0.4);
 }
 
+.resetBtn {
+  background: transparent;
+  border: none;
+  color: rgba(240,234,214,0.2);
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  transition: color 0.2s;
+  cursor: pointer;
+}
+
+.resetBtn:hover { color: rgba(240,234,214,0.5); }
+
 .signOutBtn {
   background: transparent;
   border: 1px solid rgba(255,200,120,0.15);

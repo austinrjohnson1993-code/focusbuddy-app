@@ -195,6 +195,18 @@ export default function Dashboard() {
     router.push('/')
   }
 
+  const resetOnboarding = async () => {
+    sessionStorage.removeItem('onboarding_phase')
+    sessionStorage.removeItem('onboarding_messages')
+    sessionStorage.removeItem('onboarding_complete')
+    sessionStorage.removeItem('onboarding_personas')
+    sessionStorage.removeItem('checkin_done')
+    if (user) {
+      await supabase.from('profiles').update({ onboarded: false, onboarding_complete: false }).eq('id', user.id)
+    }
+    router.push('/onboarding')
+  }
+
   const pendingTasks = tasks.filter(t => !t.completed)
   const completedTasks = tasks.filter(t => t.completed)
   const firstName = getFirstName()
@@ -216,6 +228,7 @@ export default function Dashboard() {
               <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
             </a>
             <div className={styles.navRight}>
+              <button onClick={resetOnboarding} className={styles.resetBtn}>Reset onboarding</button>
               <button onClick={handleSignOut} className={styles.signOutBtn}>Sign out</button>
             </div>
           </nav>
@@ -285,6 +298,7 @@ export default function Dashboard() {
           </a>
           <div className={styles.navRight}>
             <span className={styles.navEmail}>{firstName}</span>
+            <button onClick={resetOnboarding} className={styles.resetBtn}>Reset onboarding</button>
             <button onClick={handleSignOut} className={styles.signOutBtn}>Sign out</button>
           </div>
         </nav>
