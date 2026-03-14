@@ -4,6 +4,239 @@
   flex-direction: column;
 }
 
+/* ── Welcome Screen ── */
+
+.welcomeContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 80px 24px;
+  width: 100%;
+}
+
+.welcomeLogo {
+  font-size: 1.6rem;
+  margin-bottom: 40px;
+}
+
+.welcomeTitle {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: #f0ead6;
+  margin-bottom: 20px;
+}
+
+.welcomeSub {
+  font-size: 1rem;
+  color: rgba(240,234,214,0.65);
+  line-height: 1.7;
+  margin-bottom: 16px;
+  font-weight: 300;
+}
+
+.welcomeSub2 {
+  font-size: 0.92rem;
+  color: rgba(240,234,214,0.4);
+  line-height: 1.7;
+  margin-bottom: 40px;
+  font-weight: 300;
+}
+
+.startBtn {
+  background: #ff4d1c;
+  color: #110d06;
+  border: none;
+  border-radius: 100px;
+  padding: 16px 40px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  transition: all 0.2s;
+  margin-bottom: 16px;
+}
+
+.startBtn:hover {
+  background: #ff7043;
+  transform: translateY(-2px);
+}
+
+.welcomeNote {
+  font-size: 0.82rem;
+  color: rgba(240,234,214,0.25);
+}
+
+/* ── Conversation Screen ── */
+
+.conversationContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 40px 24px 24px;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.conversationMessages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 24px;
+  overflow-y: auto;
+}
+
+.conversationForm {
+  display: flex;
+  gap: 0;
+  background: #221608;
+  border: 1px solid rgba(255,200,120,0.1);
+  border-radius: 100px;
+  padding: 6px 6px 6px 24px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  margin-top: 8px;
+  position: sticky;
+  bottom: 24px;
+}
+
+.conversationForm:focus-within {
+  border-color: rgba(255,77,28,0.4);
+  box-shadow: 0 0 0 3px rgba(255,77,28,0.1);
+}
+
+.conversationInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #f0ead6;
+  font-size: 0.95rem;
+  min-width: 0;
+  padding-right: 8px;
+}
+
+.conversationInput::placeholder { color: rgba(240,234,214,0.3); }
+
+.conversationSendBtn {
+  background: #ff4d1c;
+  color: #110d06;
+  border: none;
+  border-radius: 100px;
+  width: 42px;
+  height: 42px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.conversationSendBtn:hover:not(:disabled) { background: #ff7043; }
+.conversationSendBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Persona Selection Screen ── */
+
+.personaContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 60px 24px 80px;
+  width: 100%;
+}
+
+.personaHeader {
+  margin-bottom: 40px;
+}
+
+.personaTitle {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: #f0ead6;
+  margin-bottom: 12px;
+}
+
+.personaSub {
+  font-size: 1rem;
+  color: rgba(240,234,214,0.6);
+  line-height: 1.6;
+  margin-bottom: 12px;
+  font-weight: 300;
+}
+
+.personaInstructions {
+  font-size: 0.85rem;
+  color: rgba(240,234,214,0.35);
+  font-weight: 300;
+}
+
+.personaGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.personaCard {
+  position: relative;
+}
+
+/* ── Saving Screen ── */
+
+.savingContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  min-height: 100vh;
+}
+
+.savingLogo {
+  font-size: 1.6rem;
+}
+
+.savingText {
+  font-size: 1rem;
+  color: rgba(240,234,214,0.4);
+}
+
+/* ── Shared ── */
+
+.finishBtn {
+  background: #ff4d1c;
+  color: #110d06;
+  border: none;
+  border-radius: 100px;
+  padding: 16px 32px;
+  font-size: 1rem;
+  font-weight: 700;
+  transition: all 0.2s;
+  align-self: flex-start;
+  cursor: pointer;
+}
+
+.finishBtn:hover:not(:disabled) {
+  background: #ff7043;
+  transform: translateY(-1px);
+}
+
+.finishBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Legacy (keep for safety) ── */
+
 .progressBar {
   width: 100%;
   height: 3px;
@@ -57,12 +290,6 @@
   font-weight: 300;
 }
 
-.textInput {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
 .input {
   background: rgba(255,200,120,0.05);
   border: 1px solid rgba(255,200,120,0.15);
@@ -101,119 +328,9 @@
 
 .nextBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.choices {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+@media (max-width: 640px) {
+  .personaGrid { grid-template-columns: 1fr; }
+  .welcomeContainer { padding: 60px 20px; }
+  .conversationContainer { padding: 24px 16px 16px; }
+  .personaContainer { padding: 40px 16px 60px; }
 }
-
-.choice {
-  background: rgba(255,200,120,0.04);
-  border: 1px solid rgba(255,200,120,0.1);
-  border-radius: 14px;
-  padding: 18px 24px;
-  color: rgba(240,234,214,0.8);
-  font-size: 1rem;
-  text-align: left;
-  transition: all 0.2s;
-}
-
-.choice:hover {
-  border-color: rgba(255,77,28,0.3);
-  color: #f0ead6;
-  background: rgba(255,77,28,0.06);
-  transform: translateX(4px);
-}
-
-.selected {
-  border-color: #ff4d1c !important;
-  background: rgba(255,77,28,0.1) !important;
-  color: #f0ead6 !important;
-}
-
-.checkinSection {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.checkinOptions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.checkinCard {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: rgba(255,200,120,0.04);
-  border: 1px solid rgba(255,200,120,0.1);
-  border-radius: 14px;
-  padding: 18px 20px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.checkinCard:hover { border-color: rgba(255,77,28,0.25); }
-
-.checkinActive {
-  border-color: #ff4d1c !important;
-  background: rgba(255,77,28,0.08) !important;
-}
-
-.checkinCheck {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 2px solid rgba(255,200,120,0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  color: #ff4d1c;
-  flex-shrink: 0;
-  transition: all 0.2s;
-}
-
-.checkinActive .checkinCheck {
-  background: #ff4d1c;
-  border-color: #ff4d1c;
-  color: #110d06;
-}
-
-.checkinInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.checkinLabel {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #f0ead6;
-}
-
-.checkinTime {
-  font-size: 0.82rem;
-  color: rgba(240,234,214,0.5);
-}
-
-.finishBtn {
-  background: #ff4d1c;
-  color: #110d06;
-  border: none;
-  border-radius: 100px;
-  padding: 16px 32px;
-  font-size: 1rem;
-  font-weight: 700;
-  transition: all 0.2s;
-  align-self: flex-start;
-}
-
-.finishBtn:hover:not(:disabled) {
-  background: #ff7043;
-  transform: translateY(-1px);
-}
-
-.finishBtn:disabled { opacity: 0.6; cursor: not-allowed; }
