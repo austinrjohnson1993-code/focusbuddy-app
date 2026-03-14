@@ -52,7 +52,7 @@
 .main {
   max-width: 720px;
   margin: 0 auto;
-  padding: 56px 24px 80px;
+  padding: 56px 24px 120px;
 }
 
 .header { margin-bottom: 40px; }
@@ -381,3 +381,84 @@
 }
 
 .checkinSkipSmall:hover { color: rgba(240,234,214,0.5); }
+
+/* ── Bottom Nav ── */
+
+.bottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: stretch;
+  background: rgba(17,13,6,0.95);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255,200,120,0.08);
+  padding: 0 0 env(safe-area-inset-bottom, 0);
+}
+
+.bottomNavTab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 8px 14px;
+  background: transparent;
+  border: none;
+  color: rgba(240,234,214,0.35);
+  transition: color 0.2s;
+  cursor: pointer;
+}
+
+.bottomNavTab:hover {
+  color: rgba(240,234,214,0.6);
+}
+
+.bottomNavTabActive {
+  color: #ff4d1c;
+}
+
+.bottomNavIcon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.bottomNavLabel {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ── Coming Soon Placeholder ── */
+
+.comingSoon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  gap: 8px;
+}
+
+.comingSoonLabel {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: rgba(240,234,214,0.2);
+}
+
+.comingSoonText {
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(240,234,214,0.15);
+}
+
+@media (max-width: 640px) {
+  .main { padding-bottom: 100px; }
+}

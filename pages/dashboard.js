@@ -4,6 +4,17 @@ import { useRouter } from 'next/router'
 import Head from 'next/head'
 import styles from '../styles/Dashboard.module.css'
 
+function stripMarkdown(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/_{1,2}(.+?)_{1,2}/g, '$1')
+    .replace(/#+\s+/g, '')
+    .replace(/`(.+?)`/g, '$1')
+    .replace(/\[(.+?)\]\(.+?\)/g, '$1')
+    .trim()
+}
+
 export default function Dashboard() {
   const router = useRouter()
   const [user, setUser] = useState(null)
@@ -13,6 +24,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
   const [greeting, setGreeting] = useState('')
+  const [activeTab, setActiveTab] = useState('tasks')
 
   // Check-in state
   const [checkinComplete, setCheckinComplete] = useState(false)
@@ -70,10 +82,16 @@ export default function Dashboard() {
     }
   }, [loading, checkinComplete, profile])
 
+  const getFirstName = () => {
+    if (profile?.full_name) return profile.full_name.split(' ')[0]
+    if (user?.email) return user.email.split('@')[0]
+    return 'there'
+  }
+
   const openCheckin = async () => {
     setCheckinLoading(true)
-    const firstName = profile?.full_name?.split(' ')[0] || 'there'
-    const pendingCount = tasks.filter(t => !t.completed).length
+    const firstName = profile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there'
+    const pending = tasks.filter(t => !t.completed)
 
     try {
       const res = await fetch('/api/checkin', {
@@ -82,13 +100,16 @@ export default function Dashboard() {
         body: JSON.stringify({
           messages: [{ role: 'user', content: 'Hey, I just opened the app.' }],
           userName: firstName,
-          taskCount: pendingCount
+          taskCount: pending.length,
+          taskTitles: pending.map(t => t.title),
+          coachingBlend: profile?.coaching_blend,
+          aiContext: profile?.ai_context
         })
       })
       const data = await res.json()
-      setCheckinMessages([{ role: 'assistant', content: data.message }])
+      setCheckinMessages([{ role: 'assistant', content: stripMarkdown(data.message) }])
     } catch (err) {
-      setCheckinMessages([{ role: 'assistant', content: `Hey ${profile?.full_name?.split(' ')[0] || 'there'} — good to see you. How are you feeling right now?` }])
+      setCheckinMessages([{ role: 'assistant', content: `Hey ${firstName} — good to see you. How are you feeling right now?` }])
     }
     setCheckinLoading(false)
   }
@@ -103,8 +124,8 @@ export default function Dashboard() {
     setCheckinInput('')
     setCheckinLoading(true)
 
-    const firstName = profile?.full_name?.split(' ')[0] || 'there'
-    const pendingCount = tasks.filter(t => !t.completed).length
+    const firstName = profile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there'
+    const pending = tasks.filter(t => !t.completed)
 
     try {
       const res = await fetch('/api/checkin', {
@@ -113,11 +134,14 @@ export default function Dashboard() {
         body: JSON.stringify({
           messages: updatedMessages,
           userName: firstName,
-          taskCount: pendingCount
+          taskCount: pending.length,
+          taskTitles: pending.map(t => t.title),
+          coachingBlend: profile?.coaching_blend,
+          aiContext: profile?.ai_context
         })
       })
       const data = await res.json()
-      setCheckinMessages([...updatedMessages, { role: 'assistant', content: data.message }])
+      setCheckinMessages([...updatedMessages, { role: 'assistant', content: stripMarkdown(data.message) }])
     } catch (err) {
       setCheckinMessages([...updatedMessages, { role: 'assistant', content: "I'm here. Take your time." }])
     }
@@ -173,7 +197,7 @@ export default function Dashboard() {
 
   const pendingTasks = tasks.filter(t => !t.completed)
   const completedTasks = tasks.filter(t => t.completed)
-  const firstName = profile?.full_name?.split(' ')[0] || 'there'
+  const firstName = getFirstName()
 
   const assistantBubbleStyle = {
     background: '#221608',
@@ -286,75 +310,119 @@ export default function Dashboard() {
             <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
           </a>
           <div className={styles.navRight}>
-            <span className={styles.navEmail}>{user?.email}</span>
+            <span className={styles.navEmail}>{firstName}</span>
             <button onClick={handleSignOut} className={styles.signOutBtn}>Sign out</button>
           </div>
         </nav>
 
         <main className={styles.main}>
-          <div className={styles.header}>
-            <h1 className={styles.greetingText}>
-              {greeting}, <span className={styles.name}>{firstName}.</span>
-            </h1>
-            <p className={styles.headerSub}>
-              {pendingTasks.length === 0
-                ? "You're all caught up. Seriously — well done."
-                : `You have ${pendingTasks.length} thing${pendingTasks.length !== 1 ? 's' : ''} on your list today.`
-              }
-            </p>
-          </div>
-
-          <form onSubmit={addTask} className={styles.addForm}>
-            <input
-              type="text"
-              placeholder="What do you need to do today?"
-              value={newTask}
-              onChange={e => setNewTask(e.target.value)}
-              className={styles.addInput}
-            />
-            <button type="submit" disabled={adding || !newTask.trim()} className={styles.addBtn}>
-              {adding ? '...' : '+ Add'}
-            </button>
-          </form>
-
-          <div className={styles.taskSection}>
-            {pendingTasks.length === 0 && completedTasks.length === 0 && (
-              <div className={styles.emptyState}>
-                <p>Nothing on your list yet.</p>
-                <p className={styles.emptySubtext}>Add your first task above — even something small counts.</p>
+          {activeTab === 'tasks' && (
+            <>
+              <div className={styles.header}>
+                <h1 className={styles.greetingText}>
+                  {greeting}, <span className={styles.name}>{firstName}.</span>
+                </h1>
+                <p className={styles.headerSub}>
+                  {pendingTasks.length === 0
+                    ? "You're all caught up. Seriously — well done."
+                    : `You have ${pendingTasks.length} thing${pendingTasks.length !== 1 ? 's' : ''} on your list today.`
+                  }
+                </p>
               </div>
-            )}
 
-            {pendingTasks.length > 0 && (
-              <div className={styles.taskGroup}>
-                <div className={styles.taskGroupLabel}>To do</div>
-                {pendingTasks.map(task => (
-                  <div key={task.id} className={styles.taskCard}>
-                    <button onClick={() => toggleTask(task)} className={styles.taskCheck} />
-                    <span className={styles.taskTitle}>{task.title}</span>
-                    <div className={styles.taskActions}>
-                      <button onClick={() => rescheduleTask(task)} className={styles.taskAction} title="Reschedule for tomorrow">↷</button>
-                      <button onClick={() => archiveTask(task)} className={styles.taskActionDelete} title="Remove">×</button>
-                    </div>
+              <form onSubmit={addTask} className={styles.addForm}>
+                <input
+                  type="text"
+                  placeholder="What do you need to do today?"
+                  value={newTask}
+                  onChange={e => setNewTask(e.target.value)}
+                  className={styles.addInput}
+                />
+                <button type="submit" disabled={adding || !newTask.trim()} className={styles.addBtn}>
+                  {adding ? '...' : '+ Add'}
+                </button>
+              </form>
+
+              <div className={styles.taskSection}>
+                {pendingTasks.length === 0 && completedTasks.length === 0 && (
+                  <div className={styles.emptyState}>
+                    <p>Nothing on your list yet.</p>
+                    <p className={styles.emptySubtext}>Add your first task above — even something small counts.</p>
                   </div>
-                ))}
-              </div>
-            )}
+                )}
 
-            {completedTasks.length > 0 && (
-              <div className={styles.taskGroup}>
-                <div className={styles.taskGroupLabel}>Completed today</div>
-                {completedTasks.map(task => (
-                  <div key={task.id} className={`${styles.taskCard} ${styles.taskDone}`}>
-                    <button onClick={() => toggleTask(task)} className={`${styles.taskCheck} ${styles.taskCheckDone}`}>✓</button>
-                    <span className={styles.taskTitleDone}>{task.title}</span>
-                    <button onClick={() => archiveTask(task)} className={styles.taskActionDelete} title="Remove">×</button>
+                {pendingTasks.length > 0 && (
+                  <div className={styles.taskGroup}>
+                    <div className={styles.taskGroupLabel}>To do</div>
+                    {pendingTasks.map(task => (
+                      <div key={task.id} className={styles.taskCard}>
+                        <button onClick={() => toggleTask(task)} className={styles.taskCheck} />
+                        <span className={styles.taskTitle}>{task.title}</span>
+                        <div className={styles.taskActions}>
+                          <button onClick={() => rescheduleTask(task)} className={styles.taskAction} title="Reschedule for tomorrow">↷</button>
+                          <button onClick={() => archiveTask(task)} className={styles.taskActionDelete} title="Remove">×</button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
+
+                {completedTasks.length > 0 && (
+                  <div className={styles.taskGroup}>
+                    <div className={styles.taskGroupLabel}>Completed today</div>
+                    {completedTasks.map(task => (
+                      <div key={task.id} className={`${styles.taskCard} ${styles.taskDone}`}>
+                        <button onClick={() => toggleTask(task)} className={`${styles.taskCheck} ${styles.taskCheckDone}`}>✓</button>
+                        <span className={styles.taskTitleDone}>{task.title}</span>
+                        <button onClick={() => archiveTask(task)} className={styles.taskActionDelete} title="Remove">×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
+
+          {activeTab !== 'tasks' && (
+            <div className={styles.comingSoon}>
+              <p className={styles.comingSoonLabel}>
+                {activeTab === 'coach' ? 'Coach' : activeTab === 'progress' ? 'Progress' : 'Life'}
+              </p>
+              <p className={styles.comingSoonText}>Coming soon</p>
+            </div>
+          )}
         </main>
+
+        <nav className={styles.bottomNav}>
+          <button
+            className={`${styles.bottomNavTab} ${activeTab === 'tasks' ? styles.bottomNavTabActive : ''}`}
+            onClick={() => setActiveTab('tasks')}
+          >
+            <span className={styles.bottomNavIcon}>☑</span>
+            <span className={styles.bottomNavLabel}>Tasks</span>
+          </button>
+          <button
+            className={`${styles.bottomNavTab} ${activeTab === 'coach' ? styles.bottomNavTabActive : ''}`}
+            onClick={() => setActiveTab('coach')}
+          >
+            <span className={styles.bottomNavIcon}>◎</span>
+            <span className={styles.bottomNavLabel}>Coach</span>
+          </button>
+          <button
+            className={`${styles.bottomNavTab} ${activeTab === 'progress' ? styles.bottomNavTabActive : ''}`}
+            onClick={() => setActiveTab('progress')}
+          >
+            <span className={styles.bottomNavIcon}>↗</span>
+            <span className={styles.bottomNavLabel}>Progress</span>
+          </button>
+          <button
+            className={`${styles.bottomNavTab} ${activeTab === 'life' ? styles.bottomNavTabActive : ''}`}
+            onClick={() => setActiveTab('life')}
+          >
+            <span className={styles.bottomNavIcon}>◈</span>
+            <span className={styles.bottomNavLabel}>Life</span>
+          </button>
+        </nav>
       </div>
     </>
   )
