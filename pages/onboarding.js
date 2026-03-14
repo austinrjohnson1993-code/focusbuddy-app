@@ -49,11 +49,45 @@ export default function Onboarding() {
       if (!session) router.push('/login')
       else setUser(session.user)
     })
+
+    // Restore conversation from sessionStorage if it exists
+    const savedPhase = sessionStorage.getItem('onboarding_phase')
+    const savedMessages = sessionStorage.getItem('onboarding_messages')
+    const savedComplete = sessionStorage.getItem('onboarding_complete')
+    const savedPersonas = sessionStorage.getItem('onboarding_personas')
+
+    if (savedPhase) setPhase(savedPhase)
+    if (savedMessages) setMessages(JSON.parse(savedMessages))
+    if (savedComplete === 'true') setIsComplete(true)
+    if (savedPersonas) setSelectedPersonas(JSON.parse(savedPersonas))
   }, [])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
+
+  // Save conversation to sessionStorage on every change
+  useEffect(() => {
+    if (phase !== 'welcome') {
+      sessionStorage.setItem('onboarding_phase', phase)
+    }
+  }, [phase])
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      sessionStorage.setItem('onboarding_messages', JSON.stringify(messages))
+    }
+  }, [messages])
+
+  useEffect(() => {
+    sessionStorage.setItem('onboarding_complete', isComplete.toString())
+  }, [isComplete])
+
+  useEffect(() => {
+    if (selectedPersonas.length > 0) {
+      sessionStorage.setItem('onboarding_personas', JSON.stringify(selectedPersonas))
+    }
+  }, [selectedPersonas])
 
   const startConversation = async () => {
     setPhase('conversation')
@@ -188,6 +222,13 @@ export default function Onboarding() {
       }
 
       await supabase.from('profiles').upsert(profile)
+
+      // Clear onboarding session data
+      sessionStorage.removeItem('onboarding_phase')
+      sessionStorage.removeItem('onboarding_messages')
+      sessionStorage.removeItem('onboarding_complete')
+      sessionStorage.removeItem('onboarding_personas')
+
       router.push('/dashboard')
     } catch (err) {
       console.error('Save failed:', err)
