@@ -106,6 +106,7 @@ export default function Dashboard() {
           aiContext: profile?.ai_context
         })
       })
+      if (!res.ok) throw new Error(`API error ${res.status}`)
       const data = await res.json()
       setCheckinMessages([{ role: 'assistant', content: stripMarkdown(data.message) }])
     } catch (err) {
@@ -140,6 +141,7 @@ export default function Dashboard() {
           aiContext: profile?.ai_context
         })
       })
+      if (!res.ok) throw new Error(`API error ${res.status}`)
       const data = await res.json()
       setCheckinMessages([...updatedMessages, { role: 'assistant', content: stripMarkdown(data.message) }])
     } catch (err) {

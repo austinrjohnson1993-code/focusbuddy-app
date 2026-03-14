@@ -124,7 +124,10 @@ export default function Onboarding() {
         userName: user.email
       })
     })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error(`API error ${res.status}`)
+        return res.json()
+      })
       .then(data => {
         setMessages([{ role: 'assistant', content: data.message }])
         if (data.isComplete) setIsComplete(true)
@@ -158,6 +161,7 @@ export default function Onboarding() {
           userName: user?.email
         })
       })
+      if (!res.ok) throw new Error(`API error ${res.status}`)
       const data = await res.json()
       const newMessages = [...updatedMessages, { role: 'assistant', content: data.message }]
       setMessages(newMessages)
