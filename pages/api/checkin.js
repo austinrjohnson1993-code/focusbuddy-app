@@ -1,4 +1,4 @@
-const { coachingMessage } = require('../../lib/anthropic');
+import { coachingMessage } from '../../lib/anthropic';
 
 const CHECKIN_SYSTEM_PROMPT = `You are FocusBuddy — a warm, direct coaching companion for people with ADHD and executive function challenges.
 
@@ -15,7 +15,7 @@ Rules:
 
 The goal: make them feel met, then find one small forward motion together.`;
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
