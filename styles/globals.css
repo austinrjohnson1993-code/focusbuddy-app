@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Figtree:wght@300;400;500;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --night: #0d1117;
+  --deep: #1a1208;
+  --card: #221608;
+  --border: rgba(255,200,120,0.09);
+  --orange: #ff4d1c;
+  --orange-soft: rgba(255,77,28,0.12);
+  --orange-glow: rgba(255,77,28,0.22);
+  --cream: #f0ead6;
+  --muted: rgba(240,234,214,0.45);
+  --soft: rgba(240,234,214,0.68);
+  --green: #3ecf8e;
+  --red: #e74c3c;
+  --radius: 16px;
+  --radius-sm: 8px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--night);
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(101,60,10,0.35) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(80,45,8,0.3) 0%, transparent 55%);
+  color: var(--cream);
+  font-family: 'Figtree', sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: 'Figtree', sans-serif; }
+input, textarea { font-family: 'Figtree', sans-serif; }
+
+.brand {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.brand .focus { color: var(--cream); }
+.brand .buddy { color: var(--orange); }
