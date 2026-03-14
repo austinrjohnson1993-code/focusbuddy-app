@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
@@ -42,6 +42,7 @@ export default function Onboarding() {
   const [isComplete, setIsComplete] = useState(false)
   const [selectedPersonas, setSelectedPersonas] = useState([])
   const [saving, setSaving] = useState(false)
+  const messagesEndRef = useRef(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -49,6 +50,10 @@ export default function Onboarding() {
       else setUser(session.user)
     })
   }, [])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, loading])
 
   const startConversation = async () => {
     setPhase('conversation')
@@ -66,7 +71,7 @@ export default function Onboarding() {
       setMessages([{ role: 'assistant', content: data.message }])
       if (data.isComplete) setIsComplete(true)
     } catch (err) {
-      setMessages([{ role: 'assistant', content: "Hey! I'm FocusBuddy. I'm going to ask you a few questions to get to know you better. First — what should I call you?" }])
+      setMessages([{ role: 'assistant', content: "Hey! What should I call you?" }])
     }
     setLoading(false)
   }
@@ -351,21 +356,18 @@ export default function Onboarding() {
       <div className={styles.page}>
         <div className={styles.conversationContainer}>
           <div className={styles.conversationMessages}>
-            {loading && messages.length === 0 && (
-              <div style={assistantStyle}>
-                <span style={{ fontSize: '1.4rem', letterSpacing: '4px', color: 'rgba(240,234,214,0.4)', WebkitTextFillColor: 'rgba(240,234,214,0.4)' }}>···</span>
-              </div>
-            )}
+            <div className={styles.conversationSpacer} />
             {messages.map((msg, i) => (
               <div key={i} style={msg.role === 'assistant' ? assistantStyle : userStyle}>
                 {msg.content}
               </div>
             ))}
-            {loading && messages.length > 0 && (
+            {loading && (
               <div style={assistantStyle}>
                 <span style={{ fontSize: '1.4rem', letterSpacing: '4px', color: 'rgba(240,234,214,0.4)', WebkitTextFillColor: 'rgba(240,234,214,0.4)' }}>···</span>
               </div>
             )}
+            <div ref={messagesEndRef} />
           </div>
 
           {isComplete && (
