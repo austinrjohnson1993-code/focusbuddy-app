@@ -2,6 +2,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: #110d06;
 }
 
 /* ── Welcome Screen ── */
@@ -60,6 +61,7 @@
   font-weight: 700;
   transition: all 0.2s;
   margin-bottom: 16px;
+  cursor: pointer;
 }
 
 .startBtn:hover {
@@ -75,14 +77,14 @@
 /* ── Conversation Screen ── */
 
 .conversationContainer {
-  flex: 1;
   display: flex;
   flex-direction: column;
   max-width: 640px;
   margin: 0 auto;
-  padding: 40px 24px 24px;
+  padding: 0 16px 24px;
   width: 100%;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
 }
 
 .conversationMessages {
@@ -90,8 +92,14 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding-bottom: 24px;
+  padding: 24px 0 16px;
   overflow-y: auto;
+  justify-content: flex-end;
+}
+
+.conversationSpacer {
+  flex: 1;
+  min-height: 20px;
 }
 
 .conversationForm {
@@ -102,9 +110,7 @@
   border-radius: 100px;
   padding: 6px 6px 6px 24px;
   transition: border-color 0.2s, box-shadow 0.2s;
-  margin-top: 8px;
-  position: sticky;
-  bottom: 24px;
+  flex-shrink: 0;
 }
 
 .conversationForm:focus-within {
@@ -136,6 +142,7 @@
   font-weight: 700;
   transition: all 0.2s;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .conversationSendBtn:hover:not(:disabled) { background: #ff7043; }
@@ -188,10 +195,6 @@
   margin-bottom: 40px;
 }
 
-.personaCard {
-  position: relative;
-}
-
 /* ── Saving Screen ── */
 
 .savingContainer {
@@ -235,7 +238,7 @@
 
 .finishBtn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* ── Legacy (keep for safety) ── */
+/* ── Legacy (kept for safety) ── */
 
 .progressBar {
   width: 100%;
@@ -319,6 +322,7 @@
   font-size: 1rem;
   font-weight: 700;
   transition: all 0.2s;
+  cursor: pointer;
 }
 
 .nextBtn:hover:not(:disabled) {
@@ -328,9 +332,10 @@
 
 .nextBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* ── Responsive ── */
+
 @media (max-width: 640px) {
   .personaGrid { grid-template-columns: 1fr; }
   .welcomeContainer { padding: 60px 20px; }
-  .conversationContainer { padding: 24px 16px 16px; }
   .personaContainer { padding: 40px 16px 60px; }
 }
