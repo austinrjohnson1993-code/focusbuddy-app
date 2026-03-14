@@ -1,402 +1,67 @@
-import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
-import { useRouter } from 'next/router'
-import Head from 'next/head'
-import styles from '../styles/Onboarding.module.css'
+const { coachingMessage } = require('../../lib/anthropic');
 
-const PERSONAS = {
-  drill_sergeant: {
-    label: 'The Drill Sergeant',
-    description: 'Blunt, direct, zero fluff. High accountability, no excuses.',
-    example: '"HEY. You\'ve rescheduled this three times. What\'s the actual problem?"'
-  },
-  coach: {
-    label: 'The Coach',
-    description: 'Warm, strategic, keeps you moving. Believes in you without letting you off the hook.',
-    example: '"You\'ve got momentum today. Let\'s use it — what\'s the one thing that moves the needle?"'
-  },
-  thinking_partner: {
-    label: 'The Thinking Partner',
-    description: 'Collaborative, asks questions, helps you figure it out yourself.',
-    example: '"You\'ve moved this task three times. What\'s actually in the way?"'
-  },
-  hype_person: {
-    label: 'The Hype Person',
-    description: 'Energetic, celebratory, motivational. Makes wins feel huge.',
-    example: '"Wake UP! You knocked out two things before noon. You\'re unstoppable today!"'
-  },
-  strategist: {
-    label: 'The Strategist',
-    description: 'Logical, pragmatic, systems-focused. Gives you the optimal path.',
-    example: '"You have 4 open tasks. Based on dependencies and deadlines, here\'s the sequence."'
-  }
-}
+const ONBOARDING_SYSTEM_PROMPT = `You are FocusBuddy — conducting a deep onboarding conversation with a new user. Your goal is to genuinely understand who this person is so the app can serve them well from day one.
 
-export default function Onboarding() {
-  const router = useRouter()
-  const [user, setUser] = useState(null)
-  const [phase, setPhase] = useState('welcome')
-  const [messages, setMessages] = useState([])
-  const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [isComplete, setIsComplete] = useState(false)
-  const [selectedPersonas, setSelectedPersonas] = useState([])
-  const [saving, setSaving] = useState(false)
+This is not a form. It's a real conversation. Ask one question at a time. Listen carefully to what they say AND how they say it — their tone, energy, and word choices tell you as much as their answers.
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) router.push('/login')
-      else setUser(session.user)
-    })
-  }, [])
+You are gathering information across these areas — but naturally, not as a checklist:
+- Their name and how they like to be addressed
+- Work situation — employed, self-employed, what kind of work
+- Daily schedule — structured or chaotic, morning person or night owl
+- Sleep habits — how much, how consistent, quality
+- Exercise and movement habits
+- Food and eating patterns
+- Family situation — partner, children, dependents, caregiving responsibilities
+- Biggest friction point — starting tasks, staying on track, finishing, or something else
+- How they respond to accountability — do they need a push or a pull
+- What's failed before — what tools or systems haven't worked and why
+- Communication style preference — direct/blunt, warm/encouraging, logical/systematic, energetic/motivational
+- What's on their plate right now — top priorities in life and work
+- Any context they want the AI to carry forward
 
-  const startConversation = async () => {
-    setPhase('conversation')
-    setLoading(true)
-    try {
-      const res = await fetch('/api/onboarding', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: 'Hi, I just signed up for FocusBuddy.' }],
-          userName: user?.email
-        })
-      })
-      const data = await res.json()
-      setMessages([{ role: 'assistant', content: data.message }])
-      if (data.isComplete) setIsComplete(true)
-    } catch (err) {
-      setMessages([{ role: 'assistant', content: "Hey! I'm FocusBuddy. I'm going to ask you a few questions to get to know you better. First — what should I call you?" }])
-    }
-    setLoading(false)
+RULES:
+- Ask ONE question at a time
+- Acknowledge what they said before asking the next question
+- If they give a short answer, gently dig one level deeper before moving on
+- Match their energy — if they're casual, be casual. If they're serious, be focused.
+- After 10-15 exchanges, you have enough to suggest a persona blend
+- When you have enough information, end your message with exactly this tag: [ONBOARDING_COMPLETE]
+
+PERSONA OPTIONS (for your suggestion at the end):
+- drill_sergeant: blunt, direct, no fluff, high accountability
+- coach: warm, strategic, encouraging, keeps momentum
+- thinking_partner: collaborative, asks questions, helps user decide
+- hype_person: energetic, celebratory, motivational
+- strategist: logical, pragmatic, systems-focused
+
+When suggesting personas, explain WHY based on what they told you. Suggest a primary, optional secondary and tertiary. Be specific.`;
+
+module.exports = async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const sendMessage = async (e) => {
-    e.preventDefault()
-    if (!input.trim() || loading) return
+  const { messages, userName } = req.body;
 
-    const userMessage = { role: 'user', content: input.trim() }
-    const updatedMessages = [...messages, userMessage]
-    setMessages(updatedMessages)
-    setInput('')
-    setLoading(true)
-
-    try {
-      const res = await fetch('/api/onboarding', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: updatedMessages,
-          userName: user?.email
-        })
-      })
-      const data = await res.json()
-      const newMessages = [...updatedMessages, { role: 'assistant', content: data.message }]
-      setMessages(newMessages)
-      if (data.isComplete) {
-        setIsComplete(true)
-        extractProfile(newMessages)
-      }
-    } catch (err) {
-      setMessages([...updatedMessages, { role: 'assistant', content: "I'm here. Keep going." }])
-    }
-    setLoading(false)
+  if (!messages || !Array.isArray(messages)) {
+    return res.status(400).json({ error: 'Messages array required' });
   }
 
-  const extractProfile = async (conversationMessages) => {
-    try {
-      const res = await fetch('/api/extract-profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: conversationMessages })
-      })
-      const data = await res.json()
-      if (data.coaching_blend) {
-        const initial = [data.coaching_blend.primary]
-        if (data.coaching_blend.secondary) initial.push(data.coaching_blend.secondary)
-        setSelectedPersonas(initial)
-      }
-    } catch (err) {
-      console.error('Profile extraction failed:', err)
-    }
+  try {
+    const system = userName
+      ? `${ONBOARDING_SYSTEM_PROMPT}\n\nThe user's email (for context): ${userName}`
+      : ONBOARDING_SYSTEM_PROMPT;
+
+    const reply = await coachingMessage(messages, system);
+    const isComplete = reply.includes('[ONBOARDING_COMPLETE]');
+    const cleanReply = reply.replace('[ONBOARDING_COMPLETE]', '').trim();
+
+    return res.status(200).json({
+      message: cleanReply,
+      isComplete
+    });
+  } catch (error) {
+    console.error('Onboarding API error:', error);
+    return res.status(500).json({ error: 'Something went wrong', detail: error.message });
   }
-
-  const togglePersona = (key) => {
-    if (selectedPersonas.includes(key)) {
-      if (selectedPersonas.length > 1) {
-        setSelectedPersonas(selectedPersonas.filter(p => p !== key))
-      }
-    } else {
-      if (selectedPersonas.length < 3) {
-        setSelectedPersonas([...selectedPersonas, key])
-      }
-    }
-  }
-
-  const handleFinish = async () => {
-    setSaving(true)
-    setPhase('saving')
-
-    const weights = {}
-    const weightValues = [60, 25, 15]
-    selectedPersonas.forEach((p, i) => {
-      weights[p] = weightValues[i] || 10
-    })
-
-    const coaching_blend = {
-      primary: selectedPersonas[0],
-      secondary: selectedPersonas[1] || null,
-      tertiary: selectedPersonas[2] || null,
-      weights
-    }
-
-    try {
-      const res = await fetch('/api/extract-profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages })
-      })
-      const profileData = await res.json()
-
-      const profile = {
-        id: user.id,
-        email: user.email,
-        full_name: profileData.full_name || user.email.split('@')[0],
-        diagnosis: 'other',
-        main_struggle: profileData.biggest_friction || 'starting',
-        checkin_times: ['morning', 'evening'],
-        onboarded: true,
-        coaching_blend,
-        communication_style: profileData.communication_style,
-        work_schedule: profileData.work_schedule,
-        sleep_habits: profileData.sleep_habits,
-        exercise_habits: profileData.exercise_habits,
-        food_habits: profileData.food_habits,
-        family_context: profileData.family_context,
-        biggest_friction: profileData.biggest_friction,
-        accountability_style: profileData.accountability_style,
-        past_failures: profileData.past_failures,
-        current_priorities: profileData.current_priorities,
-        ai_context: profileData.ai_context,
-        onboarding_complete: true,
-        created_at: new Date().toISOString()
-      }
-
-      await supabase.from('profiles').upsert(profile)
-      router.push('/dashboard')
-    } catch (err) {
-      console.error('Save failed:', err)
-      setSaving(false)
-      setPhase('persona')
-    }
-  }
-
-  const assistantStyle = {
-    background: '#221608',
-    border: '1px solid rgba(255,200,120,0.1)',
-    borderRadius: '18px 18px 18px 4px',
-    padding: '16px 20px',
-    color: '#f0ead6',
-    WebkitTextFillColor: '#f0ead6',
-    fontSize: '1.05rem',
-    lineHeight: '1.6',
-    maxWidth: '85%',
-    alignSelf: 'flex-start',
-    marginBottom: '8px'
-  }
-
-  const userStyle = {
-    background: '#ff4d1c',
-    borderRadius: '18px 18px 4px 18px',
-    padding: '14px 20px',
-    color: '#110d06',
-    WebkitTextFillColor: '#110d06',
-    fontSize: '1rem',
-    fontWeight: '500',
-    lineHeight: '1.5',
-    maxWidth: '75%',
-    alignSelf: 'flex-end',
-    marginBottom: '8px'
-  }
-
-  if (!user) return null
-
-  // WELCOME SCREEN
-  if (phase === 'welcome') {
-    return (
-      <>
-        <Head><title>Getting Started — FocusBuddy</title></Head>
-        <div className={styles.page}>
-          <div className={styles.welcomeContainer}>
-            <div className={styles.welcomeLogo}>
-              <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
-            </div>
-            <h1 className={styles.welcomeTitle}>Let's get to know you.</h1>
-            <p className={styles.welcomeSub}>
-              This conversation takes 5–10 minutes. That investment upfront means FocusBuddy works better for you from day one — faster results, fewer repetitive questions, a coach that already knows you.
-            </p>
-            <p className={styles.welcomeSub2}>
-              We'll ask about your work style, daily habits, what's worked before, what hasn't, and how you like to be held accountable. The more you share, the more personal this gets.
-            </p>
-            <button onClick={startConversation} className={styles.startBtn}>
-              I'm ready — let's do this →
-            </button>
-            <p className={styles.welcomeNote}>No wrong answers. This is just a conversation.</p>
-          </div>
-        </div>
-      </>
-    )
-  }
-
-  // SAVING SCREEN
-  if (phase === 'saving') {
-    return (
-      <>
-        <Head><title>Getting Started — FocusBuddy</title></Head>
-        <div className={styles.page}>
-          <div className={styles.savingContainer}>
-            <div className={styles.savingLogo}>
-              <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
-            </div>
-            <p className={styles.savingText}>Setting up your space...</p>
-          </div>
-        </div>
-      </>
-    )
-  }
-
-  // PERSONA SELECTION
-  if (phase === 'persona') {
-    return (
-      <>
-        <Head><title>Getting Started — FocusBuddy</title></Head>
-        <div className={styles.page}>
-          <div className={styles.personaContainer}>
-            <div className={styles.personaHeader}>
-              <h1 className={styles.personaTitle}>Your coaching style.</h1>
-              <p className={styles.personaSub}>
-                Based on our conversation, here's what I think will work for you. Adjust it however you want — you can always change this later.
-              </p>
-              <p className={styles.personaInstructions}>Pick up to 3. The first one you select is your dominant style.</p>
-            </div>
-
-            <div className={styles.personaGrid}>
-              {Object.entries(PERSONAS).map(([key, persona]) => {
-                const isSelected = selectedPersonas.includes(key)
-                const position = selectedPersonas.indexOf(key)
-                const isPrimary = position === 0
-                const isSecondary = position === 1
-
-                return (
-                  <div
-                    key={key}
-                    onClick={() => togglePersona(key)}
-                    style={{
-                      background: isSelected ? 'rgba(255,77,28,0.08)' : '#221608',
-                      border: isSelected ? '1px solid rgba(255,77,28,0.4)' : '1px solid rgba(255,200,120,0.08)',
-                      cursor: 'pointer',
-                      borderRadius: '16px',
-                      padding: '20px',
-                      transition: 'all 0.2s',
-                      position: 'relative'
-                    }}
-                  >
-                    {isSelected && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '12px',
-                        right: '12px',
-                        background: '#ff4d1c',
-                        color: '#110d06',
-                        WebkitTextFillColor: '#110d06',
-                        borderRadius: '100px',
-                        padding: '2px 10px',
-                        fontSize: '0.72rem',
-                        fontWeight: '700'
-                      }}>
-                        {isPrimary ? 'Primary' : isSecondary ? 'Secondary' : 'Tertiary'}
-                      </div>
-                    )}
-                    <p style={{ color: '#f0ead6', WebkitTextFillColor: '#f0ead6', fontWeight: '700', fontSize: '1rem', marginBottom: '8px' }}>
-                      {persona.label}
-                    </p>
-                    <p style={{ color: 'rgba(240,234,214,0.6)', WebkitTextFillColor: 'rgba(240,234,214,0.6)', fontSize: '0.88rem', lineHeight: '1.5', marginBottom: '12px' }}>
-                      {persona.description}
-                    </p>
-                    <p style={{ color: 'rgba(240,234,214,0.4)', WebkitTextFillColor: 'rgba(240,234,214,0.4)', fontSize: '0.82rem', lineHeight: '1.5', fontStyle: 'italic' }}>
-                      {persona.example}
-                    </p>
-                  </div>
-                )
-              })}
-            </div>
-
-            <button
-              onClick={handleFinish}
-              disabled={selectedPersonas.length === 0 || saving}
-              className={styles.finishBtn}
-            >
-              {saving ? 'Setting up your space...' : "This is me — let's go →"}
-            </button>
-          </div>
-        </div>
-      </>
-    )
-  }
-
-  // CONVERSATION SCREEN
-  return (
-    <>
-      <Head><title>Getting Started — FocusBuddy</title></Head>
-      <div className={styles.page}>
-        <div className={styles.conversationContainer}>
-          <div className={styles.conversationMessages}>
-            {loading && messages.length === 0 && (
-              <div style={assistantStyle}>
-                <span style={{ fontSize: '1.4rem', letterSpacing: '4px', color: 'rgba(240,234,214,0.4)', WebkitTextFillColor: 'rgba(240,234,214,0.4)' }}>···</span>
-              </div>
-            )}
-            {messages.map((msg, i) => (
-              <div key={i} style={msg.role === 'assistant' ? assistantStyle : userStyle}>
-                {msg.content}
-              </div>
-            ))}
-            {loading && messages.length > 0 && (
-              <div style={assistantStyle}>
-                <span style={{ fontSize: '1.4rem', letterSpacing: '4px', color: 'rgba(240,234,214,0.4)', WebkitTextFillColor: 'rgba(240,234,214,0.4)' }}>···</span>
-              </div>
-            )}
-          </div>
-
-          {isComplete && (
-            <button
-              onClick={() => setPhase('persona')}
-              className={styles.finishBtn}
-              style={{ marginBottom: '16px' }}
-            >
-              Choose my coaching style →
-            </button>
-          )}
-
-          <form onSubmit={sendMessage} className={styles.conversationForm}>
-            <input
-              type="text"
-              placeholder="Type your answer..."
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              className={styles.conversationInput}
-              autoFocus
-            />
-            <button
-              type="submit"
-              disabled={loading || !input.trim()}
-              className={styles.conversationSendBtn}
-            >
-              →
-            </button>
-          </form>
-        </div>
-      </div>
-    </>
-  )
 }
