@@ -14,6 +14,13 @@ export default function Dashboard() {
   const [adding, setAdding] = useState(false)
   const [greeting, setGreeting] = useState('')
 
+  // Check-in state
+  const [checkinComplete, setCheckinComplete] = useState(false)
+  const [checkinMessages, setCheckinMessages] = useState([])
+  const [checkinInput, setCheckinInput] = useState('')
+  const [checkinLoading, setCheckinLoading] = useState(false)
+  const [checkinStarted, setCheckinStarted] = useState(false)
+
   useEffect(() => {
     const hour = new Date().getHours()
     if (hour < 12) setGreeting('Good morning')
@@ -27,6 +34,10 @@ export default function Dashboard() {
       setUser(session.user)
       fetchProfile(session.user.id)
       fetchTasks(session.user.id)
+
+      // Check if check-in already done this session
+      const done = sessionStorage.getItem('checkin_done')
+      if (done) setCheckinComplete(true)
     })
   }, [])
 
@@ -49,6 +60,77 @@ export default function Dashboard() {
       .order('created_at', { ascending: false })
     setTasks(data || [])
     setLoading(false)
+  }
+
+  // Start check-in with opening message from FocusBuddy
+  useEffect(() => {
+    if (!loading && !checkinComplete && profile && !checkinStarted) {
+      setCheckinStarted(true)
+      openCheckin()
+    }
+  }, [loading, checkinComplete, profile])
+
+  const openCheckin = async () => {
+    setCheckinLoading(true)
+    const firstName = profile?.full_name?.split(' ')[0] || 'there'
+    const pendingCount = tasks.filter(t => !t.completed).length
+
+    try {
+      const res = await fetch('/api/checkin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'Hey, I just opened the app.' }],
+          userName: firstName,
+          taskCount: pendingCount
+        })
+      })
+      const data = await res.json()
+      setCheckinMessages([
+        { role: 'assistant', content: data.message }
+      ])
+    } catch (err) {
+      setCheckinMessages([
+        { role: 'assistant', content: `Hey ${profile?.full_name?.split(' ')[0] || 'there'} — good to see you. How are you feeling right now?` }
+      ])
+    }
+    setCheckinLoading(false)
+  }
+
+  const sendCheckinMessage = async (e) => {
+    e.preventDefault()
+    if (!checkinInput.trim() || checkinLoading) return
+
+    const userMessage = { role: 'user', content: checkinInput.trim() }
+    const updatedMessages = [...checkinMessages, userMessage]
+    setCheckinMessages(updatedMessages)
+    setCheckinInput('')
+    setCheckinLoading(true)
+
+    const firstName = profile?.full_name?.split(' ')[0] || 'there'
+    const pendingCount = tasks.filter(t => !t.completed).length
+
+    try {
+      const res = await fetch('/api/checkin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: updatedMessages,
+          userName: firstName,
+          taskCount: pendingCount
+        })
+      })
+      const data = await res.json()
+      setCheckinMessages([...updatedMessages, { role: 'assistant', content: data.message }])
+    } catch (err) {
+      setCheckinMessages([...updatedMessages, { role: 'assistant', content: "I'm here. Take your time." }])
+    }
+    setCheckinLoading(false)
+  }
+
+  const completeCheckin = () => {
+    sessionStorage.setItem('checkin_done', 'true')
+    setCheckinComplete(true)
   }
 
   const addTask = async (e) => {
@@ -103,6 +185,79 @@ export default function Dashboard() {
     </div>
   )
 
+  // CHECK-IN SCREEN
+  if (!checkinComplete) {
+    return (
+      <>
+        <Head><title>Dashboard — FocusBuddy</title></Head>
+        <div className={styles.page}>
+          <nav className={styles.nav}>
+            <a href="/" className={styles.navLogo}>
+              <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
+            </a>
+            <div className={styles.navRight}>
+              <button onClick={handleSignOut} className={styles.signOutBtn}>Sign out</button>
+            </div>
+          </nav>
+
+          <main className={styles.checkinMain}>
+            <div className={styles.checkinCard}>
+              <div className={styles.checkinMessages}>
+                {checkinLoading && checkinMessages.length === 0 && (
+                  <div className={styles.checkinBubbleAssistant}>
+                    <span className={styles.typingDots}>···</span>
+                  </div>
+                )}
+                {checkinMessages.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={msg.role === 'assistant' ? styles.checkinBubbleAssistant : styles.checkinBubbleUser}
+                  >
+                    {msg.content}
+                  </div>
+                ))}
+                {checkinLoading && checkinMessages.length > 0 && (
+                  <div className={styles.checkinBubbleAssistant}>
+                    <span className={styles.typingDots}>···</span>
+                  </div>
+                )}
+              </div>
+
+              {checkinMessages.length >= 2 && (
+                <button onClick={completeCheckin} className={styles.checkinSkip}>
+                  Let's go →
+                </button>
+              )}
+
+              <form onSubmit={sendCheckinMessage} className={styles.checkinForm}>
+                <input
+                  type="text"
+                  placeholder="How are you doing..."
+                  value={checkinInput}
+                  onChange={e => setCheckinInput(e.target.value)}
+                  className={styles.checkinInput}
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  disabled={checkinLoading || !checkinInput.trim()}
+                  className={styles.checkinSendBtn}
+                >
+                  →
+                </button>
+              </form>
+
+              <button onClick={completeCheckin} className={styles.checkinSkipSmall}>
+                Skip to my tasks
+              </button>
+            </div>
+          </main>
+        </div>
+      </>
+    )
+  }
+
+  // MAIN DASHBOARD
   return (
     <>
       <Head><title>Dashboard — FocusBuddy</title></Head>
