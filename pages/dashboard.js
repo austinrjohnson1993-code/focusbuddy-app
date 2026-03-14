@@ -1,342 +1,385 @@
-import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
-import { useRouter } from 'next/router'
-import Head from 'next/head'
-import styles from '../styles/Dashboard.module.css'
-
-export default function Dashboard() {
-  const router = useRouter()
-  const [user, setUser] = useState(null)
-  const [profile, setProfile] = useState(null)
-  const [tasks, setTasks] = useState([])
-  const [newTask, setNewTask] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [adding, setAdding] = useState(false)
-  const [greeting, setGreeting] = useState('')
-
-  // Check-in state
-  const [checkinComplete, setCheckinComplete] = useState(false)
-  const [checkinMessages, setCheckinMessages] = useState([])
-  const [checkinInput, setCheckinInput] = useState('')
-  const [checkinLoading, setCheckinLoading] = useState(false)
-  const [checkinStarted, setCheckinStarted] = useState(false)
-
-  useEffect(() => {
-    const hour = new Date().getHours()
-    if (hour < 12) setGreeting('Good morning')
-    else if (hour < 17) setGreeting('Good afternoon')
-    else setGreeting('Good evening')
-  }, [])
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { router.push('/login'); return }
-      setUser(session.user)
-      fetchProfile(session.user.id)
-      fetchTasks(session.user.id)
-
-      // Check if check-in already done this session
-      const done = sessionStorage.getItem('checkin_done')
-      if (done) setCheckinComplete(true)
-    })
-  }, [])
-
-  const fetchProfile = async (userId) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    if (data) setProfile(data)
-    else router.push('/onboarding')
-  }
-
-  const fetchTasks = async (userId) => {
-    const { data } = await supabase
-      .from('tasks')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('archived', false)
-      .order('created_at', { ascending: false })
-    setTasks(data || [])
-    setLoading(false)
-  }
-
-  // Start check-in with opening message from FocusBuddy
-  useEffect(() => {
-    if (!loading && !checkinComplete && profile && !checkinStarted) {
-      setCheckinStarted(true)
-      openCheckin()
-    }
-  }, [loading, checkinComplete, profile])
-
-  const openCheckin = async () => {
-    setCheckinLoading(true)
-    const firstName = profile?.full_name?.split(' ')[0] || 'there'
-    const pendingCount = tasks.filter(t => !t.completed).length
-
-    try {
-      const res = await fetch('/api/checkin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: 'Hey, I just opened the app.' }],
-          userName: firstName,
-          taskCount: pendingCount
-        })
-      })
-      const data = await res.json()
-      setCheckinMessages([
-        { role: 'assistant', content: data.message }
-      ])
-    } catch (err) {
-      setCheckinMessages([
-        { role: 'assistant', content: `Hey ${profile?.full_name?.split(' ')[0] || 'there'} — good to see you. How are you feeling right now?` }
-      ])
-    }
-    setCheckinLoading(false)
-  }
-
-  const sendCheckinMessage = async (e) => {
-    e.preventDefault()
-    if (!checkinInput.trim() || checkinLoading) return
-
-    const userMessage = { role: 'user', content: checkinInput.trim() }
-    const updatedMessages = [...checkinMessages, userMessage]
-    setCheckinMessages(updatedMessages)
-    setCheckinInput('')
-    setCheckinLoading(true)
-
-    const firstName = profile?.full_name?.split(' ')[0] || 'there'
-    const pendingCount = tasks.filter(t => !t.completed).length
-
-    try {
-      const res = await fetch('/api/checkin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: updatedMessages,
-          userName: firstName,
-          taskCount: pendingCount
-        })
-      })
-      const data = await res.json()
-      setCheckinMessages([...updatedMessages, { role: 'assistant', content: data.message }])
-    } catch (err) {
-      setCheckinMessages([...updatedMessages, { role: 'assistant', content: "I'm here. Take your time." }])
-    }
-    setCheckinLoading(false)
-  }
-
-  const completeCheckin = () => {
-    sessionStorage.setItem('checkin_done', 'true')
-    setCheckinComplete(true)
-  }
-
-  const addTask = async (e) => {
-    e.preventDefault()
-    if (!newTask.trim() || !user) return
-    setAdding(true)
-    const task = {
-      user_id: user.id,
-      title: newTask.trim(),
-      completed: false,
-      archived: false,
-      created_at: new Date().toISOString(),
-      scheduled_for: new Date().toISOString()
-    }
-    const { data } = await supabase.from('tasks').insert(task).select().single()
-    if (data) setTasks([data, ...tasks])
-    setNewTask('')
-    setAdding(false)
-  }
-
-  const toggleTask = async (task) => {
-    const updated = { ...task, completed: !task.completed, completed_at: !task.completed ? new Date().toISOString() : null }
-    await supabase.from('tasks').update({ completed: updated.completed, completed_at: updated.completed_at }).eq('id', task.id)
-    setTasks(tasks.map(t => t.id === task.id ? updated : t))
-  }
-
-  const rescheduleTask = async (task) => {
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    const updated = { ...task, scheduled_for: tomorrow.toISOString() }
-    await supabase.from('tasks').update({ scheduled_for: updated.scheduled_for }).eq('id', task.id)
-    setTasks(tasks.map(t => t.id === task.id ? updated : t))
-  }
-
-  const archiveTask = async (task) => {
-    await supabase.from('tasks').update({ archived: true }).eq('id', task.id)
-    setTasks(tasks.filter(t => t.id !== task.id))
-  }
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push('/')
-  }
-
-  const pendingTasks = tasks.filter(t => !t.completed)
-  const completedTasks = tasks.filter(t => t.completed)
-  const firstName = profile?.full_name?.split(' ')[0] || 'there'
-
-  if (loading) return (
-    <div className={styles.loadingPage}>
-      <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
-    </div>
-  )
-
-  // CHECK-IN SCREEN
-  if (!checkinComplete) {
-    return (
-      <>
-        <Head><title>Dashboard — FocusBuddy</title></Head>
-        <div className={styles.page}>
-          <nav className={styles.nav}>
-            <a href="/" className={styles.navLogo}>
-              <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
-            </a>
-            <div className={styles.navRight}>
-              <button onClick={handleSignOut} className={styles.signOutBtn}>Sign out</button>
-            </div>
-          </nav>
-
-          <main className={styles.checkinMain}>
-            <div className={styles.checkinCard}>
-              <div className={styles.checkinMessages}>
-                {checkinLoading && checkinMessages.length === 0 && (
-                  <div className={styles.checkinBubbleAssistant}>
-                    <span className={styles.typingDots}>···</span>
-                  </div>
-                )}
-                {checkinMessages.map((msg, i) => (
-                  <div
-                    key={i}
-                    className={msg.role === 'assistant' ? styles.checkinBubbleAssistant : styles.checkinBubbleUser}
-                  >
-                    {msg.content}
-                  </div>
-                ))}
-                {checkinLoading && checkinMessages.length > 0 && (
-                  <div className={styles.checkinBubbleAssistant}>
-                    <span className={styles.typingDots}>···</span>
-                  </div>
-                )}
-              </div>
-
-              {checkinMessages.length >= 2 && (
-                <button onClick={completeCheckin} className={styles.checkinSkip}>
-                  Let's go →
-                </button>
-              )}
-
-              <form onSubmit={sendCheckinMessage} className={styles.checkinForm}>
-                <input
-                  type="text"
-                  placeholder="How are you doing..."
-                  value={checkinInput}
-                  onChange={e => setCheckinInput(e.target.value)}
-                  className={styles.checkinInput}
-                  autoFocus
-                />
-                <button
-                  type="submit"
-                  disabled={checkinLoading || !checkinInput.trim()}
-                  className={styles.checkinSendBtn}
-                >
-                  →
-                </button>
-              </form>
-
-              <button onClick={completeCheckin} className={styles.checkinSkipSmall}>
-                Skip to my tasks
-              </button>
-            </div>
-          </main>
-        </div>
-      </>
-    )
-  }
-
-  // MAIN DASHBOARD
-  return (
-    <>
-      <Head><title>Dashboard — FocusBuddy</title></Head>
-      <div className={styles.page}>
-        <nav className={styles.nav}>
-          <a href="/" className={styles.navLogo}>
-            <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
-          </a>
-          <div className={styles.navRight}>
-            <span className={styles.navEmail}>{user?.email}</span>
-            <button onClick={handleSignOut} className={styles.signOutBtn}>Sign out</button>
-          </div>
-        </nav>
-
-        <main className={styles.main}>
-          <div className={styles.header}>
-            <h1 className={styles.greetingText}>
-              {greeting}, <span className={styles.name}>{firstName}.</span>
-            </h1>
-            <p className={styles.headerSub}>
-              {pendingTasks.length === 0
-                ? "You're all caught up. Seriously — well done."
-                : `You have ${pendingTasks.length} thing${pendingTasks.length !== 1 ? 's' : ''} on your list today.`
-              }
-            </p>
-          </div>
-
-          <form onSubmit={addTask} className={styles.addForm}>
-            <input
-              type="text"
-              placeholder="What do you need to do today?"
-              value={newTask}
-              onChange={e => setNewTask(e.target.value)}
-              className={styles.addInput}
-            />
-            <button type="submit" disabled={adding || !newTask.trim()} className={styles.addBtn}>
-              {adding ? '...' : '+ Add'}
-            </button>
-          </form>
-
-          <div className={styles.taskSection}>
-            {pendingTasks.length === 0 && completedTasks.length === 0 && (
-              <div className={styles.emptyState}>
-                <p>Nothing on your list yet.</p>
-                <p className={styles.emptySubtext}>Add your first task above — even something small counts.</p>
-              </div>
-            )}
-
-            {pendingTasks.length > 0 && (
-              <div className={styles.taskGroup}>
-                <div className={styles.taskGroupLabel}>To do</div>
-                {pendingTasks.map(task => (
-                  <div key={task.id} className={styles.taskCard}>
-                    <button onClick={() => toggleTask(task)} className={styles.taskCheck} />
-                    <span className={styles.taskTitle}>{task.title}</span>
-                    <div className={styles.taskActions}>
-                      <button onClick={() => rescheduleTask(task)} className={styles.taskAction} title="Reschedule for tomorrow">↷</button>
-                      <button onClick={() => archiveTask(task)} className={styles.taskActionDelete} title="Remove">×</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {completedTasks.length > 0 && (
-              <div className={styles.taskGroup}>
-                <div className={styles.taskGroupLabel}>Completed today</div>
-                {completedTasks.map(task => (
-                  <div key={task.id} className={`${styles.taskCard} ${styles.taskDone}`}>
-                    <button onClick={() => toggleTask(task)} className={`${styles.taskCheck} ${styles.taskCheckDone}`}>✓</button>
-                    <span className={styles.taskTitleDone}>{task.title}</span>
-                    <button onClick={() => archiveTask(task)} className={styles.taskActionDelete} title="Remove">×</button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </main>
-      </div>
-    </>
-  )
+.loadingPage {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
 }
+
+.page { min-height: 100vh; }
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 40px;
+  background: rgba(17,13,6,0.9);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,200,120,0.08);
+}
+
+.navLogo { font-size: 1.3rem; text-decoration: none; }
+
+.navRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.navEmail {
+  font-size: 0.82rem;
+  color: rgba(240,234,214,0.4);
+}
+
+.signOutBtn {
+  background: transparent;
+  border: 1px solid rgba(255,200,120,0.15);
+  border-radius: 100px;
+  padding: 6px 16px;
+  color: rgba(240,234,214,0.55);
+  font-size: 0.82rem;
+  transition: all 0.2s;
+}
+
+.signOutBtn:hover {
+  border-color: rgba(255,77,28,0.3);
+  color: #ff4d1c;
+}
+
+.main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 56px 24px 80px;
+}
+
+.header { margin-bottom: 40px; }
+
+.greetingText {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: clamp(2rem, 5vw, 3rem);
+  letter-spacing: -0.02em;
+  color: #f0ead6;
+  margin-bottom: 8px;
+}
+
+.name { color: #ff4d1c; }
+
+.headerSub {
+  font-size: 1rem;
+  color: rgba(240,234,214,0.55);
+  font-weight: 300;
+}
+
+.addForm {
+  display: flex;
+  gap: 0;
+  background: #221608;
+  border: 1px solid rgba(255,200,120,0.1);
+  border-radius: 100px;
+  padding: 6px 6px 6px 24px;
+  margin-bottom: 40px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.addForm:focus-within {
+  border-color: rgba(255,77,28,0.4);
+  box-shadow: 0 0 0 3px rgba(255,77,28,0.1);
+}
+
+.addInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #f0ead6;
+  font-size: 0.95rem;
+  min-width: 0;
+  padding-right: 8px;
+}
+
+.addInput::placeholder { color: rgba(240,234,214,0.3); }
+
+.addBtn {
+  background: #ff4d1c;
+  color: #110d06;
+  border: none;
+  border-radius: 100px;
+  padding: 10px 24px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.addBtn:hover:not(:disabled) { background: #ff7043; }
+.addBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.taskSection { display: flex; flex-direction: column; gap: 32px; }
+
+.taskGroup { display: flex; flex-direction: column; gap: 8px; }
+
+.taskGroupLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(240,234,214,0.35);
+  margin-bottom: 4px;
+  padding-left: 4px;
+}
+
+.taskCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #221608;
+  border: 1px solid rgba(255,200,120,0.08);
+  border-radius: 14px;
+  padding: 16px 18px;
+  transition: border-color 0.2s, transform 0.15s;
+}
+
+.taskCard:hover {
+  border-color: rgba(255,200,120,0.15);
+  transform: translateX(2px);
+}
+
+.taskDone { opacity: 0.5; }
+
+.taskCheck {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,200,120,0.25);
+  background: transparent;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: transparent;
+}
+
+.taskCheck:hover { border-color: #ff4d1c; }
+
+.taskCheckDone {
+  background: #ff4d1c !important;
+  border-color: #ff4d1c !important;
+  color: #110d06 !important;
+}
+
+.taskTitle {
+  flex: 1;
+  font-size: 0.95rem;
+  color: #f0ead6;
+  line-height: 1.4;
+}
+
+.taskTitleDone {
+  flex: 1;
+  font-size: 0.95rem;
+  color: rgba(240,234,214,0.5);
+  text-decoration: line-through;
+}
+
+.taskActions { display: flex; gap: 6px; }
+
+.taskAction {
+  background: transparent;
+  border: 1px solid rgba(255,200,120,0.1);
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(240,234,214,0.4);
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.taskAction:hover {
+  border-color: rgba(255,77,28,0.3);
+  color: #ff4d1c;
+}
+
+.taskActionDelete {
+  background: transparent;
+  border: 1px solid rgba(255,200,120,0.1);
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(240,234,214,0.3);
+  font-size: 1.2rem;
+  transition: all 0.2s;
+}
+
+.taskActionDelete:hover {
+  border-color: rgba(231,76,60,0.3);
+  color: #e74c3c;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+  color: rgba(240,234,214,0.5);
+  font-size: 1rem;
+}
+
+.emptySubtext {
+  margin-top: 8px;
+  font-size: 0.88rem;
+  color: rgba(240,234,214,0.3);
+}
+
+@media (max-width: 640px) {
+  .nav { padding: 14px 20px; }
+  .navEmail { display: none; }
+  .main { padding: 40px 16px 60px; }
+}
+
+/* ── Check-in Screen ── */
+
+.checkinMain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 65px);
+  padding: 24px;
+}
+
+.checkinCard {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.checkinMessages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 120px;
+}
+
+.checkinBubbleAssistant {
+  background: #221608;
+  border: 1px solid rgba(255,200,120,0.1);
+  border-radius: 18px 18px 18px 4px;
+  padding: 16px 20px;
+  color: #f0ead6 !important;
+  -webkit-text-fill-color: #f0ead6;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  max-width: 85%;
+  align-self: flex-start;
+}
+
+.checkinBubbleUser {
+  background: #ff4d1c;
+  border-radius: 18px 18px 4px 18px;
+  padding: 14px 20px;
+  color: #110d06 !important;
+  -webkit-text-fill-color: #110d06;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+  max-width: 75%;
+  align-self: flex-end;
+}
+
+.typingDots {
+  font-size: 1.4rem;
+  letter-spacing: 4px;
+  color: rgba(240,234,214,0.4);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.checkinForm {
+  display: flex;
+  gap: 0;
+  background: #221608;
+  border: 1px solid rgba(255,200,120,0.1);
+  border-radius: 100px;
+  padding: 6px 6px 6px 24px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  margin-top: 8px;
+}
+
+.checkinForm:focus-within {
+  border-color: rgba(255,77,28,0.4);
+  box-shadow: 0 0 0 3px rgba(255,77,28,0.1);
+}
+
+.checkinInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #f0ead6;
+  font-size: 0.95rem;
+  min-width: 0;
+  padding-right: 8px;
+}
+
+.checkinInput::placeholder { color: rgba(240,234,214,0.3); }
+
+.checkinSendBtn {
+  background: #ff4d1c;
+  color: #110d06;
+  border: none;
+  border-radius: 100px;
+  width: 42px;
+  height: 42px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.checkinSendBtn:hover:not(:disabled) { background: #ff7043; }
+.checkinSendBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.checkinSkip {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px solid rgba(255,77,28,0.3);
+  border-radius: 100px;
+  padding: 10px 24px;
+  color: #ff4d1c;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+
+.checkinSkip:hover {
+  background: rgba(255,77,28,0.1);
+}
+
+.checkinSkipSmall {
+  background: transparent;
+  border: none;
+  color: rgba(240,234,214,0.25);
+  font-size: 0.8rem;
+  text-align: center;
+  padding: 4px;
+  transition: color 0.2s;
+  cursor: pointer;
+}
+
+.checkinSkipSmall:hover { color: rgba(240,234,214,0.5); }
