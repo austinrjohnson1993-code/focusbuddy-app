@@ -45,8 +45,11 @@ export default function Dashboard() {
       .select('*')
       .eq('id', userId)
       .single()
-    if (data) setProfile(data)
-    else router.push('/onboarding')
+    if (data && data.onboarded) {
+      setProfile(data)
+    } else {
+      router.push('/onboarding')
+    }
   }
 
   const fetchTasks = async (userId) => {
