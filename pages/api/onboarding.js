@@ -1,181 +1,67 @@
-import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
-import { useRouter } from 'next/router'
-import Head from 'next/head'
-import styles from '../styles/Onboarding.module.css'
+const { coachingMessage } = require('../../lib/anthropic');
 
-const steps = [
-  {
-    id: 'name',
-    question: "First things first — what should we call you?",
-    sub: "Just your first name is fine.",
-    type: 'text',
-    placeholder: 'Your first name',
-    field: 'full_name'
-  },
-  {
-    id: 'diagnosis',
-    question: "How would you describe yourself?",
-    sub: "This helps us personalize your experience. No wrong answers.",
-    type: 'choice',
-    field: 'diagnosis',
-    options: [
-      { value: 'diagnosed_adhd', label: 'Diagnosed with ADHD' },
-      { value: 'suspected_adhd', label: 'Suspect I have ADHD' },
-      { value: 'no_adhd', label: 'No ADHD — just need help focusing' },
-      { value: 'other', label: 'Something else entirely' }
-    ]
-  },
-  {
-    id: 'struggle',
-    question: "What's your biggest daily struggle?",
-    sub: "Pick the one that hits closest to home.",
-    type: 'choice',
-    field: 'main_struggle',
-    options: [
-      { value: 'starting', label: "Starting tasks — the wall is real" },
-      { value: 'time', label: "Time disappears and I don't know where it went" },
-      { value: 'overwhelm', label: "Everything feels equally urgent" },
-      { value: 'shame', label: "The shame spiral when I fall behind" }
-    ]
-  },
-  {
-    id: 'checkin',
-    question: "When do you want FocusBuddy to check in?",
-    sub: "We'll reach out at these times. You can change this anytime.",
-    type: 'checkin',
-    field: 'checkin_times'
-  }
-]
+const ONBOARDING_SYSTEM_PROMPT = `You are FocusBuddy — conducting a deep onboarding conversation with a new user. Your goal is to genuinely understand who this person is so the app can serve them well from day one.
 
-export default function Onboarding() {
-  const router = useRouter()
-  const [user, setUser] = useState(null)
-  const [step, setStep] = useState(0)
-  const [answers, setAnswers] = useState({})
-  const [textValue, setTextValue] = useState('')
-  const [checkins, setCheckins] = useState({ morning: true, midday: false, evening: true })
-  const [saving, setSaving] = useState(false)
+This is not a form. It's a real conversation. Ask one question at a time. Listen carefully to what they say AND how they say it — their tone, energy, and word choices tell you as much as their answers.
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) router.push('/login')
-      else setUser(session.user)
-    })
-  }, [])
+You are gathering information across these areas — but naturally, not as a checklist:
+- Their name and how they like to be addressed
+- Work situation — employed, self-employed, what kind of work
+- Daily schedule — structured or chaotic, morning person or night owl
+- Sleep habits — how much, how consistent, quality
+- Exercise and movement habits
+- Food and eating patterns
+- Family situation — partner, children, dependents, caregiving responsibilities
+- Biggest friction point — starting tasks, staying on track, finishing, or something else
+- How they respond to accountability — do they need a push or a pull
+- What's failed before — what tools or systems haven't worked and why
+- Communication style preference — direct/blunt, warm/encouraging, logical/systematic, energetic/motivational
+- What's on their plate right now — top priorities in life and work
+- Any context they want the AI to carry forward
 
-  const current = steps[step]
+RULES:
+- Ask ONE question at a time
+- Acknowledge what they said before asking the next question
+- If they give a short answer, gently dig one level deeper before moving on
+- Match their energy — if they're casual, be casual. If they're serious, be focused.
+- After 10-15 exchanges, you have enough to suggest a persona blend
+- When you have enough information, end your message with exactly this tag: [ONBOARDING_COMPLETE]
 
-  const handleChoice = (value) => {
-    const newAnswers = { ...answers, [current.field]: value }
-    setAnswers(newAnswers)
-    if (step < steps.length - 1) {
-      setTimeout(() => setStep(step + 1), 300)
-    }
+PERSONA OPTIONS (for your suggestion at the end):
+- drill_sergeant: blunt, direct, no fluff, high accountability
+- coach: warm, strategic, encouraging, keeps momentum
+- thinking_partner: collaborative, asks questions, helps user decide
+- hype_person: energetic, celebratory, motivational
+- strategist: logical, pragmatic, systems-focused
+
+When suggesting personas, explain WHY based on what they told you. Suggest a primary, optional secondary and tertiary. Be specific.`;
+
+module.exports = async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const handleText = () => {
-    if (!textValue.trim()) return
-    const newAnswers = { ...answers, [current.field]: textValue.trim() }
-    setAnswers(newAnswers)
-    setTextValue('')
-    setStep(step + 1)
+  const { messages, userName } = req.body;
+
+  if (!messages || !Array.isArray(messages)) {
+    return res.status(400).json({ error: 'Messages array required' });
   }
 
-  const handleFinish = async () => {
-    setSaving(true)
-    const checkinArray = Object.entries(checkins).filter(([,v]) => v).map(([k]) => k)
-    const profile = {
-      id: user.id,
-      email: user.email,
-      full_name: answers.full_name,
-      diagnosis: answers.diagnosis,
-      main_struggle: answers.main_struggle,
-      checkin_times: checkinArray,
-      onboarded: true,
-      created_at: new Date().toISOString()
-    }
-    await supabase.from('profiles').upsert(profile)
-    router.push('/dashboard')
+  try {
+    const system = userName
+      ? `${ONBOARDING_SYSTEM_PROMPT}\n\nThe user's email (for context): ${userName}`
+      : ONBOARDING_SYSTEM_PROMPT;
+
+    const reply = await coachingMessage(messages, system);
+    const isComplete = reply.includes('[ONBOARDING_COMPLETE]');
+    const cleanReply = reply.replace('[ONBOARDING_COMPLETE]', '').trim();
+
+    return res.status(200).json({
+      message: cleanReply,
+      isComplete
+    });
+  } catch (error) {
+    console.error('Onboarding API error:', error);
+    return res.status(500).json({ error: 'Something went wrong', detail: error.message });
   }
-
-  if (!user) return null
-
-  const progress = ((step) / steps.length) * 100
-
-  return (
-    <>
-      <Head><title>Getting Started — FocusBuddy</title></Head>
-      <div className={styles.page}>
-        <div className={styles.progressBar}>
-          <div className={styles.progressFill} style={{ width: `${progress}%` }} />
-        </div>
-
-        <div className={styles.container}>
-          <div className={styles.stepCount}>{step + 1} of {steps.length}</div>
-
-          <h1 className={styles.question}>{current.question}</h1>
-          <p className={styles.sub}>{current.sub}</p>
-
-          {current.type === 'text' && (
-            <div className={styles.textInput}>
-              <input
-                type="text"
-                placeholder={current.placeholder}
-                value={textValue}
-                onChange={e => setTextValue(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleText()}
-                autoFocus
-                className={styles.input}
-              />
-              <button onClick={handleText} disabled={!textValue.trim()} className={styles.nextBtn}>
-                Continue →
-              </button>
-            </div>
-          )}
-
-          {current.type === 'choice' && (
-            <div className={styles.choices}>
-              {current.options.map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => handleChoice(opt.value)}
-                  className={`${styles.choice} ${answers[current.field] === opt.value ? styles.selected : ''}`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {current.type === 'checkin' && (
-            <div className={styles.checkinSection}>
-              <div className={styles.checkinOptions}>
-                {[
-                  { key: 'morning', label: 'Morning check-in', time: '8:00 AM', desc: "Plan your day before it plans you" },
-                  { key: 'midday', label: 'Midday nudge', time: '12:30 PM', desc: "A gentle pulse check" },
-                  { key: 'evening', label: 'Evening wrap-up', time: '7:00 PM', desc: "Celebrate what you did" }
-                ].map(item => (
-                  <div
-                    key={item.key}
-                    onClick={() => setCheckins({ ...checkins, [item.key]: !checkins[item.key] })}
-                    className={`${styles.checkinCard} ${checkins[item.key] ? styles.checkinActive : ''}`}
-                  >
-                    <div className={styles.checkinCheck}>{checkins[item.key] ? '✓' : ''}</div>
-                    <div className={styles.checkinInfo}>
-                      <span className={styles.checkinLabel}>{item.label}</span>
-                      <span className={styles.checkinTime}>{item.time} — {item.desc}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <button onClick={handleFinish} disabled={saving} className={styles.finishBtn}>
-                {saving ? 'Setting up your space...' : "I'm ready — let's go"}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </>
-  )
 }
