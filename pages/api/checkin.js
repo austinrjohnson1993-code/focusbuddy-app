@@ -323,7 +323,10 @@ async function executeTool(toolName, input, supabaseAdmin, userId) {
   }
 
   if (toolName === 'create_task') {
-    const scheduledFor = input.scheduled_for || new Date().toISOString().split('T')[0] + 'T00:00:00.000Z'
+    const rawDate = input.scheduled_for ? new Date(input.scheduled_for) : new Date()
+    const normalized = new Date(rawDate)
+    normalized.setHours(12, 0, 0, 0)
+    const scheduledFor = normalized.toISOString()
     const { data, error } = await supabaseAdmin
       .from('tasks')
       .insert({
@@ -374,13 +377,16 @@ function fmtTaskLine(t, tz) {
 function buildContextPrompt(checkInType, profile, pending, completed, isFirstCheckin, extra) {
   const rawName = profile.full_name || ''
   const name = rawName.includes('@') ? 'there' : (rawName.split(' ')[0] || 'there')
-  const { focusTask, focusDuration, timezone } = extra || {}
+  const { focusTask, focusDuration, timezone, todayStr, tomorrowStr } = extra || {}
   const tz = timezone || 'America/Chicago'
+  const today = todayStr || new Date().toLocaleDateString('en-CA', { timeZone: tz })
+  const tomorrow = tomorrowStr || new Date(Date.now() + 86400000).toLocaleDateString('en-CA', { timeZone: tz })
+  const dateContext = `\nToday's date is: ${today}. When creating tasks, use today's date for tasks the user says are happening today, and tomorrow's date (${tomorrow}) for tasks they say are happening tomorrow. Always use local date not UTC.`
 
   if (checkInType === 'focus') {
     return `Focus mode. User: ${name}.
 They spent ${focusDuration || 25} minutes on "${focusTask || 'their task'}" and got stuck.
-Write 2 sentences. Ask one specific question to help them identify what's in the way. Be direct, no fluff.`
+Write 2 sentences. Ask one specific question to help them identify what's in the way. Be direct, no fluff.${dateContext}`
   }
 
   if (checkInType === 'weekly_summary') {
@@ -392,7 +398,7 @@ Write 2 sentences. Ask one specific question to help them identify what's in the
     return `Weekly review. User: ${name}.
 Completed this week: ${weekWins}.
 Still pending: ${pendingLines}.
-Write 3 sentences. Name one specific win, one pattern you noticed, one thing to focus on next week. Use real task names. Be specific and direct.`
+Write 3 sentences. Name one specific win, one pattern you noticed, one thing to focus on next week. Use real task names. Be specific and direct.${dateContext}`
   }
 
   const top = topTask(pending)
@@ -409,7 +415,7 @@ Write 3 sentences. Name one specific win, one pattern you noticed, one thing to 
 Top priority: ${top ? `"${top.title}" | id:${top.id}${top.due_time ? ` | due ${formatLocalTime(top.due_time, tz)}` : ''}${top.consequence_level === 'external' ? ' | external' : ''}` : 'none'}.
 All pending tasks:
 ${pendingLines}${firstFlag}
-Write the opening morning check-in. 2-3 sentences max. Name the top task specifically. If you commit to checking in at a specific time, call schedule_morning_checkin.`
+Write the opening morning check-in. 2-3 sentences max. Name the top task specifically. If you commit to checking in at a specific time, call schedule_morning_checkin.${dateContext}`
   }
 
   if (checkInType === 'midday') {
@@ -417,7 +423,7 @@ Write the opening morning check-in. 2-3 sentences max. Name the top task specifi
 Completed so far: ${completedTitles}.
 Pending tasks:
 ${pendingLines}${firstFlag}
-Write the midday check-in. 2 sentences. Acknowledge what's done by name, name what's next. If the user confirmed completing something, call complete_task. If they want to move something, call reschedule_task or update_task_time.`
+Write the midday check-in. 2 sentences. Acknowledge what's done by name, name what's next. If the user confirmed completing something, call complete_task. If they want to move something, call reschedule_task or update_task_time.${dateContext}`
   }
 
   // evening — pending tasks are being auto-rescheduled before this message; tell the user
@@ -425,7 +431,7 @@ Write the midday check-in. 2 sentences. Acknowledge what's done by name, name wh
 Completed today: ${completedTitles}.
 These tasks are being moved to tomorrow morning (already done — just tell them):
 ${pendingLines}${firstFlag}
-Write the evening check-in. 2-3 sentences. One specific win or honest acknowledgment, confirm what moves to tomorrow by name, one closing line.`
+Write the evening check-in. 2-3 sentences. One specific win or honest acknowledgment, confirm what moves to tomorrow by name, one closing line.${dateContext}`
 }
 
 // ── Handler ──────────────────────────────────────────────────────────────────
@@ -440,6 +446,9 @@ export default async function handler(req, res) {
 
   const { userId, checkInType, messages, timezone } = req.body
   if (!userId) return res.status(400).json({ error: 'userId required' })
+
+  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: timezone || 'America/Chicago' })
+  const tomorrowStr = new Date(Date.now() + 86400000).toLocaleDateString('en-CA', { timeZone: timezone || 'America/Chicago' })
 
   if (checkRateLimit(userId)) {
     console.warn(`[checkin] rate limit hit for ${userId}`)
@@ -523,7 +532,7 @@ export default async function handler(req, res) {
       .eq('id', profile.id)
   }
 
-  const extra = { focusTask: req.body.focusTask, focusDuration: req.body.focusDuration, timezone }
+  const extra = { focusTask: req.body.focusTask, focusDuration: req.body.focusDuration, timezone, todayStr, tomorrowStr }
   const contextPrompt = buildContextPrompt(type, profile, pending, completed, isFirstCheckin, extra)
   console.log('[checkin] context prompt:\n', contextPrompt)
 
