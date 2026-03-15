@@ -59,6 +59,7 @@ const QUESTIONS = [
       { id: 'b', text: "Help you think through problems yourself" },
       { id: 'c', text: "Celebrate every win and keep energy high" },
       { id: 'd', text: "Give you a clear logical plan and get out of the way" },
+      { id: 'e', text: "Check in on how you're feeling before anything else" },
     ]
   },
   {
@@ -124,8 +125,8 @@ const SCORING = [
   { a: { drill_sergeant: 1 }, b: { hype_person: 1 }, c: { thinking_partner: 2 }, d: { strategist: 2 } },
   { a: { drill_sergeant: 2 }, b: { hype_person: 2 }, c: { coach: 1 }, d: { strategist: 1 } },
   { a: { drill_sergeant: 1, strategist: 1 }, b: { strategist: 2 }, c: { thinking_partner: 2 }, d: { coach: 2 } },
-  { a: { drill_sergeant: 3 }, b: { coach: 2 }, c: { thinking_partner: 2 }, d: { hype_person: 1 } },
-  { a: { drill_sergeant: 3 }, b: { thinking_partner: 3 }, c: { hype_person: 3 }, d: { strategist: 3 } },
+  { a: { drill_sergeant: 3 }, b: { coach: 2 }, c: { thinking_partner: 2 }, d: { empath: 3 } },
+  { a: { drill_sergeant: 3 }, b: { thinking_partner: 3 }, c: { hype_person: 3 }, d: { strategist: 3 }, e: { empath: 3 } },
   { a: { strategist: 3 }, b: { thinking_partner: 2 }, c: { coach: 2 }, d: { drill_sergeant: 2 } },
   { a: { strategist: 2, drill_sergeant: 1 }, b: { thinking_partner: 2 }, c: { drill_sergeant: 2 }, d: { coach: 1 } },
   { a: { thinking_partner: 2 }, b: { strategist: 2 }, c: { thinking_partner: 1, coach: 1 }, d: { coach: 2 } },
@@ -140,10 +141,11 @@ const PERSONA_DEFS = {
   thinking_partner: { label: 'The Thinking Partner', desc: 'Collaborative, helps you think it through.' },
   hype_person:      { label: 'The Hype Person',       desc: 'Energetic, celebratory, makes wins feel huge.' },
   strategist:       { label: 'The Strategist',        desc: 'Logical, pragmatic, systems-focused.' },
+  empath:           { label: 'The Empath',            desc: 'Emotionally attuned, meets you where you are.' },
 }
 
 function computePersonas(answers) {
-  const scores = { drill_sergeant: 0, coach: 0, thinking_partner: 0, hype_person: 0, strategist: 0 }
+  const scores = { drill_sergeant: 0, coach: 0, thinking_partner: 0, hype_person: 0, strategist: 0, empath: 0 }
   answers.forEach((optionId, qIdx) => {
     if (!optionId) return
     const weights = SCORING[qIdx]?.[optionId] || {}

@@ -10,6 +10,26 @@ import { applyAccentColor, DEFAULT_ACCENTS } from '../lib/accentColor'
 import { saveTaskOrder } from '../lib/taskOrder'
 import { isDueSoon as billIsDueSoon, formatBillAmount, getBillCategory, getNextDueDate } from '../lib/billUtils'
 
+const THEMES = [
+  { id: 'orange-bronze', name: 'Classic', accent: '#ff4d1c', gradient: 'radial-gradient(ellipse at top left, rgba(101,60,10,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(80,45,8,0.35) 0%, transparent 60%)', logo: '#ff4d1c' },
+  { id: 'teal-ocean', name: 'Ocean', accent: '#2dd4bf', gradient: 'radial-gradient(ellipse at top left, rgba(15,80,90,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(10,60,70,0.35) 0%, transparent 60%)', logo: '#2dd4bf' },
+  { id: 'purple-cosmos', name: 'Cosmos', accent: '#8b5cf6', gradient: 'radial-gradient(ellipse at top left, rgba(60,20,120,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(40,10,90,0.35) 0%, transparent 60%)', logo: '#8b5cf6' },
+  { id: 'blue-arctic', name: 'Arctic', accent: '#3b82f6', gradient: 'radial-gradient(ellipse at top left, rgba(15,40,100,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(10,30,80,0.35) 0%, transparent 60%)', logo: '#3b82f6' },
+  { id: 'green-forest', name: 'Forest', accent: '#22c55e', gradient: 'radial-gradient(ellipse at top left, rgba(10,70,30,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(8,50,20,0.35) 0%, transparent 60%)', logo: '#22c55e' },
+  { id: 'rose-sunset', name: 'Sunset', accent: '#f43f5e', gradient: 'radial-gradient(ellipse at top left, rgba(120,20,40,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(90,15,30,0.35) 0%, transparent 60%)', logo: '#f43f5e' },
+  { id: 'amber-desert', name: 'Desert', accent: '#f59e0b', gradient: 'radial-gradient(ellipse at top left, rgba(120,70,5,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(90,50,5,0.35) 0%, transparent 60%)', logo: '#f59e0b' },
+  { id: 'cyan-electric', name: 'Electric', accent: '#06b6d4', gradient: 'radial-gradient(ellipse at top left, rgba(5,70,100,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(5,50,80,0.35) 0%, transparent 60%)', logo: '#06b6d4' },
+  { id: 'indigo-night', name: 'Night', accent: '#6366f1', gradient: 'radial-gradient(ellipse at top left, rgba(30,20,100,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(20,15,80,0.35) 0%, transparent 60%)', logo: '#6366f1' },
+  { id: 'drill-sergeant', name: 'Command', accent: '#ef4444', gradient: 'radial-gradient(ellipse at top left, rgba(100,10,10,0.5) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(80,5,5,0.4) 0%, transparent 60%)', logo: '#ef4444' },
+]
+
+function applyTheme(theme) {
+  if (!theme || typeof document === 'undefined') return
+  document.documentElement.style.setProperty('--accent', theme.accent)
+  document.documentElement.style.setProperty('--accent-gradient', theme.gradient)
+  document.documentElement.style.setProperty('--logo-color', theme.logo)
+}
+
 const NAV_ITEMS = [
   { id: 'tasks', label: 'Tasks', icon: (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -36,20 +56,20 @@ const NAV_ITEMS = [
       <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
     </svg>
   )},
-  { id: 'progress', label: 'Progress', icon: (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-    </svg>
-  )},
   { id: 'finance', label: 'Finance', icon: (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
     </svg>
   )},
+  { id: 'progress', label: 'Progress', icon: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+    </svg>
+  )},
 ]
 
 const NAV_PRIMARY_IDS = ['tasks', 'checkin', 'focus', 'calendar']
-const NAV_MORE_IDS = ['journal', 'progress', 'finance', 'settings']
+const NAV_MORE_IDS = ['journal', 'finance', 'progress', 'settings']
 
 // ── Pure helpers ──────────────────────────────────────────────────────────────
 
@@ -160,6 +180,7 @@ const PERSONAS_LIST = [
   { key: 'thinking_partner', label: 'The Thinking Partner', desc: 'Collaborative, asks questions, helps you decide.' },
   { key: 'hype_person', label: 'The Hype Person', desc: 'Energetic, celebratory, makes wins feel huge.' },
   { key: 'strategist', label: 'The Strategist', desc: 'Logical, pragmatic, systems-focused.' },
+  { key: 'empath', label: 'The Empath', desc: 'Emotionally attuned, meets you where you are.' },
 ]
 const PERSONA_BADGE = ['Primary', 'Supporting', 'Accent']
 
@@ -267,6 +288,33 @@ export default function Dashboard() {
   // Mobile more drawer
   const [showMoreDrawer, setShowMoreDrawer] = useState(false)
 
+  // Themes
+  const [activeTheme, setActiveTheme] = useState(THEMES[0])
+
+  // Focus subtab
+  const [focusSubTab, setFocusSubTab] = useState('session')
+
+  // Progress time band
+  const [progressBand, setProgressBand] = useState('week')
+
+  // Guide modal
+  const [showGuideModal, setShowGuideModal] = useState(false)
+
+  // Alarms
+  const [alarms, setAlarms] = useState([])
+  const [alarmsLoaded, setAlarmsLoaded] = useState(false)
+  const [showAlarmsModal, setShowAlarmsModal] = useState(false)
+  const [newAlarmTime, setNewAlarmTime] = useState('')
+  const [newAlarmTitle, setNewAlarmTitle] = useState('')
+  const [newAlarmRepeat, setNewAlarmRepeat] = useState('once')
+  const [addingAlarm, setAddingAlarm] = useState(false)
+  const [activeAlarmBanner, setActiveAlarmBanner] = useState(null)
+  const alarmIntervalRef = useRef(null)
+
+  // Journal reminder
+  const [journalReminderShown, setJournalReminderShown] = useState(false)
+  const [showJournalReminder, setShowJournalReminder] = useState(false)
+
   // Settings
   const [settingsName, setSettingsName] = useState('')
   const [settingsSaving, setSettingsSaving] = useState(false)
@@ -309,8 +357,14 @@ export default function Dashboard() {
   }, [detailTask?.id])
 
   useEffect(() => {
-    applyAccentColor(profile?.accent_color)
-    if (profile?.full_name) setSettingsName(profile.full_name)
+    if (!profile) return
+    const themeId = profile.accent_color && profile.accent_color.startsWith('#')
+      ? null // legacy hex color, map to closest or default
+      : profile.accent_color
+    const theme = THEMES.find(t => t.id === themeId) || THEMES.find(t => t.accent === profile.accent_color) || THEMES[0]
+    setActiveTheme(theme)
+    applyTheme(theme)
+    if (profile.full_name) setSettingsName(profile.full_name)
   }, [profile])
 
   useEffect(() => {
@@ -363,6 +417,19 @@ export default function Dashboard() {
     return () => clearInterval(focusIntervalRef.current)
   }, [])
 
+  // Alarm checking
+  useEffect(() => {
+    if (!user) return
+    alarmIntervalRef.current = setInterval(() => checkAlarms(), 60000)
+    return () => clearInterval(alarmIntervalRef.current)
+  }, [user, alarms])
+
+  useEffect(() => {
+    if (activeTab === 'checkin' && user && !alarmsLoaded) {
+      fetchAlarms(user.id)
+    }
+  }, [activeTab, user])
+
   // ── Data fetching ─────────────────────────────────────────────────────────
 
   const fetchProfile = async (userId) => {
@@ -412,6 +479,80 @@ export default function Dashboard() {
       .from('bills').select('*').eq('user_id', userId)
       .order('created_at', { ascending: false })
     setBills(data || [])
+  }
+
+  const fetchAlarms = async (userId) => {
+    setAlarmsLoaded(true)
+    const { data } = await supabase.from('alarms').select('*').eq('user_id', userId).eq('triggered', false).order('alarm_time', { ascending: true })
+    setAlarms(data || [])
+  }
+
+  const addAlarm = async (e) => {
+    e.preventDefault()
+    if (!newAlarmTime || !newAlarmTitle.trim() || !user) return
+    setAddingAlarm(true)
+    const alarm = {
+      user_id: user.id,
+      alarm_time: new Date(newAlarmTime).toISOString(),
+      title: newAlarmTitle.trim(),
+      repeat: newAlarmRepeat,
+      triggered: false,
+      created_at: new Date().toISOString(),
+    }
+    const { data } = await supabase.from('alarms').insert(alarm).select().single()
+    if (data) setAlarms(prev => [...prev, data])
+    setNewAlarmTime(''); setNewAlarmTitle(''); setNewAlarmRepeat('once')
+    setAddingAlarm(false)
+  }
+
+  const deleteAlarm = async (id) => {
+    await supabase.from('alarms').delete().eq('id', id)
+    setAlarms(prev => prev.filter(a => a.id !== id))
+  }
+
+  const checkAlarms = () => {
+    const now = new Date()
+    setAlarms(prev => {
+      let changed = false
+      const updated = prev.map(alarm => {
+        if (alarm.triggered) return alarm
+        const alarmTime = new Date(alarm.alarm_time)
+        if (now >= alarmTime) {
+          changed = true
+          // Fire alarm
+          fireAlarm(alarm)
+          return { ...alarm, triggered: true }
+        }
+        return alarm
+      })
+      if (changed) {
+        // Mark triggered in DB
+        updated.filter(a => a.triggered && !prev.find(p => p.id === a.id)?.triggered).forEach(a => {
+          supabase.from('alarms').update({ triggered: true }).eq('id', a.id)
+        })
+      }
+      return updated
+    })
+  }
+
+  const fireAlarm = (alarm) => {
+    // In-app banner
+    setActiveAlarmBanner(alarm)
+    // Browser notification
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      new Notification(alarm.title, { body: 'FocusBuddy reminder', icon: '/favicon.ico' })
+    }
+    // Web Audio beep
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain); gain.connect(ctx.destination)
+      osc.frequency.value = 520; osc.type = 'sine'
+      gain.gain.setValueAtTime(0.3, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2)
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 1.2)
+    } catch {}
   }
 
   // ── Task form ─────────────────────────────────────────────────────────────
@@ -573,6 +714,7 @@ export default function Dashboard() {
       if (data.message) setCheckinMessages(prev => [...prev, { role: 'assistant', content: data.message }])
       fetchTasks(user.id)
       if (billsLoaded) fetchBills(user.id)
+      fetchAlarms(user.id)
     } catch {
       setCheckinMessages(prev => [...prev, { role: 'assistant', content: "I'm here. Keep going." }])
     }
@@ -595,6 +737,7 @@ export default function Dashboard() {
       })
       const data = await res.json()
       setJournalMessages(prev => [...prev, { role: 'assistant', content: data.message }])
+      if (!journalReminderShown) { setJournalReminderShown(true); setShowJournalReminder(true) }
       if (data.extractedTasks?.length > 0) setJournalPendingTask(data.extractedTasks[0])
     } catch {
       setJournalMessages(prev => [...prev, { role: 'assistant', content: "I'm here. Keep going." }])
@@ -717,14 +860,15 @@ export default function Dashboard() {
     showToast('Settings saved')
   }
 
-  const saveAccentColor = async (color) => {
-    applyAccentColor(color)
-    setProfile(prev => ({ ...prev, accent_color: color }))
+  const saveTheme = async (theme) => {
+    applyTheme(theme)
+    setActiveTheme(theme)
+    setProfile(prev => ({ ...prev, accent_color: theme.id }))
     if (user) {
       await fetch('/api/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, updates: { accent_color: color } }),
+        body: JSON.stringify({ userId: user.id, updates: { accent_color: theme.id } }),
       })
     }
   }
@@ -870,6 +1014,48 @@ export default function Dashboard() {
   const isDueSoon = (dueDay) => dueDay != null && dueDay >= today && dueDay <= today + 3
   const largestBill = bills.length ? bills.reduce((max, b) => parseFloat(b.amount) > parseFloat(max.amount) ? b : max, bills[0]) : null
 
+  // "Coming up" — bills due within 3 days + recurring tasks due within 3 days (non-daily)
+  const comingUpItems = (() => {
+    const items = []
+    const today = new Date(); today.setHours(0,0,0,0)
+    const threeDays = new Date(today); threeDays.setDate(today.getDate() + 3)
+    // Bills
+    bills.forEach(b => {
+      if (b.due_day == null) return
+      const next = getNextDueDate(b)
+      if (next && next >= today && next <= threeDays) {
+        const daysUntil = Math.round((next - today) / 86400000)
+        items.push({
+          type: 'bill', id: `bill-${b.id}`, title: `Pay: ${b.name}`,
+          amount: b.amount, dueDate: next, daysUntil,
+          label: daysUntil === 0 ? 'due today' : daysUntil === 1 ? 'due tomorrow' : `due in ${daysUntil} days`,
+          bill: b,
+        })
+      }
+    })
+    // Recurring tasks (weekly only — daily tasks don't show in coming up)
+    tasks.filter(t => !t.completed && !t.archived && t.recurrence === 'weekly').forEach(t => {
+      const base = taskBaseDate(t)
+      if (!base) return
+      // Find next weekly occurrence
+      const now = new Date(); now.setHours(0,0,0,0)
+      for (let i = 0; i <= 7; i++) {
+        const candidate = new Date(base); candidate.setDate(base.getDate() + i * 7)
+        if (candidate >= now && candidate <= threeDays) {
+          const daysUntil = Math.round((candidate - today) / 86400000)
+          items.push({
+            type: 'task', id: `task-${t.id}`, title: t.title,
+            dueDate: candidate, daysUntil,
+            label: daysUntil === 0 ? 'today' : daysUntil === 1 ? 'tomorrow' : `in ${daysUntil} days`,
+            task: t,
+          })
+          break
+        }
+      }
+    })
+    return items.sort((a, b) => a.daysUntil - b.daysUntil)
+  })()
+
   // Weekly wins grouped by day
   const completedByDay = {}
   completedThisWeek.sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at)).forEach(t => {
@@ -887,12 +1073,12 @@ export default function Dashboard() {
   return (
     <>
       <Head><title>Dashboard — FocusBuddy</title></Head>
-      <div className={styles.appShell}>
+      <div className={styles.appShell} style={{ background: `var(--accent-gradient), #110d06` }}>
 
         {/* SIDEBAR */}
         <aside className={styles.sidebar}>
           <div className={styles.sidebarLogo}>
-            <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
+            <span className="brand" style={{ color: 'var(--logo-color, var(--accent))' }}><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
           </div>
           <nav className={styles.sidebarNav}>
             {NAV_ITEMS.map(item => (
@@ -905,6 +1091,13 @@ export default function Dashboard() {
           </nav>
           <div className={styles.sidebarFooter}>
             <span className={styles.sidebarEmail}>{user?.email}</span>
+            <button onClick={() => setShowGuideModal(true)}
+              className={styles.settingsFooterBtn}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              Guide
+            </button>
             <button
               onClick={() => switchTab('settings')}
               className={`${styles.settingsFooterBtn} ${activeTab === 'settings' ? styles.settingsFooterBtnActive : ''}`}>
@@ -1037,6 +1230,30 @@ export default function Dashboard() {
                 </div>
               )}
 
+              {/* ── Coming up ── */}
+              {comingUpItems.length > 0 && (
+                <div className={styles.taskGroup} style={{ marginTop: '28px' }}>
+                  <div className={styles.taskGroupLabel}>Coming up</div>
+                  {comingUpItems.map(item => (
+                    <div key={item.id} className={styles.comingUpCard}
+                      onClick={() => item.type === 'task' && item.task && setDetailTask(item.task)}>
+                      <div className={styles.comingUpLeft}>
+                        <span className={`${styles.comingUpBadge} ${item.type === 'bill' ? styles.comingUpBadgeBill : styles.comingUpBadgeTask}`}>
+                          {item.type === 'bill' ? 'Bill' : 'Recurring'}
+                        </span>
+                        <span className={styles.comingUpTitle}>
+                          {item.title}
+                          {item.type === 'bill' && item.amount ? ` · $${parseFloat(item.amount).toFixed(0)}` : ''}
+                        </span>
+                      </div>
+                      <span className={`${styles.comingUpDue} ${item.daysUntil <= 1 ? styles.comingUpDueSoon : ''}`}>
+                        {item.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {completedTasks.length > 0 && (
                 <div className={styles.taskGroup} style={{ marginTop: '32px' }}>
                   <div className={styles.taskGroupLabel}>Done today · {completedTasks.length} {completedTasks.length === 1 ? 'win' : 'wins'} 🔥</div>
@@ -1069,7 +1286,12 @@ export default function Dashboard() {
                     <div className={styles.checkinTypeTag}>{typeLabel}</div>
                     <div className={styles.checkinPersonaTag}>{personaLabel}</div>
                   </div>
-                  <button onClick={() => setActiveTab('tasks')} className={styles.checkinSkipBtn}>Skip to tasks</button>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <button onClick={() => setShowAlarmsModal(true)} className={styles.checkinSkipBtn} title="Alarms">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3L2 6"/><path d="M22 6l-3-3"/></svg>
+                    </button>
+                    <button onClick={() => setActiveTab('tasks')} className={styles.checkinSkipBtn}>Skip to tasks</button>
+                  </div>
                 </div>
                 <div className={styles.checkinMessages}>
                   <div className={styles.checkinSpacer} />
@@ -1094,93 +1316,145 @@ export default function Dashboard() {
           {/* ── FOCUS ── */}
           {activeTab === 'focus' && (
             <div className={styles.focusView}>
-              {focusPhase === 'setup' && (
-                <div className={styles.focusSetup}>
-                  <p className={styles.focusSetupLabel}>Priority task</p>
-                  <h2 className={styles.focusSetupTask}>{topTask?.title || 'No tasks — add one first'}</h2>
-
-                  {topTask && (
-                    <>
-                      <p className={styles.focusDurationLabel}>Session length</p>
-                      <div className={styles.focusDurationRow}>
-                        {[15, 25, 45].map(d => (
-                          <button key={d}
-                            onClick={() => { setFocusDuration(d); setFocusCustom('') }}
-                            className={`${styles.focusDurationBtn} ${focusDuration === d && !focusCustom ? styles.focusDurationBtnActive : ''}`}>
-                            {d} min
-                          </button>
-                        ))}
-                        <input
-                          type="number" placeholder="Custom"
-                          value={focusCustom}
-                          onChange={e => { setFocusCustom(e.target.value); setFocusDuration(0) }}
-                          className={styles.focusCustomInput}
-                          min="1" max="180"
-                        />
-                      </div>
-                      <button onClick={startFocus} className={styles.focusStartBtn}>
-                        Start session →
-                      </button>
-                    </>
-                  )}
-
-                  {!topTask && (
-                    <button onClick={() => setShowAddModal(true)} className={styles.focusStartBtn}>+ Add a task</button>
-                  )}
-                </div>
-              )}
-
-              {focusPhase === 'active' && (
-                <div className={styles.focusActive}>
-                  <p className={styles.focusActiveTask}>{topTask?.title}</p>
-                  <div className={styles.focusTimerDisplay}>{formatTimer(focusTimeLeft)}</div>
-                  <button onClick={toggleFocusPause} className={styles.focusPauseBtn}>
-                    {focusRunning ? 'Pause' : 'Resume'}
+              {/* Sub-tab nav */}
+              <div className={styles.focusSubNav}>
+                {[['session','Session'],['fuel','Fuel'],['move','Move'],['supplements','Supplements']].map(([id, label]) => (
+                  <button key={id} onClick={() => setFocusSubTab(id)}
+                    className={`${styles.focusSubNavBtn} ${focusSubTab === id ? styles.focusSubNavBtnActive : ''}`}>
+                    {label}
                   </button>
-                  <button onClick={() => { clearInterval(focusIntervalRef.current); setFocusPhase('setup') }}
-                    className={styles.focusAbandonBtn}>
-                    Abandon session
-                  </button>
-                </div>
-              )}
+                ))}
+              </div>
 
-              {focusPhase === 'complete' && (
-                <div className={styles.focusComplete}>
-                  <p className={styles.focusCompleteHeading}>Time's up.</p>
-                  <p className={styles.focusCompleteTask}>{topTask?.title}</p>
-                  <p className={styles.focusCompletePrompt}>How'd it go?</p>
-                  <div className={styles.focusResultBtns}>
-                    <button onClick={() => handleFocusResult('complete')} className={styles.focusResultBtn}>
-                      Nailed it ✓
-                    </button>
-                    <button onClick={() => handleFocusResult('progress')} className={`${styles.focusResultBtn} ${styles.focusResultBtnSecondary}`}>
-                      Made progress →
-                    </button>
-                    <button onClick={() => handleFocusResult('stuck')} className={`${styles.focusResultBtn} ${styles.focusResultBtnSecondary}`}>
-                      Got stuck, help me
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {focusPhase === 'stuck' && (
-                <div className={styles.focusStuck}>
-                  <p className={styles.focusStuckLabel}>FocusBuddy</p>
-                  {focusAiLoading ? (
-                    <div className={styles.focusStuckBubble}>
-                      <span className={styles.checkinTyping}>···</span>
+              {/* SESSION */}
+              {focusSubTab === 'session' && <>
+                {focusPhase === 'setup' && (
+                  <div className={styles.focusSetup}>
+                    <p className={styles.focusSetupLabel}>Priority task</p>
+                    <h2 className={styles.focusSetupTask}>{topTask?.title || 'No tasks — add one first'}</h2>
+                    {topTask && (
+                      <>
+                        <p className={styles.focusDurationLabel}>Session length</p>
+                        <div className={styles.focusDurationRow}>
+                          {[15, 25, 45].map(d => (
+                            <button key={d}
+                              onClick={() => { setFocusDuration(d); setFocusCustom('') }}
+                              className={`${styles.focusDurationBtn} ${focusDuration === d && !focusCustom ? styles.focusDurationBtnActive : ''}`}>
+                              {d}m
+                            </button>
+                          ))}
+                          <input type="number" placeholder="Custom" value={focusCustom}
+                            onChange={e => { setFocusCustom(e.target.value); setFocusDuration(0) }}
+                            className={styles.focusCustomInput} min="1" max="180" />
+                        </div>
+                        <button onClick={startFocus} className={styles.focusStartBtn}>Start session →</button>
+                      </>
+                    )}
+                    {!topTask && <button onClick={() => setShowAddModal(true)} className={styles.focusStartBtn}>+ Add a task</button>}
+                    <div className={styles.focusMusicStub}>
+                      🎵 Music — connect Spotify, Apple Music, or YouTube in Settings
                     </div>
-                  ) : (
-                    <div className={styles.focusStuckBubble}>{focusAiResponse}</div>
-                  )}
-                  <div className={styles.focusStuckActions}>
-                    <button onClick={() => setFocusPhase('setup')} className={styles.focusStuckBtn}>
-                      Try again
-                    </button>
-                    <button onClick={() => switchTab('tasks')} className={`${styles.focusStuckBtn} ${styles.focusStuckBtnGhost}`}>
-                      Back to tasks
-                    </button>
                   </div>
+                )}
+                {focusPhase === 'active' && (
+                  <div className={styles.focusActive}>
+                    <p className={styles.focusActiveTask}>{topTask?.title}</p>
+                    <div className={styles.focusTimerDisplay}>{formatTimer(focusTimeLeft)}</div>
+                    <button onClick={toggleFocusPause} className={styles.focusPauseBtn}>{focusRunning ? 'Pause' : 'Resume'}</button>
+                    <button onClick={() => { clearInterval(focusIntervalRef.current); setFocusPhase('setup') }} className={styles.focusAbandonBtn}>Abandon session</button>
+                  </div>
+                )}
+                {focusPhase === 'complete' && (
+                  <div className={styles.focusComplete}>
+                    <p className={styles.focusCompleteHeading}>Time's up.</p>
+                    <p className={styles.focusCompleteTask}>{topTask?.title}</p>
+                    <p className={styles.focusCompletePrompt}>How'd it go?</p>
+                    <div className={styles.focusResultBtns}>
+                      <button onClick={() => handleFocusResult('complete')} className={styles.focusResultBtn}>Nailed it ✓</button>
+                      <button onClick={() => handleFocusResult('progress')} className={`${styles.focusResultBtn} ${styles.focusResultBtnSecondary}`}>Made progress →</button>
+                      <button onClick={() => handleFocusResult('stuck')} className={`${styles.focusResultBtn} ${styles.focusResultBtnSecondary}`}>Got stuck, help me</button>
+                    </div>
+                  </div>
+                )}
+                {focusPhase === 'stuck' && (
+                  <div className={styles.focusStuck}>
+                    <p className={styles.focusStuckLabel}>FocusBuddy</p>
+                    {focusAiLoading ? <div className={styles.focusStuckBubble}><span className={styles.checkinTyping}>···</span></div>
+                      : <div className={styles.focusStuckBubble}>{focusAiResponse}</div>}
+                    <div className={styles.focusStuckActions}>
+                      <button onClick={() => setFocusPhase('setup')} className={styles.focusStuckBtn}>Try again</button>
+                      <button onClick={() => switchTab('tasks')} className={`${styles.focusStuckBtn} ${styles.focusStuckBtnGhost}`}>Back to tasks</button>
+                    </div>
+                  </div>
+                )}
+              </>}
+
+              {/* FUEL */}
+              {focusSubTab === 'fuel' && (
+                <div className={styles.focusContentCards}>
+                  <h2 className={styles.focusContentTitle}>Fuel your focus</h2>
+                  <p className={styles.focusContentSub}>What you eat before a session matters. Keep it simple.</p>
+                  {[
+                    { icon: '🥚', title: 'Protein first', body: 'Eggs, Greek yogurt, or a handful of nuts before a session. Protein stabilizes blood sugar and prevents the mid-session crash that hits ~90 minutes after a high-carb meal.' },
+                    { icon: '🍠', title: 'Complex carbs for sustained energy', body: 'Oats, sweet potato, or whole grain bread 1-2 hours before a long session. They release energy slowly — no spike, no crash. Avoid simple carbs right before starting.' },
+                    { icon: '💧', title: 'Hydration is non-negotiable', body: "Even mild dehydration (1-2%) measurably impairs cognitive function. Drink 500ml of water before your session starts. Keep a glass nearby — you'll drink more if it's visible." },
+                    { icon: '☕', title: 'Caffeine timing', body: 'Wait 90 minutes after waking before your first coffee. This avoids crashing through your cortisol peak. Caffeine peaks at 30-60 min — time it to start just before your session. Cut off by 2pm to protect sleep.' },
+                    { icon: '🚫', title: 'What to avoid', body: 'Heavy meals right before a session send blood flow to your gut. Alcohol the night before fragments sleep and tanks focus the next day. Ultra-processed foods cause inflammation that slows thinking.' },
+                  ].map(({ icon, title, body }) => (
+                    <div key={title} className={styles.focusContentCard}>
+                      <span className={styles.focusContentCardIcon}>{icon}</span>
+                      <div>
+                        <p className={styles.focusContentCardTitle}>{title}</p>
+                        <p className={styles.focusContentCardBody}>{body}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* MOVE */}
+              {focusSubTab === 'move' && (
+                <div className={styles.focusContentCards}>
+                  <h2 className={styles.focusContentTitle}>Move to think better</h2>
+                  <p className={styles.focusContentSub}>Physical activity directly improves executive function. Here's how to use it.</p>
+                  {[
+                    { icon: '🚶', title: '10-minute walk before a hard task', body: "A brisk 10-minute walk before a focus session increases BDNF (brain-derived neurotrophic factor) and blood flow to the prefrontal cortex. It's the single most evidence-backed pre-work ritual for cognitive performance." },
+                    { icon: '🪑', title: 'Desk stretches every 45 minutes', body: 'Neck rolls, shoulder circles, chest opener, hip flexor stretch. Takes 2 minutes. Sitting compresses the spine and restricts blood flow — brief movement resets your posture and attention.' },
+                    { icon: '⏱️', title: 'Exercise timing for focus', body: "Morning exercise improves attention for 2-4 hours after. Afternoon exercise (3-5pm) can extend peak focus into the evening. Avoid intense exercise within 3 hours of a critical cognitive task — you'll feel great but your working memory takes a temporary hit." },
+                    { icon: '🧘', title: '5-minute breathing reset', body: "Box breathing: 4 counts in, 4 hold, 4 out, 4 hold. 5 rounds. Activates the parasympathetic nervous system and lowers cortisol. Use this before a session you've been dreading or when you hit a wall." },
+                    { icon: '🏃', title: 'Exercise and ADHD', body: 'Regular aerobic exercise is one of the most powerful non-pharmacological interventions for attention and impulse control. Even 20 minutes of moderate-intensity cardio produces dopamine and norepinephrine — the same targets as stimulant medications.' },
+                  ].map(({ icon, title, body }) => (
+                    <div key={title} className={styles.focusContentCard}>
+                      <span className={styles.focusContentCardIcon}>{icon}</span>
+                      <div>
+                        <p className={styles.focusContentCardTitle}>{title}</p>
+                        <p className={styles.focusContentCardBody}>{body}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* SUPPLEMENTS */}
+              {focusSubTab === 'supplements' && (
+                <div className={styles.focusContentCards}>
+                  <h2 className={styles.focusContentTitle}>Evidence-based supplements</h2>
+                  <p className={styles.focusContentSub}>Always consult your doctor before starting any supplement, especially if you take medication.</p>
+                  {[
+                    { icon: '🐟', title: 'Omega-3 (EPA/DHA)', body: 'The most studied supplement for cognitive function. EPA and DHA are structural components of brain cell membranes and support communication between neurons. 1-2g of combined EPA/DHA daily. Effects build over weeks, not days.' },
+                    { icon: '🧲', title: 'Magnesium glycinate', body: 'Most people are deficient. Magnesium plays a role in over 300 enzymatic reactions, including those involved in energy production and nerve function. Glycinate form is best absorbed and gentlest on the stomach. 200-400mg before bed also improves sleep quality.' },
+                    { icon: '🍵', title: 'L-Theanine + Caffeine', body: 'The gold standard focus stack. L-theanine (100-200mg) taken with caffeine smooths out the jitteriness, extends the focus window, and reduces the crash. Found naturally together in green tea. Widely studied, consistently well-tolerated.' },
+                    { icon: '🌿', title: 'Bacopa monnieri', body: 'An adaptogenic herb with some of the strongest evidence for improving memory consolidation and reducing cognitive anxiety. Effects take 8-12 weeks to build. Take with fat. Recommended dose: 300-450mg of a 55% bacosides extract.' },
+                    { icon: '⚠️', title: 'A word on stacking', body: "More is not better. Start with one supplement, give it 4-6 weeks, evaluate honestly. Supplements work best on top of fundamentals — sleep, exercise, and nutrition. No supplement compensates for poor sleep. Talk to your doctor, especially if you take any medications." },
+                  ].map(({ icon, title, body }) => (
+                    <div key={title} className={styles.focusContentCard}>
+                      <span className={styles.focusContentCardIcon}>{icon}</span>
+                      <div>
+                        <p className={styles.focusContentCardTitle}>{title}</p>
+                        <p className={styles.focusContentCardBody}>{body}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -1337,50 +1611,38 @@ export default function Dashboard() {
                 )}
               </div>
 
-              {/* Past entries */}
-              {journalEntries.length > 0 && (
-                <div className={styles.journalPast}>
-                  <p className={styles.journalPastLabel}>Past entries</p>
-                  {journalEntries.map(entry => (
-                    <div key={entry.id} className={styles.journalPastEntry}
-                      onClick={() => setJournalExpandedEntry(journalExpandedEntry === entry.id ? null : entry.id)}>
-                      <div className={styles.journalPastEntryHeader}>
-                        <span className={styles.journalPastDate}>
-                          {new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </span>
-                        <span className={styles.journalPastPreview}>
-                          {journalExpandedEntry === entry.id ? entry.content : `${entry.content.slice(0, 72)}${entry.content.length > 72 ? '...' : ''}`}
-                        </span>
-                      </div>
-                      {journalExpandedEntry === entry.id && entry.ai_response && (
-                        <div className={styles.journalPastResponse}>{entry.ai_response}</div>
-                      )}
-                    </div>
-                  ))}
+              {/* Current entry — conversation at top */}
+              <div className={styles.journalMessages}>
+                {journalMessages.map((msg, i) => (
+                  <div key={i} className={msg.role === 'assistant' ? styles.journalBubbleAI : styles.journalBubbleUser}>
+                    {msg.content}
+                  </div>
+                ))}
+                {journalLoading && <div className={styles.journalBubbleAI}><span className={styles.checkinTyping}>···</span></div>}
+                <div ref={journalEndRef} />
+              </div>
+
+              {/* Journal reminder prompt */}
+              {showJournalReminder && (
+                <div className={styles.journalTaskBanner}>
+                  <span className={styles.journalTaskBannerText}>Want me to remind you to journal regularly?</span>
+                  <div className={styles.journalTaskBannerBtns}>
+                    {[['Daily', 'daily'], ['Weekly', 'weekly']].map(([label, rec]) => (
+                      <button key={rec} className={styles.journalTaskYes} onClick={async () => {
+                        await addTaskQuick(`Journal session`)
+                        setShowJournalReminder(false)
+                        showToast(`${label} journal reminder added`)
+                      }}>{label}</button>
+                    ))}
+                    <button className={styles.journalTaskNo} onClick={() => setShowJournalReminder(false)}>No thanks</button>
+                  </div>
                 </div>
               )}
 
-              {/* Conversation */}
-              {journalMessages.length > 0 && (
-                <div className={styles.journalMessages}>
-                  {journalMessages.map((msg, i) => (
-                    <div key={i} className={msg.role === 'assistant' ? styles.journalBubbleAI : styles.journalBubbleUser}>
-                      {msg.content}
-                    </div>
-                  ))}
-                  {journalLoading && (
-                    <div className={styles.journalBubbleAI}><span className={styles.checkinTyping}>···</span></div>
-                  )}
-                  <div ref={journalEndRef} />
-                </div>
-              )}
-
-              {/* Task suggestion banner */}
+              {/* Task extraction banner */}
               {journalPendingTask && (
                 <div className={styles.journalTaskBanner}>
-                  <span className={styles.journalTaskBannerText}>
-                    I noticed a task: <strong>{journalPendingTask}</strong>
-                  </span>
+                  <span className={styles.journalTaskBannerText}>I noticed a task: <strong>{journalPendingTask}</strong></span>
                   <div className={styles.journalTaskBannerBtns}>
                     <button onClick={addJournalTask} className={styles.journalTaskYes}>Add it</button>
                     <button onClick={() => setJournalPendingTask(null)} className={styles.journalTaskNo}>Skip</button>
@@ -1390,21 +1652,40 @@ export default function Dashboard() {
 
               {/* Input */}
               <form onSubmit={sendJournalMessage} className={styles.journalForm}>
-                <textarea
-                  placeholder="What's on your mind..."
-                  value={journalInput}
-                  onChange={e => setJournalInput(e.target.value)}
+                <textarea placeholder="What's on your mind..."
+                  value={journalInput} onChange={e => setJournalInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendJournalMessage(e) } }}
-                  className={styles.journalTextarea}
-                  rows={3}
-                />
+                  className={styles.journalTextarea} rows={3} />
                 <div className={styles.journalFormFooter}>
                   <span className={styles.journalHint}>Shift+Enter for new line</span>
-                  <button type="submit" disabled={journalLoading || !journalInput.trim()} className={styles.journalSendBtn}>
-                    Send →
-                  </button>
+                  <button type="submit" disabled={journalLoading || !journalInput.trim()} className={styles.journalSendBtn}>Send →</button>
                 </div>
               </form>
+
+              {/* Past entries deck — below the input */}
+              {journalEntries.length > 0 && (
+                <div className={styles.journalPast} style={{ marginTop: '36px' }}>
+                  <p className={styles.journalPastLabel}>Past entries</p>
+                  {journalEntries.map(entry => (
+                    <div key={entry.id} className={styles.journalPastEntry}
+                      onClick={() => setJournalExpandedEntry(journalExpandedEntry === entry.id ? null : entry.id)}>
+                      <div className={styles.journalPastEntryHeader}>
+                        <span className={styles.journalPastDate}>
+                          {new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          {' · '}
+                          {new Date(entry.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                        </span>
+                        <span className={styles.journalPastPreview}>
+                          {journalExpandedEntry === entry.id ? entry.content : `${entry.content.slice(0, 72)}${entry.content.length > 72 ? '…' : ''}`}
+                        </span>
+                      </div>
+                      {journalExpandedEntry === entry.id && entry.ai_response && (
+                        <div className={styles.journalPastResponse}>{entry.ai_response}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -1412,65 +1693,98 @@ export default function Dashboard() {
           {activeTab === 'progress' && (
             <div className={styles.view}>
               <div className={styles.header}>
-                <h1 className={styles.greetingText}>This week</h1>
-                <p className={styles.headerSub}>
-                  {new Date(sevenDaysAgo).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </p>
+                <h1 className={styles.greetingText}>Progress</h1>
               </div>
 
-              {/* Stats row */}
-              <div className={styles.progressStats}>
-                <div className={styles.progressStat}>
-                  <span className={styles.progressStatNum}>{completedThisWeek.length}</span>
-                  <span className={styles.progressStatLabel}>Tasks completed</span>
-                </div>
-                <div className={styles.progressStat}>
-                  <span className={styles.progressStatNum}>{getStreak()}</span>
-                  <span className={styles.progressStatLabel}>Day streak</span>
-                </div>
-                <div className={styles.progressStat}>
-                  <span className={styles.progressStatNum}>{getBestDay()}</span>
-                  <span className={styles.progressStatLabel}>Best day</span>
-                </div>
+              {/* Time band selector */}
+              <div className={styles.progressBands}>
+                {[['today','Today'],['week','This week'],['month','This month']].map(([id, label]) => (
+                  <button key={id} onClick={() => setProgressBand(id)}
+                    className={`${styles.progressBandBtn} ${progressBand === id ? styles.progressBandBtnActive : ''}`}>
+                    {label}
+                  </button>
+                ))}
               </div>
 
-              {/* Weekly wins */}
-              {Object.keys(completedByDay).length > 0 ? (
-                <div className={styles.progressWins}>
-                  <p className={styles.progressWinsLabel}>Weekly wins</p>
-                  {Object.entries(completedByDay).map(([day, items]) => (
-                    <div key={day} className={styles.progressDayGroup}>
-                      <p className={styles.progressDayLabel}>{day}</p>
-                      {items.map(t => (
-                        <div key={t.id} className={styles.progressWinItem}>
-                          <span className={styles.progressWinDot}>✓</span>
-                          <span className={styles.progressWinTitle}>{t.title}</span>
-                          <span className={styles.progressWinTime}>
-                            {new Date(t.completed_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                          </span>
+              {progressBand === 'today' && (() => {
+                const todayTasks = tasks.filter(t => t.completed && t.completed_at && new Date(t.completed_at).toDateString() === new Date().toDateString())
+                const todayJournalCount = journalEntries.filter(e => new Date(e.created_at).toDateString() === new Date().toDateString()).length
+                return (
+                  <div>
+                    <div className={styles.progressStats}>
+                      <div className={styles.progressStat}><span className={styles.progressStatNum}>{todayTasks.length}</span><span className={styles.progressStatLabel}>Done today</span></div>
+                      <div className={styles.progressStat}><span className={styles.progressStatNum}>{pendingTasks.length}</span><span className={styles.progressStatLabel}>Still pending</span></div>
+                      <div className={styles.progressStat}><span className={styles.progressStatNum}>{todayJournalCount}</span><span className={styles.progressStatLabel}>Journal entries</span></div>
+                    </div>
+                    {todayTasks.length > 0 ? (
+                      <div className={styles.progressWins}>
+                        <p className={styles.progressWinsLabel}>Today's wins</p>
+                        {todayTasks.map(t => (
+                          <div key={t.id} className={styles.progressWinItem}>
+                            <span className={styles.progressWinDot}>✓</span>
+                            <span className={styles.progressWinTitle}>{t.title}</span>
+                            <span className={styles.progressWinTime}>{new Date(t.completed_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : <div className={styles.progressEmpty}><p className={styles.emptyText}>Nothing completed yet today.</p><p className={styles.emptySubtext}>Complete a task to see it here.</p></div>}
+                  </div>
+                )
+              })()}
+
+              {progressBand === 'week' && (
+                <div>
+                  <div className={styles.progressStats}>
+                    <div className={styles.progressStat}><span className={styles.progressStatNum}>{completedThisWeek.length}</span><span className={styles.progressStatLabel}>Completed</span></div>
+                    <div className={styles.progressStat}><span className={styles.progressStatNum}>{getStreak()}</span><span className={styles.progressStatLabel}>Day streak</span></div>
+                    <div className={styles.progressStat}><span className={styles.progressStatNum}>{getBestDay()}</span><span className={styles.progressStatLabel}>Best day</span></div>
+                  </div>
+                  {Object.keys(completedByDay).length > 0 ? (
+                    <div className={styles.progressWins}>
+                      <p className={styles.progressWinsLabel}>Weekly wins</p>
+                      {Object.entries(completedByDay).map(([day, items]) => (
+                        <div key={day} className={styles.progressDayGroup}>
+                          <p className={styles.progressDayLabel}>{day}</p>
+                          {items.map(t => (
+                            <div key={t.id} className={styles.progressWinItem}>
+                              <span className={styles.progressWinDot}>✓</span>
+                              <span className={styles.progressWinTitle}>{t.title}</span>
+                              <span className={styles.progressWinTime}>{new Date(t.completed_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+                            </div>
+                          ))}
                         </div>
                       ))}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className={styles.progressEmpty}>
-                  <p className={styles.emptyText}>No completions this week yet.</p>
-                  <p className={styles.emptySubtext}>Complete your first task to start tracking your momentum.</p>
+                  ) : <div className={styles.progressEmpty}><p className={styles.emptyText}>No completions this week yet.</p></div>}
+                  <div className={styles.progressSummaryCard}>
+                    <p className={styles.progressSummaryLabel}>Weekly summary</p>
+                    {weeklySummaryLoading ? <p className={styles.progressSummaryLoading}>···</p>
+                      : weeklySummary ? <p className={styles.progressSummaryText}>{weeklySummary}</p>
+                      : <button onClick={fetchWeeklySummary} className={styles.progressSummaryRefresh}>Generate summary</button>}
+                  </div>
                 </div>
               )}
 
-              {/* AI weekly summary */}
-              <div className={styles.progressSummaryCard}>
-                <p className={styles.progressSummaryLabel}>Weekly summary</p>
-                {weeklySummaryLoading ? (
-                  <p className={styles.progressSummaryLoading}>···</p>
-                ) : weeklySummary ? (
-                  <p className={styles.progressSummaryText}>{weeklySummary}</p>
-                ) : (
-                  <button onClick={fetchWeeklySummary} className={styles.progressSummaryRefresh}>Generate summary</button>
-                )}
-              </div>
+              {progressBand === 'month' && (() => {
+                const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+                const completedThisMonth = tasks.filter(t => t.completed && t.completed_at && new Date(t.completed_at) > thirtyDaysAgo)
+                const totalCompleted = tasks.filter(t => t.completed).length
+                return (
+                  <div>
+                    <div className={styles.progressStats}>
+                      <div className={styles.progressStat}><span className={styles.progressStatNum}>{completedThisMonth.length}</span><span className={styles.progressStatLabel}>This month</span></div>
+                      <div className={styles.progressStat}><span className={styles.progressStatNum}>{totalCompleted}</span><span className={styles.progressStatLabel}>All time</span></div>
+                      <div className={styles.progressStat}><span className={styles.progressStatNum}>{getBestDay()}</span><span className={styles.progressStatLabel}>Best day</span></div>
+                    </div>
+                    <div className={styles.progressSummaryCard}>
+                      <p className={styles.progressSummaryLabel}>Monthly insight</p>
+                      {weeklySummaryLoading ? <p className={styles.progressSummaryLoading}>···</p>
+                        : weeklySummary ? <p className={styles.progressSummaryText}>{weeklySummary}</p>
+                        : <button onClick={fetchWeeklySummary} className={styles.progressSummaryRefresh}>Generate insight</button>}
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
           )}
 
@@ -1505,22 +1819,22 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Appearance */}
+              {/* Appearance / Theme */}
               <div className={styles.settingsSection}>
-                <p className={styles.settingsSectionLabel}>Appearance</p>
+                <p className={styles.settingsSectionLabel}>Theme</p>
                 <div className={styles.settingsCard}>
                   <div className={styles.settingsRow}>
                     <div className={styles.settingsRowLeft}>
-                      <span className={styles.settingsRowLabel}>Accent color</span>
-                      <span className={styles.settingsRowSub}>Applied across the whole app</span>
+                      <span className={styles.settingsRowLabel}>Color theme</span>
+                      <span className={styles.settingsRowSub}>{activeTheme?.name || 'Classic'}</span>
                     </div>
                     <div className={styles.settingsRowRight}>
-                      <div className={styles.accentSwatches}>
-                        {DEFAULT_ACCENTS.map(({ value, label }) => (
-                          <button key={value} title={label}
-                            onClick={() => saveAccentColor(value)}
-                            className={`${styles.accentSwatch} ${(profile?.accent_color || '#ff4d1c') === value ? styles.accentSwatchActive : ''}`}
-                            style={{ background: value }}
+                      <div className={styles.themeSwatches}>
+                        {THEMES.map(theme => (
+                          <button key={theme.id} title={theme.name}
+                            onClick={() => saveTheme(theme)}
+                            className={`${styles.accentSwatch} ${activeTheme?.id === theme.id ? styles.accentSwatchActive : ''}`}
+                            style={{ background: theme.accent }}
                           />
                         ))}
                       </div>
@@ -1549,9 +1863,9 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Notifications */}
+              {/* Notification preferences */}
               <div className={styles.settingsSection}>
-                <p className={styles.settingsSectionLabel}>Notifications</p>
+                <p className={styles.settingsSectionLabel}>Check-in notifications</p>
                 <div className={styles.settingsCard}>
                   {[
                     { key: 'morning', label: 'Morning check-in', sub: 'Daily at 8am', val: notifMorning, set: setNotifMorning },
@@ -1562,15 +1876,19 @@ export default function Dashboard() {
                         <span className={styles.settingsRowLabel}>{label}</span>
                         <span className={styles.settingsRowSub}>{sub}</span>
                       </div>
-                      <div className={styles.settingsRowRight}>
-                        <button
-                          onClick={() => set(v => !v)}
-                          className={`${styles.notifToggle} ${val ? styles.notifToggleOn : ''}`}
-                          aria-label={val ? 'Disable' : 'Enable'}
-                        />
-                      </div>
+                      <button onClick={() => { set(v => !v); if (!val && typeof Notification !== 'undefined') Notification.requestPermission() }}
+                        className={`${styles.notifToggle} ${val ? styles.notifToggleOn : ''}`} />
                     </div>
                   ))}
+                  <div className={styles.settingsRow}>
+                    <div className={styles.settingsRowLeft}>
+                      <span className={styles.settingsRowLabel}>Push notifications</span>
+                      <span className={styles.settingsRowSub}>Required for alarms &amp; check-ins</span>
+                    </div>
+                    <button className={styles.connectionBtn} onClick={() => typeof Notification !== 'undefined' && Notification.requestPermission().then(p => showToast(p === 'granted' ? 'Notifications enabled' : 'Permission denied'))}>
+                      Enable
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1596,6 +1914,13 @@ export default function Dashboard() {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* How to get the most out of FocusBuddy */}
+              <div className={styles.settingsSection}>
+                <button className={styles.settingsTipsToggle} onClick={() => setShowGuideModal(true)}>
+                  How to get the most out of FocusBuddy →
+                </button>
               </div>
             </div>
           )}
@@ -1983,6 +2308,94 @@ export default function Dashboard() {
                   <button className={styles.detailBtnPrimary} onClick={() => { completeTask(detailTask); setDetailTask(null) }}>Mark complete</button>
                 )}
                 <button className={styles.detailBtnSecondary} onClick={() => { rescheduleTask(detailTask); setDetailTask(null) }}>Push to tomorrow</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ALARM BANNER */}
+        {activeAlarmBanner && (
+          <div className={styles.alarmBanner}>
+            <span className={styles.alarmBannerIcon}>⏰</span>
+            <div className={styles.alarmBannerContent}>
+              <span className={styles.alarmBannerTitle}>{activeAlarmBanner.title}</span>
+            </div>
+            <button onClick={() => setActiveAlarmBanner(null)} className={styles.alarmBannerDismiss}>Dismiss</button>
+          </div>
+        )}
+
+        {/* ALARMS MODAL */}
+        {showAlarmsModal && (
+          <div className={styles.modalOverlay} onClick={e => e.target === e.currentTarget && setShowAlarmsModal(false)}>
+            <div className={styles.modal}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>Alarms</h2>
+                <button onClick={() => setShowAlarmsModal(false)} className={styles.modalClose}>×</button>
+              </div>
+              {alarms.filter(a => !a.triggered).length === 0 && (
+                <p style={{ fontSize: '0.88rem', color: 'rgba(240,234,214,0.35)', marginBottom: '20px' }}>No active alarms.</p>
+              )}
+              {alarms.filter(a => !a.triggered).map(alarm => (
+                <div key={alarm.id} className={styles.alarmRow}>
+                  <div>
+                    <p className={styles.alarmRowTitle}>{alarm.title}</p>
+                    <p className={styles.alarmRowTime}>{new Date(alarm.alarm_time).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</p>
+                  </div>
+                  <button onClick={() => deleteAlarm(alarm.id)} className={styles.taskActionDelete}>×</button>
+                </div>
+              ))}
+              <form onSubmit={addAlarm} className={styles.modalForm} style={{ marginTop: '16px' }}>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Title</label>
+                  <input type="text" placeholder="Reminder title" value={newAlarmTitle} onChange={e => setNewAlarmTitle(e.target.value)} className={styles.fieldInput} required />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Time</label>
+                  <input type="datetime-local" value={newAlarmTime} onChange={e => setNewAlarmTime(e.target.value)} className={styles.fieldInput} required />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Repeat</label>
+                  <div className={styles.toggleRow}>
+                    {['once','daily','weekly'].map(r => (
+                      <button key={r} type="button" onClick={() => setNewAlarmRepeat(r)}
+                        className={`${styles.toggleBtn} ${newAlarmRepeat === r ? styles.toggleBtnActive : ''}`}>
+                        {r.charAt(0).toUpperCase() + r.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button type="submit" disabled={addingAlarm || !newAlarmTitle.trim() || !newAlarmTime} className={styles.modalSubmit}>
+                  {addingAlarm ? 'Adding...' : 'Add alarm'}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* GUIDE MODAL */}
+        {showGuideModal && (
+          <div className={styles.modalOverlay} onClick={e => e.target === e.currentTarget && setShowGuideModal(false)}>
+            <div className={styles.modal} style={{ maxWidth: '640px' }}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>FocusBuddy Guide</h2>
+                <button onClick={() => setShowGuideModal(false)} className={styles.modalClose}>×</button>
+              </div>
+              <div className={styles.guideContent}>
+                {[
+                  { title: 'What is FocusBuddy?', body: "FocusBuddy is a personal productivity coach that works like a smart friend, not a corporate app. It knows your tasks, understands how you work, and checks in with you to keep things moving — morning, midday, and evening.\n\nIt's built for people who struggle with task initiation, time blindness, or just need accountability that doesn't feel like a burden." },
+                  { title: 'The Check-in', body: "Three times a day, FocusBuddy reaches out — morning to set your priority, midday to check on progress, evening to wrap up. Each check-in is a real conversation. Tell it what happened, what's blocked, or what moved. It adjusts your task list automatically." },
+                  { title: 'Your Task Deck', body: 'Tasks are ranked by priority score — external commitments, overdue items, and rolled-over tasks rise to the top. You can drag to reorder. Add tasks by typing or by speaking (tap the mic). Voice input understands natural language like "dentist appointment Friday at 3pm".' },
+                  { title: 'Focus Sessions', body: 'The Focus tab starts a countdown timer for your top task — 15, 25, or 45 minutes. When it ends, you report how it went. "Nailed it" marks the task complete. "Made progress" keeps it active. "Got stuck" routes you to a coaching response from FocusBuddy.' },
+                  { title: 'The Journal', body: 'Journal is a private space to think out loud. The AI listens, reflects back what it notices, and asks one good question. If you mention something that sounds like a task, it offers to add it. Your past entries are saved below each session.' },
+                  { title: 'Your Persona', body: 'FocusBuddy has 6 coaching styles: Drill Sergeant (blunt, direct), Coach (warm, strategic), Thinking Partner (asks questions), Hype Person (celebrates every win), Strategist (systems and logic), and The Empath (emotionally attuned, meets you where you are). Mix up to 3 — your first choice is dominant.' },
+                  { title: 'Finance Tracker', body: 'Track your recurring bills, see your monthly burn rate, and get a breakdown by category. Voice input understands "Netflix $15 on the 5th of every month". Bill due dates show as teal dots on the calendar.' },
+                  { title: 'Coming Soon', body: '• SMS check-ins — daily texts without opening the app\n• Wearable integrations — Fitbit and Oura readiness scores in your check-in\n• Calendar sync — two-way Google Calendar integration\n• Spotify / Apple Music — curated focus playlists in the Focus tab' },
+                ].map(({ title, body }) => (
+                  <div key={title} className={styles.guideSection}>
+                    <p className={styles.guideSectionTitle}>{title}</p>
+                    <p className={styles.guideSectionBody}>{body}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
