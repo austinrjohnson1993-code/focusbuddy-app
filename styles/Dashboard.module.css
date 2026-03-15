@@ -1239,6 +1239,36 @@
   font-style: italic;
 }
 
+/* ── Journal history deck ── */
+.journalHistory { margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.08); }
+.journalHistoryLabel { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.4; margin-bottom: 16px; }
+.journalEntryCard { background: rgba(255,255,255,0.03); border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: background 0.15s; }
+.journalEntryCard:hover { background: rgba(255,255,255,0.05); }
+.journalEntryDate { font-size: 11px; opacity: 0.4; margin-bottom: 6px; }
+.journalEntrySummary { font-size: 14px; opacity: 0.8; line-height: 1.5; }
+.journalEntryPrivate { font-size: 13px; opacity: 0.4; font-style: italic; }
+.journalEntryExpanded { background: rgba(255,255,255,0.05) !important; }
+
+/* ── Learn referral banner ── */
+.learnReferralBanner {
+  position: relative;
+  background: rgba(var(--accent-rgb,255,77,28),0.08);
+  border: 1px solid rgba(var(--accent-rgb,255,77,28),0.25);
+  border-radius: 12px;
+  padding: 14px 40px 14px 16px;
+  margin-bottom: 20px;
+  font-size: 0.88rem;
+  color: rgba(240,234,214,0.75);
+  line-height: 1.6;
+}
+.learnReferralBanner strong { color: #f0ead6; }
+.learnReferralClose {
+  position: absolute; top: 10px; right: 12px;
+  background: none; border: none; color: rgba(240,234,214,0.4);
+  font-size: 1.1rem; cursor: pointer; padding: 0; line-height: 1;
+}
+.learnReferralClose:hover { color: rgba(240,234,214,0.75); }
+
 .journalMessages { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
 .journalBubbleAI {
   background: #221608; border: 1px solid rgba(255,200,120,0.1);

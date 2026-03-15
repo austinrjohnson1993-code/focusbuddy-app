@@ -400,6 +400,13 @@ export default function Dashboard() {
   const [expandedLearnCard, setExpandedLearnCard] = useState(null)
   const [monthlyIncome, setMonthlyIncome] = useState(0)
   const [monthlyIncomeInput, setMonthlyIncomeInput] = useState('')
+  const [learnReferral, setLearnReferral] = useState(null)
+  const [incomeFrequency, setIncomeFrequency] = useState('monthly')
+  const [billType, setBillType] = useState('bill')
+  const [billInterestRate, setBillInterestRate] = useState('')
+
+  // Journal history (up to 20 past entries)
+  const [journalHistory, setJournalHistory] = useState([])
 
   // Live tick for countdown displays in task list
   const [tickNow, setTickNow] = useState(() => new Date())
@@ -487,8 +494,9 @@ export default function Dashboard() {
   }, [journalMessages, journalLoading])
 
   useEffect(() => {
-    if (activeTab === 'journal' && user && !journalEntriesLoaded) {
-      fetchJournalEntries(user.id)
+    if (activeTab === 'journal' && user) {
+      if (!journalEntriesLoaded) fetchJournalEntries(user.id)
+      fetchJournalHistory(user.id)
     }
   }, [activeTab, user])
 
@@ -535,12 +543,14 @@ export default function Dashboard() {
     }
   }, [])
 
-  // Finance: load monthly income from localStorage
+  // Finance: load monthly income + frequency from localStorage
   useEffect(() => {
     if (typeof localStorage !== 'undefined') {
       const saved = parseFloat(localStorage.getItem('fb_monthly_income') || '0') || 0
       setMonthlyIncome(saved)
       setMonthlyIncomeInput(saved > 0 ? String(saved) : '')
+      const freq = localStorage.getItem('fb_income_frequency') || 'monthly'
+      setIncomeFrequency(freq)
     }
   }, [])
 
@@ -574,6 +584,13 @@ export default function Dashboard() {
       .from('journal_entries').select('*').eq('user_id', userId)
       .order('created_at', { ascending: false }).limit(5)
     setJournalEntries(data || [])
+  }
+
+  const fetchJournalHistory = async (userId) => {
+    const { data } = await supabase
+      .from('journal_entries').select('*').eq('user_id', userId)
+      .order('created_at', { ascending: false }).limit(20)
+    setJournalHistory(data || [])
   }
 
   const fetchWeeklySummary = async () => {
@@ -954,12 +971,15 @@ export default function Dashboard() {
       amount: parseFloat(newBillAmount),
       due_day: newBillDueDay ? parseInt(newBillDueDay) : null,
       frequency: newBillFrequency, category: newBillCategory || 'Other',
-      auto_task: newBillAutoTask, created_at: new Date().toISOString()
+      auto_task: newBillAutoTask, created_at: new Date().toISOString(),
+      bill_type: billType,
+      ...(billInterestRate ? { interest_rate: parseFloat(billInterestRate) } : {}),
     }
     const { data } = await supabase.from('bills').insert(bill).select().single()
     if (data) setBills(prev => [data, ...prev])
     setNewBillName(''); setNewBillAmount(''); setNewBillDueDay('')
     setNewBillFrequency('monthly'); setNewBillCategory('Other'); setNewBillAutoTask(true)
+    setBillType('bill'); setBillInterestRate('')
     setAddingBill(false); setShowAddBillModal(false)
   }
 
@@ -1602,7 +1622,7 @@ export default function Dashboard() {
               {focusSubTab === 'session' && <>
                 {focusPhase === 'setup' && (
                   <div className={styles.focusSetup}>
-                    <p className={styles.focusSetupLabel}>{topTask?.due_time ? 'Time sensitive task' : 'Priority task'}</p>
+                    <p className={styles.focusSetupLabel}>{topTask?.due_time ? 'Time sensitive task' : 'Focus task'}</p>
                     <h2 className={styles.focusSetupTask}>{topTask?.title || 'No tasks — add one first'}</h2>
                     {topTask && topTaskCountdown && (
                       <p style={{ fontSize: '13px', color: 'var(--accent)', opacity: 0.8, margin: '-8px 0 16px', fontWeight: 600 }}>{topTaskCountdown}</p>
@@ -1964,27 +1984,37 @@ export default function Dashboard() {
               </form>
 
               {/* Past entries deck — below the input */}
-              {journalEntries.length > 0 && (
-                <div className={styles.journalPast} style={{ marginTop: '36px' }}>
-                  <p className={styles.journalPastLabel}>Past entries</p>
-                  {journalEntries.map(entry => (
-                    <div key={entry.id} className={styles.journalPastEntry}
-                      onClick={() => setJournalExpandedEntry(journalExpandedEntry === entry.id ? null : entry.id)}>
-                      <div className={styles.journalPastEntryHeader}>
-                        <span className={styles.journalPastDate}>
-                          {new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          {' · '}
-                          {new Date(entry.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                        </span>
-                        <span className={styles.journalPastPreview}>
-                          {journalExpandedEntry === entry.id ? entry.content : `${entry.content.slice(0, 72)}${entry.content.length > 72 ? '…' : ''}`}
-                        </span>
+              {journalHistory.length > 0 && (
+                <div className={styles.journalHistory}>
+                  <p className={styles.journalHistoryLabel}>Past entries</p>
+                  {journalHistory.map(entry => {
+                    const isExpanded = journalExpandedEntry === entry.id
+                    const d = new Date(entry.created_at)
+                    const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+                    const timeStr = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+                    const isPrivate = entry.ai_summary === 'Personal entry.'
+                    const preview = entry.ai_summary && !isPrivate
+                      ? entry.ai_summary
+                      : !entry.ai_summary
+                        ? `${(entry.content || '').slice(0, 80)}${(entry.content || '').length > 80 ? '...' : ''}`
+                        : null
+                    return (
+                      <div key={entry.id}
+                        className={`${styles.journalEntryCard} ${isExpanded ? styles.journalEntryExpanded : ''}`}
+                        onClick={() => setJournalExpandedEntry(isExpanded ? null : entry.id)}>
+                        <div className={styles.journalEntryDate}>{dateStr} · {timeStr}</div>
+                        {isPrivate
+                          ? <div className={styles.journalEntryPrivate}>🔒 Personal entry</div>
+                          : <div className={styles.journalEntrySummary}>{preview}</div>
+                        }
+                        {isExpanded && (
+                          <div style={{ marginTop: '10px', fontSize: '13px', color: 'rgba(240,234,214,0.6)', lineHeight: 1.6, borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: '10px' }}>
+                            {entry.content}
+                          </div>
+                        )}
                       </div>
-                      {journalExpandedEntry === entry.id && entry.ai_response && (
-                        <div className={styles.journalPastResponse}>{entry.ai_response}</div>
-                      )}
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>
@@ -2321,34 +2351,79 @@ export default function Dashboard() {
               )}
 
               {/* ── BUDGET ── */}
-              {financeSub === 'budget' && (
+              {financeSub === 'budget' && (() => {
+                const freqMultiplier = { weekly: 4.33, biweekly: 2.17, bimonthly: 2, monthly: 1 }[incomeFrequency] || 1
+                const normalizedIncome = monthlyIncome * freqMultiplier
+                return (
                 <div className={styles.budgetPanel}>
+                  {/* Learn referral callout */}
+                  {learnReferral && (
+                    <div className={styles.learnReferralBanner}>
+                      <button className={styles.learnReferralClose} onClick={() => setLearnReferral(null)}>×</button>
+                      {learnReferral === '50-30-20' && (normalizedIncome > 0
+                        ? <p>Based on 50/30/20 — Your needs budget is <strong>{fmtMoney(normalizedIncome * 0.5)}</strong>, wants <strong>{fmtMoney(normalizedIncome * 0.3)}</strong>, savings <strong>{fmtMoney(normalizedIncome * 0.2)}</strong>. Your fixed bills of <strong>{fmtMoney(monthlyTotal)}</strong> fit within your needs allocation.</p>
+                        : <p>Add your income above to see this calculation.</p>
+                      )}
+                      {learnReferral === 'debt-avalanche' && (() => {
+                        const debts = bills.filter(b => b.bill_type === 'loan' || b.bill_type === 'debt').filter(b => b.interest_rate > 0).sort((a, b) => b.interest_rate - a.interest_rate)
+                        if (debts.length === 0) return <p>Add interest rates to your loans and debts in the Bills tab to see your payoff order.</p>
+                        return <p>Debt Avalanche order: {debts.map(d => d.name).join(' → ')}. Pay minimums on all, attack <strong>{debts[0].name}</strong> first.</p>
+                      })()}
+                      {learnReferral === 'emergency-fund' && (
+                        <p>Your 3-month emergency fund target: <strong>{fmtMoney(monthlyTotal * 3)}</strong>. Start with <strong>{fmtMoney(monthlyTotal * 0.5)}/month</strong> to build it in 6 months.</p>
+                      )}
+                      {!['50-30-20','debt-avalanche','emergency-fund'].includes(learnReferral) && (
+                        <p>Your fixed bills are <strong>{fmtMoney(monthlyTotal)}/mo</strong>. Use this concept to improve how you allocate the rest.</p>
+                      )}
+                    </div>
+                  )}
+
                   {/* Income input */}
                   <div className={styles.fieldGroup}>
-                    <label className={styles.fieldLabel}>Monthly take-home income</label>
+                    <label className={styles.fieldLabel}>Take-home income</label>
                     <div className={styles.quickRow}>
                       <input
                         type="number" placeholder="0" min="0" step="1"
                         value={monthlyIncomeInput}
                         onChange={e => setMonthlyIncomeInput(e.target.value)}
                         className={styles.fieldInput}
-                        style={{ maxWidth: '200px' }}
+                        style={{ maxWidth: '160px' }}
                       />
                       <button
                         className={styles.addTaskBtn}
                         onClick={() => {
                           const val = parseFloat(monthlyIncomeInput) || 0
                           setMonthlyIncome(val)
-                          if (typeof localStorage !== 'undefined') localStorage.setItem('fb_monthly_income', String(val))
+                          if (typeof localStorage !== 'undefined') {
+                            localStorage.setItem('fb_monthly_income', String(val))
+                            localStorage.setItem('fb_income_frequency', incomeFrequency)
+                          }
                           showToast('Income saved')
                         }}
                       >
                         Save
                       </button>
                     </div>
+                    {/* Income frequency selector */}
+                    <div className={styles.toggleRow} style={{ marginTop: '10px' }}>
+                      {[['weekly','Weekly'],['biweekly','Biweekly'],['bimonthly','Bimonthly'],['monthly','Monthly']].map(([val, lbl]) => (
+                        <button key={val} type="button" onClick={() => {
+                          setIncomeFrequency(val)
+                          if (typeof localStorage !== 'undefined') localStorage.setItem('fb_income_frequency', val)
+                        }}
+                          className={`${styles.toggleBtn} ${incomeFrequency === val ? styles.toggleBtnActive : ''}`}>
+                          {lbl}
+                        </button>
+                      ))}
+                    </div>
+                    {incomeFrequency !== 'monthly' && monthlyIncome > 0 && (
+                      <p style={{ fontSize: '12px', color: 'rgba(240,234,214,0.35)', marginTop: '6px' }}>
+                        = {fmtMoney(normalizedIncome)}/mo
+                      </p>
+                    )}
                   </div>
 
-                  {monthlyIncome > 0 ? (
+                  {normalizedIncome > 0 ? (
                     <>
                       {/* 50/30/20 breakdown */}
                       <div className={styles.budgetCard}>
@@ -2363,7 +2438,7 @@ export default function Dashboard() {
                               <span className={styles.budgetRowLabel}>{label} <span className={styles.budgetRowPct}>({pct}%)</span></span>
                               <span className={styles.budgetRowDesc}>{desc}</span>
                             </div>
-                            <span className={styles.budgetRowAmt}>{fmtMoney(monthlyIncome * pct / 100)}</span>
+                            <span className={styles.budgetRowAmt}>{fmtMoney(normalizedIncome * pct / 100)}</span>
                           </div>
                         ))}
                         <div className={styles.budgetRow}>
@@ -2377,7 +2452,7 @@ export default function Dashboard() {
 
                       {/* Surplus / Deficit */}
                       {(() => {
-                        const diff = monthlyIncome - monthlyTotal
+                        const diff = normalizedIncome - monthlyTotal
                         return (
                           <div className={styles.budgetCard}>
                             <div className={styles.budgetRow} style={{ borderBottom: 'none' }}>
@@ -2391,52 +2466,53 @@ export default function Dashboard() {
                       })()}
                     </>
                   ) : (
-                    <p className={styles.budgetEmptyNote}>Enter your monthly income above to see your breakdown.</p>
+                    <p className={styles.budgetEmptyNote}>Enter your take-home income above to see your breakdown.</p>
                   )}
                 </div>
-              )}
+                )
+              })()}
 
               {/* ── LEARN ── */}
               {financeSub === 'learn' && (
                 <div>
                   {[
                     {
-                      icon: '💰', title: 'The 50/30/20 Rule',
+                      key: '50-30-20', icon: '💰', title: 'The 50/30/20 Rule',
                       body: 'Split your take-home pay: 50% to needs (rent, groceries, bills), 30% to wants (dining, subscriptions, fun), 20% to savings or debt payoff. It\'s not a strict rule — it\'s a starting point.',
                       tag: 'Most people have no idea where their money goes. This gives it somewhere to go.',
                       impl: '1. Find your monthly take-home pay. 2. Multiply by 0.5 — that\'s your needs ceiling. 3. Multiply by 0.3 — that\'s your wants budget. 4. The remaining 20% goes to savings or debt before you spend anything else. 5. Track for one month without judging — just observe.',
                     },
                     {
-                      icon: '🔥', title: 'The Debt Avalanche',
+                      key: 'debt-avalanche', icon: '🔥', title: 'The Debt Avalanche',
                       body: 'List your debts by interest rate, highest first. Pay minimums on everything, then throw every extra dollar at the highest-rate debt. Once it\'s gone, roll that payment to the next one.',
                       tag: 'This method saves the most money in interest over time.',
                       impl: '1. List every debt with its balance and interest rate. 2. Set up minimum autopay on all of them. 3. Put every extra dollar toward the highest-rate debt. 4. When that debt hits zero, add its payment to the next highest. 5. Repeat until clear.',
                     },
                     {
-                      icon: '⛄', title: 'The Emergency Fund',
+                      key: 'emergency-fund', icon: '⛄', title: 'The Emergency Fund',
                       body: "Keep 3-6 months of expenses in a separate, boring savings account you don't touch. Not for opportunities — only for actual emergencies.",
                       tag: 'Without one, any surprise expense becomes debt.',
                       impl: "1. Open a separate savings account — label it 'Emergency Only'. 2. Calculate 3 months of your essential expenses. 3. Set up a small automatic transfer each payday — even $25 counts. 4. Build to 1 month first, then 3, then 6. 5. Do not touch it for non-emergencies.",
                     },
                     {
-                      icon: '📈', title: 'Compound Interest',
+                      key: 'compound', icon: '📈', title: 'Compound Interest',
                       body: 'When your money earns interest, and that interest earns interest, growth accelerates over time. Starting at 25 vs 35 can mean hundreds of thousands of dollars by retirement.',
                       tag: 'Time in the market beats timing the market.',
                       impl: '1. Open a retirement account (401k if employer offers match — take the full match first). 2. Then open a Roth IRA if eligible. 3. Invest in a low-cost index fund (e.g. S&P 500 index). 4. Set up automatic contributions. 5. Don\'t check it daily — let time do the work.',
                     },
                     {
-                      icon: '🧾', title: 'Fixed vs Variable Expenses',
+                      key: 'fixed-variable', icon: '🧾', title: 'Fixed vs Variable Expenses',
                       body: 'Fixed expenses are the same every month — rent, subscriptions, loan payments. Variable expenses change — food, gas, entertainment. Cutting fixed costs has a bigger long-term impact.',
                       tag: 'Knowing the difference shows you where you actually have room to move.',
                       impl: '1. List every expense from last month. 2. Mark each F (fixed) or V (variable). 3. Total both columns. 4. To cut fixed costs: negotiate bills, cancel unused subscriptions, shop insurance annually. 5. Variable costs are easier to cut short-term but fixed cuts compound over years.',
                     },
                     {
-                      icon: '🏦', title: 'Pay Yourself First',
+                      key: 'pay-yourself-first', icon: '🏦', title: 'Pay Yourself First',
                       body: "Before paying any bill or buying anything, transfer a set amount to savings the moment your paycheck lands. Treat saving like a bill you owe yourself.",
                       tag: "If you wait until the end of the month to save what's left, there's never anything left.",
                       impl: "1. Decide a savings amount — even 5% of income to start. 2. Set an automatic transfer for payday, the moment money lands. 3. Transfer to a separate account you don't see daily. 4. Treat it like rent — not optional. 5. Increase by 1% every 3 months.",
                     },
-                  ].map(({ icon, title, body, tag, impl }) => {
+                  ].map(({ key, icon, title, body, tag, impl }) => {
                     const isOpen = expandedLearnCard === title
                     return (
                       <div key={title} className={`${styles.learnCard} ${isOpen ? styles.learnCardExpanded : ''}`}>
@@ -2454,7 +2530,11 @@ export default function Dashboard() {
                               <div className={styles.learnCardImplementSteps}>{impl}</div>
                               <button
                                 className={styles.learnCardApplyBtn}
-                                onClick={() => { setFinanceSub('budget'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                onClick={() => {
+                                  setLearnReferral(key)
+                                  setFinanceSub('budget')
+                                  window.scrollTo({ top: 0, behavior: 'smooth' })
+                                }}
                               >
                                 See this applied to my budget →
                               </button>
@@ -2756,12 +2836,31 @@ export default function Dashboard() {
                     className={styles.fieldInput} required />
                 </div>
                 <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Type</label>
+                  <div className={styles.toggleRow}>
+                    {[['bill','Bill'],['loan','Loan'],['debt','Debt']].map(([val, lbl]) => (
+                      <button key={val} type="button" onClick={() => setBillType(val)}
+                        className={`${styles.toggleBtn} ${billType === val ? styles.toggleBtnActive : ''}`}>
+                        {lbl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {(billType === 'loan' || billType === 'debt') && (
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>APR % <span className={styles.fieldLabelOptional}>(optional)</span></label>
+                    <input type="number" placeholder="0.00" min="0" step="0.01" max="100"
+                      value={billInterestRate} onChange={e => setBillInterestRate(e.target.value)}
+                      className={styles.fieldInput} />
+                  </div>
+                )}
+                <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>Frequency</label>
                   <div className={styles.toggleRow}>
-                    {['monthly', 'weekly', 'yearly'].map(f => (
+                    {['monthly', 'bimonthly', 'weekly', 'yearly'].map(f => (
                       <button key={f} type="button" onClick={() => setNewBillFrequency(f)}
                         className={`${styles.toggleBtn} ${newBillFrequency === f ? styles.toggleBtnActive : ''}`}>
-                        {f.charAt(0).toUpperCase() + f.slice(1)}
+                        {f === 'bimonthly' ? 'Bimonthly' : f.charAt(0).toUpperCase() + f.slice(1)}
                       </button>
                     ))}
                   </div>
