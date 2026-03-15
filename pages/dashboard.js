@@ -145,6 +145,9 @@ export default function Dashboard() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [completing, setCompleting] = useState(null)
   const [detailTask, setDetailTask] = useState(null)
+  const [detailNoteEdit, setDetailNoteEdit] = useState('')
+  const [detailNoteEditing, setDetailNoteEditing] = useState(false)
+  const [toast, setToast] = useState(null)
 
   // Add task form
   const [newTitle, setNewTitle] = useState('')
@@ -190,6 +193,13 @@ export default function Dashboard() {
   useEffect(() => {
     if (showAddModal) setTimeout(() => titleInputRef.current?.focus(), 50)
   }, [showAddModal])
+
+  useEffect(() => {
+    if (detailTask) {
+      setDetailNoteEdit(detailTask.notes || '')
+      setDetailNoteEditing(false)
+    }
+  }, [detailTask?.id])
 
   const fetchProfile = async (userId) => {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
@@ -328,6 +338,26 @@ export default function Dashboard() {
     }).eq('id', task.id)
   }
 
+  const saveDetailNote = async () => {
+    const notes = detailNoteEdit.trim() || null
+    const updated = { ...detailTask, notes }
+    setTasks(prev => prev.map(t => t.id === detailTask.id ? updated : t))
+    setDetailTask(updated)
+    await supabase.from('tasks').update({ notes }).eq('id', detailTask.id)
+  }
+
+  const handleRunRollover = async () => {
+    try {
+      const res = await fetch('/api/rollover-tasks', { method: 'POST' })
+      const data = await res.json()
+      setToast(`Rolled ${data.rolled} task${data.rolled !== 1 ? 's' : ''}`)
+      if (data.rolled > 0) fetchTasks(user.id)
+    } catch {
+      setToast('Rollover failed')
+    }
+    setTimeout(() => setToast(null), 3000)
+  }
+
   const archiveTask = async (task) => {
     await supabase.from('tasks').update({ archived: true }).eq('id', task.id)
     setTasks(prev => prev.filter(t => t.id !== task.id))
@@ -403,6 +433,7 @@ export default function Dashboard() {
           <div className={styles.sidebarFooter}>
             <span className={styles.sidebarEmail}>{user?.email}</span>
             <button onClick={handleSignOut} className={styles.signOutBtn}>Sign out</button>
+            <button onClick={handleRunRollover} className={styles.rolloverDevBtn}>Run rollover</button>
           </div>
         </aside>
 
@@ -911,6 +942,9 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* TOAST */}
+        {toast && <div className={styles.toast}>{toast}</div>}
+
         {/* TASK DETAIL MODAL */}
         {detailTask && (
           <div className={styles.modalOverlay} onClick={e => e.target === e.currentTarget && setDetailTask(null)}>
@@ -953,12 +987,28 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                {detailTask.notes && (
-                  <div className={styles.detailNotesBlock}>
-                    <span className={styles.detailLabel}>Notes</span>
-                    <p className={styles.detailNotesText}>{detailTask.notes}</p>
-                  </div>
-                )}
+                <div className={styles.detailNotesBlock}>
+                  <span className={styles.detailLabel}>Notes</span>
+                  {(detailNoteEditing || !detailTask.notes) ? (
+                    <div className={styles.detailNoteEditRow}>
+                      <input
+                        type="text"
+                        className={styles.detailNoteInput}
+                        placeholder="Add a note..."
+                        value={detailNoteEdit}
+                        onChange={e => setDetailNoteEdit(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && saveDetailNote()}
+                        autoFocus={detailNoteEditing}
+                      />
+                      <button className={styles.detailNoteSaveBtn} onClick={saveDetailNote}>Save</button>
+                    </div>
+                  ) : (
+                    <p className={styles.detailNotesText} onClick={() => setDetailNoteEditing(true)}
+                      style={{ cursor: 'pointer' }} title="Click to edit">
+                      {detailTask.notes}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className={styles.detailActions}>
