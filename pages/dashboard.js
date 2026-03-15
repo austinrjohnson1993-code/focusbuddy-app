@@ -502,7 +502,8 @@ export default function Dashboard() {
 
   const pendingTasks = sortByPriority(tasks.filter(t => !t.completed))
   const completedTasks = tasks.filter(t => t.completed)
-  const firstName = profile?.full_name?.split(' ')[0] || 'there'
+  const rawName = profile?.full_name || ''
+  const firstName = rawName.includes('@') ? 'there' : (rawName.split(' ')[0] || 'there')
   const topTask = pendingTasks[0] || null
   const restTasks = pendingTasks.slice(1)
 
@@ -701,10 +702,23 @@ export default function Dashboard() {
             const type = getCheckinType()
             const typeLabel = type === 'morning' ? 'Morning check-in'
               : type === 'midday' ? 'Midday check-in' : 'Evening check-in'
+            const personaLabel = (() => {
+              const blend = profile?.persona_blend
+              if (!blend || blend.length === 0) return 'Default coaching style'
+              const nameMap = {
+                drill_sergeant: 'The Drill Sergeant', coach: 'The Coach',
+                thinking_partner: 'The Thinking Partner', hype_person: 'The Hype Person',
+                strategist: 'The Strategist'
+              }
+              return blend.map(k => nameMap[k] || k).join(' · ')
+            })()
             return (
               <div className={styles.checkinWrap}>
                 <div className={styles.checkinHeader}>
-                  <div className={styles.checkinTypeTag}>{typeLabel}</div>
+                  <div>
+                    <div className={styles.checkinTypeTag}>{typeLabel}</div>
+                    <div className={styles.checkinPersonaTag}>{personaLabel}</div>
+                  </div>
                   <button onClick={() => setActiveTab('tasks')} className={styles.checkinSkipBtn}>
                     Skip to tasks
                   </button>

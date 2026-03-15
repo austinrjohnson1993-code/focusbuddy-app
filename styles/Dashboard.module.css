@@ -341,11 +341,23 @@
   .viewHeader { flex-direction: row; align-items: center; margin-bottom: 28px; }
   .greetingText { font-size: 1.6rem; }
 
+  /* Focus card: prevent horizontal overflow, shrink action row */
+  .focusCard { padding: 18px 16px 16px; }
+  .focusTaskTitle { font-size: 1.05rem; }
+  .focusCardActions { flex-wrap: wrap; gap: 6px; }
+  .focusAction { font-size: 0.75rem; padding: 6px 12px; }
+
+  /* Task meta row: wrap cleanly, shrink text */
+  .taskMeta { gap: 5px; }
+  .taskDueTime, .taskRollover, .taskExternal, .taskRecurrence { font-size: 0.7rem; }
+
+  /* Bottom nav: full safe-area support for iPhone home indicator */
   .bottomNav {
     display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
     background: rgba(14,10,4,0.97); backdrop-filter: blur(20px);
     border-top: 1px solid rgba(255,200,120,0.08);
-    padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+    padding: 8px 0 max(12px, env(safe-area-inset-bottom));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
   }
   .bottomNavItem {
     flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
@@ -357,6 +369,14 @@
   .bottomNavItemActive { color: #ff4d1c !important; }
   .bottomNavIcon { display: flex; align-items: center; }
   .bottomNavLabel { line-height: 1; }
+
+  /* Modal: cap height, prevent overflow taller than viewport */
+  .modal {
+    max-height: 90dvh;
+    max-height: 90vh;
+    border-radius: 20px 20px 0 0;
+  }
+  .modalOverlay { align-items: flex-end; padding: 0; }
 }
 
 /* ════════════════════════════════════════════
@@ -827,6 +847,13 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: rgba(240,234,214,0.3);
+}
+
+.checkinPersonaTag {
+  font-size: 0.75rem;
+  color: rgba(240,234,214,0.2);
+  margin-top: 3px;
+  font-weight: 400;
 }
 
 .checkinSkipBtn {

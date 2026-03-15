@@ -81,7 +81,12 @@ export default function Onboarding() {
           .eq('id', session.user.id)
           .single()
         if (profile?.onboarded) {
-          router.push('/dashboard')
+          if (profile.persona_set) {
+            router.push('/dashboard')
+          } else {
+            // Onboarded but never picked a persona — send them to the persona step
+            setPhase('persona')
+          }
         }
       }
     })

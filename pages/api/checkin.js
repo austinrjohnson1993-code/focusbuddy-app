@@ -148,7 +148,8 @@ function fmtTaskLine(t) {
 }
 
 function buildContextPrompt(checkInType, profile, pending, completed, isFirstCheckin) {
-  const name = profile.full_name?.split(' ')[0] || 'there'
+  const rawName = profile.full_name || ''
+  const name = rawName.includes('@') ? 'there' : (rawName.split(' ')[0] || 'there')
   const top = topTask(pending)
   const firstFlag = isFirstCheckin
     ? '\nThis is their very first check-in. Use the "Alright, first time working together." opener.'
