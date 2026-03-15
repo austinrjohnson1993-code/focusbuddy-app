@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FocusBuddy</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <!-- Login screen -->
+  <div id="screen-login" class="screen">
+    <div class="logo">
+      <span class="brand">
+        <span class="focus">Focus</span><span class="buddy">Buddy</span>
+      </span>
+    </div>
+    <p class="tagline">Your AI productivity coach</p>
+    <form id="login-form">
+      <div class="field">
+        <input type="email" id="email" placeholder="Email" autocomplete="email" required />
+      </div>
+      <div class="field">
+        <input type="password" id="password" placeholder="Password" autocomplete="current-password" required />
+      </div>
+      <button type="submit" class="btn btn-primary" id="login-btn">Sign In</button>
+    </form>
+    <p class="error" id="login-error"></p>
+    <a class="link" href="https://focus-buddy.app/signup" target="_blank">No account? Sign up →</a>
+  </div>
+
+  <!-- Main screen -->
+  <div id="screen-main" class="screen hidden">
+    <!-- Header -->
+    <div class="header">
+      <span class="brand small">
+        <span class="focus">Focus</span><span class="buddy">Buddy</span>
+      </span>
+      <button id="open-app-btn" class="icon-btn" title="Open FocusBuddy">↗</button>
+      <button id="logout-btn" class="icon-btn" title="Sign out">⏏</button>
+    </div>
+
+    <!-- Focus Timer -->
+    <div id="timer-section" class="card">
+      <div id="timer-idle" class="timer-idle">
+        <p class="section-label">Focus Session</p>
+        <div class="timer-btns">
+          <button class="timer-start-btn" data-minutes="15">15 min</button>
+          <button class="timer-start-btn" data-minutes="25">25 min</button>
+          <button class="timer-start-btn" data-minutes="45">45 min</button>
+        </div>
+      </div>
+      <div id="timer-active" class="timer-active hidden">
+        <p class="section-label">Focusing</p>
+        <div class="timer-display" id="timer-display">25:00</div>
+        <button id="timer-stop-btn" class="btn btn-ghost btn-sm">End Session</button>
+      </div>
+    </div>
+
+    <!-- Quick Add Task -->
+    <div class="card">
+      <p class="section-label">Add Task</p>
+      <form id="add-task-form">
+        <div class="field row">
+          <input
+            type="text"
+            id="task-input"
+            placeholder="e.g. Call dentist tomorrow at 2pm"
+            autocomplete="off"
+          />
+          <button type="submit" class="btn btn-primary btn-sm" id="add-task-btn">+</button>
+        </div>
+        <p class="hint" id="page-context-hint"></p>
+      </form>
+      <p class="status-msg" id="add-task-status"></p>
+    </div>
+
+    <!-- Today's Tasks -->
+    <div class="card">
+      <div class="tasks-header">
+        <p class="section-label">Today's Tasks</p>
+        <span class="badge" id="task-count-badge">—</span>
+      </div>
+      <div id="task-list" class="task-list">
+        <p class="muted" id="tasks-loading">Loading…</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
