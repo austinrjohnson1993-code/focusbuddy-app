@@ -1,396 +1,365 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 import styles from '../styles/Onboarding.module.css'
 
-const PERSONAS = {
-  drill_sergeant: {
-    label: 'The Drill Sergeant',
-    description: 'Blunt, direct, zero fluff. Gets you moving.',
-    example: '"HEY. You\'ve rescheduled this three times. What\'s the actual problem?"'
+// ── Questions ────────────────────────────────────────────────────────────────
+
+const QUESTIONS = [
+  {
+    text: "When you have a big task you've been avoiding, what usually happens?",
+    options: [
+      { id: 'a', text: "I keep moving it to tomorrow until the deadline forces me" },
+      { id: 'b', text: "I start it but lose momentum halfway through" },
+      { id: 'c', text: "I overthink it until it feels impossible to start" },
+      { id: 'd', text: "I do everything else on my list first" },
+    ]
   },
-  coach: {
-    label: 'The Coach',
-    description: 'Warm, strategic, keeps you moving forward.',
-    example: '"You\'ve got momentum today. Let\'s use it — what\'s the one thing that moves the needle?"'
+  {
+    text: "A friend asks for help moving on the same day you had planned to catch up on work. You:",
+    options: [
+      { id: 'a', text: "Cancel your plans — commitments to others come first" },
+      { id: 'b', text: "Try to do both and end up stressed" },
+      { id: 'c', text: "Say no but feel guilty about it all day" },
+      { id: 'd', text: "Negotiate a shorter window that works for both" },
+    ]
   },
-  thinking_partner: {
-    label: 'The Thinking Partner',
-    description: 'Collaborative, asks questions, helps you decide.',
-    example: '"You\'ve moved this task three times. What\'s actually in the way?"'
+  {
+    text: "When you get a reminder notification, you usually:",
+    options: [
+      { id: 'a', text: "Do the thing immediately" },
+      { id: 'b', text: "Snooze it and forget about it" },
+      { id: 'c', text: "Acknowledge it mentally but get to it later" },
+      { id: 'd', text: "Feel annoyed and dismiss it" },
+    ]
   },
-  hype_person: {
-    label: 'The Hype Person',
-    description: 'Energetic, celebratory, makes wins feel huge.',
-    example: '"Wake UP! You knocked out two things before noon. You\'re unstoppable today!"'
+  {
+    text: "What does a productive day feel like for you?",
+    options: [
+      { id: 'a', text: "I completed everything on my list" },
+      { id: 'b', text: "I made real progress on the one thing that mattered most" },
+      { id: 'c', text: "I stayed focused without feeling overwhelmed" },
+      { id: 'd', text: "I kept my promises to others and myself" },
+    ]
   },
-  strategist: {
-    label: 'The Strategist',
-    description: 'Logical, pragmatic, systems-focused.',
-    example: '"You have 4 open tasks. Based on dependencies and deadlines, here\'s the sequence."'
-  }
+  {
+    text: "When someone gives you direct, blunt feedback, you:",
+    options: [
+      { id: 'a', text: "Appreciate it — just tell me straight" },
+      { id: 'b', text: "Need a moment but ultimately value it" },
+      { id: 'c', text: "Prefer it softened with some context" },
+      { id: 'd', text: "Shut down if it feels harsh" },
+    ]
+  },
+  {
+    text: "Your ideal coach would:",
+    options: [
+      { id: 'a', text: "Push you hard and not accept excuses" },
+      { id: 'b', text: "Help you think through problems yourself" },
+      { id: 'c', text: "Celebrate every win and keep energy high" },
+      { id: 'd', text: "Give you a clear logical plan and get out of the way" },
+    ]
+  },
+  {
+    text: "When you miss a goal or deadline, your first instinct is:",
+    options: [
+      { id: 'a', text: "Figure out what went wrong and fix the system" },
+      { id: 'b', text: "Beat yourself up about it" },
+      { id: 'c', text: "Remind yourself it's not the end of the world" },
+      { id: 'd', text: "Move on quickly and focus on what's next" },
+    ]
+  },
+  {
+    text: "How do you prefer to start your day?",
+    options: [
+      { id: 'a', text: "With a clear prioritized list ready to go" },
+      { id: 'b', text: "With a quick check-in to assess how I'm feeling" },
+      { id: 'c', text: "Just jumping into the most urgent thing" },
+      { id: 'd', text: "Slowly — I need time to ease in" },
+    ]
+  },
+  {
+    text: "When a task keeps getting pushed back, it's usually because:",
+    options: [
+      { id: 'a', text: "I don't know where to start" },
+      { id: 'b', text: "Other things feel more urgent" },
+      { id: 'c', text: "I'm not sure it actually matters" },
+      { id: 'd', text: "It feels too big to tackle in one go" },
+    ]
+  },
+  {
+    text: "How do you respond to accountability?",
+    options: [
+      { id: 'a', text: "I need someone checking in or I'll drift" },
+      { id: 'b', text: "I work better when I set my own deadlines" },
+      { id: 'c', text: "Public commitment helps me follow through" },
+      { id: 'd', text: "I do best when I understand the why behind the goal" },
+    ]
+  },
+  {
+    text: "What's your relationship with your phone notifications?",
+    options: [
+      { id: 'a', text: "I check everything immediately" },
+      { id: 'b', text: "I batch them and check periodically" },
+      { id: 'c', text: "I'm often overwhelmed by them" },
+      { id: 'd', text: "I mostly ignore them" },
+    ]
+  },
+  {
+    text: "When you complete something you've been putting off, you feel:",
+    options: [
+      { id: 'a', text: "Relieved more than proud" },
+      { id: 'b', text: "Genuinely proud — wins matter to me" },
+      { id: 'c', text: "Ready to immediately move to the next thing" },
+      { id: 'd', text: "Like I should have done it sooner" },
+    ]
+  },
+]
+
+// ── Persona scoring ───────────────────────────────────────────────────────────
+
+const SCORING = [
+  { a: { drill_sergeant: 2 }, b: { coach: 2 }, c: { thinking_partner: 2 }, d: { strategist: 2 } },
+  { a: { drill_sergeant: 1 }, b: { hype_person: 1 }, c: { thinking_partner: 2 }, d: { strategist: 2 } },
+  { a: { drill_sergeant: 2 }, b: { hype_person: 2 }, c: { coach: 1 }, d: { strategist: 1 } },
+  { a: { drill_sergeant: 1, strategist: 1 }, b: { strategist: 2 }, c: { thinking_partner: 2 }, d: { coach: 2 } },
+  { a: { drill_sergeant: 3 }, b: { coach: 2 }, c: { thinking_partner: 2 }, d: { hype_person: 1 } },
+  { a: { drill_sergeant: 3 }, b: { thinking_partner: 3 }, c: { hype_person: 3 }, d: { strategist: 3 } },
+  { a: { strategist: 3 }, b: { thinking_partner: 2 }, c: { coach: 2 }, d: { drill_sergeant: 2 } },
+  { a: { strategist: 2, drill_sergeant: 1 }, b: { thinking_partner: 2 }, c: { drill_sergeant: 2 }, d: { coach: 1 } },
+  { a: { thinking_partner: 2 }, b: { strategist: 2 }, c: { thinking_partner: 1, coach: 1 }, d: { coach: 2 } },
+  { a: { drill_sergeant: 2, hype_person: 1 }, b: { strategist: 2 }, c: { hype_person: 2 }, d: { thinking_partner: 2 } },
+  { a: { drill_sergeant: 1 }, b: { strategist: 2 }, c: { thinking_partner: 1, coach: 1 }, d: { coach: 2 } },
+  { a: { thinking_partner: 1 }, b: { hype_person: 3 }, c: { strategist: 2 }, d: { drill_sergeant: 1 } },
+]
+
+const PERSONA_DEFS = {
+  drill_sergeant:   { label: 'The Drill Sergeant',   desc: 'Blunt, direct, zero fluff. Gets you moving.' },
+  coach:            { label: 'The Coach',             desc: 'Warm, strategic, keeps you moving forward.' },
+  thinking_partner: { label: 'The Thinking Partner', desc: 'Collaborative, asks questions, helps you decide.' },
+  hype_person:      { label: 'The Hype Person',       desc: 'Energetic, celebratory, makes wins feel huge.' },
+  strategist:       { label: 'The Strategist',        desc: 'Logical, pragmatic, systems-focused.' },
 }
 
-const BADGE_LABELS = ['Primary', 'Supporting', 'Accent']
+function computePersonas(answers) {
+  const scores = { drill_sergeant: 0, coach: 0, thinking_partner: 0, hype_person: 0, strategist: 0 }
+  answers.forEach((optionId, qIdx) => {
+    if (!optionId) return
+    const weights = SCORING[qIdx]?.[optionId] || {}
+    Object.entries(weights).forEach(([persona, pts]) => {
+      if (persona in scores) scores[persona] += pts
+    })
+  })
+  return Object.entries(scores)
+    .sort((a, b) => b[1] - a[1])
+    .filter(([, score]) => score > 2)
+    .slice(0, 3)
+    .map(([key]) => key)
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Onboarding() {
   const router = useRouter()
   const [user, setUser] = useState(null)
-  const [phase, setPhase] = useState('welcome')
-  const [messages, setMessages] = useState([])
-  const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [isComplete, setIsComplete] = useState(false)
-  const [selectedPersonas, setSelectedPersonas] = useState([])
+  const [phase, setPhase] = useState('intro') // intro | questions | analyzing | reveal | saving
+  const [name, setName] = useState('')
+  const [checkinTimes, setCheckinTimes] = useState(['morning', 'evening'])
+  const [currentQ, setCurrentQ] = useState(0)
+  const [answers, setAnswers] = useState(Array(QUESTIONS.length).fill(null))
+  const [animKey, setAnimKey] = useState(0)
+  const [personaBlend, setPersonaBlend] = useState([])
   const [personaVoice, setPersonaVoice] = useState('female')
-  const [saving, setSaving] = useState(false)
-  const messagesEndRef = useRef(null)
 
   useEffect(() => {
     const isReset = window.location.search.includes('reset=1')
-
-    if (isReset) {
-      sessionStorage.removeItem('onboarding_phase')
-      sessionStorage.removeItem('onboarding_messages')
-      sessionStorage.removeItem('onboarding_complete')
-      sessionStorage.removeItem('onboarding_personas')
-      sessionStorage.removeItem('checkin_done')
-    } else {
-      // Restore conversation from sessionStorage if it exists
-      const savedPhase = sessionStorage.getItem('onboarding_phase')
-      const savedMessages = sessionStorage.getItem('onboarding_messages')
-      const savedComplete = sessionStorage.getItem('onboarding_complete')
-      const savedPersonas = sessionStorage.getItem('onboarding_personas')
-
-      if (savedPhase) setPhase(savedPhase)
-      if (savedMessages) setMessages(JSON.parse(savedMessages))
-      if (savedComplete === 'true') setIsComplete(true)
-      if (savedPersonas) setSelectedPersonas(JSON.parse(savedPersonas))
-    }
-
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { router.push('/login'); return }
       setUser(session.user)
-
-      // If already onboarded and this isn't a reset, skip to dashboard
       if (!isReset) {
         const { data: profile } = await supabase
-          .from('profiles')
-          .select('onboarded')
-          .eq('id', session.user.id)
-          .single()
-        if (profile?.onboarded) {
-          if (profile.persona_set) {
-            router.push('/dashboard')
-          } else {
-            // Onboarded but never picked a persona — send them to the persona step
-            setPhase('persona')
-          }
-        }
+          .from('profiles').select('onboarded, persona_set').eq('id', session.user.id).single()
+        if (profile?.onboarded && profile?.persona_set) router.push('/dashboard')
       }
     })
   }, [])
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, loading])
-
-  // Save conversation to sessionStorage on every change
-  useEffect(() => {
-    if (phase !== 'welcome') {
-      sessionStorage.setItem('onboarding_phase', phase)
-    }
-  }, [phase])
-
-  useEffect(() => {
-    if (messages.length > 0) {
-      sessionStorage.setItem('onboarding_messages', JSON.stringify(messages))
-    }
-  }, [messages])
-
-  useEffect(() => {
-    sessionStorage.setItem('onboarding_complete', isComplete.toString())
-  }, [isComplete])
-
-  useEffect(() => {
-    if (selectedPersonas.length > 0) {
-      sessionStorage.setItem('onboarding_personas', JSON.stringify(selectedPersonas))
-    }
-  }, [selectedPersonas])
-
-  // Fetch the first AI message whenever the conversation phase starts with no messages
-  useEffect(() => {
-    if (phase !== 'conversation' || messages.length > 0 || !user) return
-
-    setLoading(true)
-    fetch('/api/onboarding', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: [{ role: 'user', content: 'Hi, I just signed up for FocusBuddy.' }],
-        userName: user.email
-      })
-    })
-      .then(res => {
-        if (!res.ok) throw new Error(`API error ${res.status}`)
-        return res.json()
-      })
-      .then(data => {
-        setMessages([{ role: 'assistant', content: data.message }])
-        if (data.isComplete) setIsComplete(true)
-      })
-      .catch(() => {
-        setMessages([{ role: 'assistant', content: "Hey! What should I call you?" }])
-      })
-      .finally(() => setLoading(false))
-  }, [phase, user])
-
-  const startConversation = () => {
-    setPhase('conversation')
+  const toggleCheckinTime = (t) => {
+    setCheckinTimes(prev =>
+      prev.includes(t)
+        ? prev.length > 1 ? prev.filter(x => x !== t) : prev
+        : [...prev, t]
+    )
   }
 
-  const sendMessage = async (e) => {
-    e.preventDefault()
-    if (!input.trim() || loading) return
+  const handleAnswer = (optionId) => {
+    const newAnswers = answers.map((a, i) => i === currentQ ? optionId : a)
+    setAnswers(newAnswers)
 
-    const userMessage = { role: 'user', content: input.trim() }
-    const updatedMessages = [...messages, userMessage]
-    setMessages(updatedMessages)
-    setInput('')
-    setLoading(true)
-
-    try {
-      const res = await fetch('/api/onboarding', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: updatedMessages,
-          userName: user?.email
-        })
-      })
-      if (!res.ok) throw new Error(`API error ${res.status}`)
-      const data = await res.json()
-      const newMessages = [...updatedMessages, { role: 'assistant', content: data.message }]
-      setMessages(newMessages)
-      if (data.isComplete) {
-        setIsComplete(true)
-        extractProfile(newMessages)
-      }
-    } catch (err) {
-      setMessages([...updatedMessages, { role: 'assistant', content: "I'm here. Keep going." }])
-    }
-    setLoading(false)
-  }
-
-  const extractProfile = async (conversationMessages) => {
-    try {
-      const res = await fetch('/api/extract-profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: conversationMessages })
-      })
-      const data = await res.json()
-      if (data.coaching_blend) {
-        const initial = [data.coaching_blend.primary]
-        if (data.coaching_blend.secondary) initial.push(data.coaching_blend.secondary)
-        setSelectedPersonas(initial)
-      }
-    } catch (err) {
-      console.error('Profile extraction failed:', err)
-    }
-  }
-
-  const togglePersona = (key) => {
-    if (selectedPersonas.includes(key)) {
-      if (selectedPersonas.length > 1) {
-        setSelectedPersonas(selectedPersonas.filter(p => p !== key))
-      }
+    if (currentQ < QUESTIONS.length - 1) {
+      setAnimKey(k => k + 1)
+      setCurrentQ(q => q + 1)
     } else {
-      if (selectedPersonas.length < 3) {
-        setSelectedPersonas([...selectedPersonas, key])
-      }
+      const blend = computePersonas(newAnswers)
+      setPersonaBlend(blend.length ? blend : ['coach'])
+      setPhase('analyzing')
+      setTimeout(() => setPhase('reveal'), 1500)
     }
   }
 
-  const handleFinish = async () => {
-    setSaving(true)
+  const handleConfirm = async () => {
     setPhase('saving')
-
-    const weights = {}
     const weightValues = [60, 25, 15]
-    selectedPersonas.forEach((p, i) => {
-      weights[p] = weightValues[i] || 10
-    })
-
+    const weights = Object.fromEntries(personaBlend.map((p, i) => [p, weightValues[i] || 10]))
     const coaching_blend = {
-      primary: selectedPersonas[0],
-      secondary: selectedPersonas[1] || null,
-      tertiary: selectedPersonas[2] || null,
-      weights
+      primary: personaBlend[0],
+      secondary: personaBlend[1] || null,
+      tertiary: personaBlend[2] || null,
+      weights,
     }
-
-    try {
-      const res = await fetch('/api/extract-profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages })
-      })
-      const profileData = await res.json()
-
-      const profile = {
-        id: user.id,
-        email: user.email,
-        full_name: profileData.full_name || user.email.split('@')[0],
-        diagnosis: 'other',
-        main_struggle: profileData.biggest_friction || 'starting',
-        checkin_times: ['morning', 'evening'],
-        onboarded: true,
-        coaching_blend,
-        persona_blend: selectedPersonas,
-        persona_voice: personaVoice,
-        persona_set: true,
-        communication_style: profileData.communication_style,
-        work_schedule: profileData.work_schedule,
-        sleep_habits: profileData.sleep_habits,
-        exercise_habits: profileData.exercise_habits,
-        food_habits: profileData.food_habits,
-        family_context: profileData.family_context,
-        biggest_friction: profileData.biggest_friction,
-        accountability_style: profileData.accountability_style,
-        past_failures: profileData.past_failures,
-        current_priorities: profileData.current_priorities,
-        ai_context: profileData.ai_context,
-        onboarding_complete: true,
-        created_at: new Date().toISOString()
-      }
-
-      const { error: upsertError } = await supabase.from('profiles').upsert(profile)
-      if (upsertError) throw new Error(upsertError.message)
-
-      // Clear onboarding session data
-      sessionStorage.removeItem('onboarding_phase')
-      sessionStorage.removeItem('onboarding_messages')
-      sessionStorage.removeItem('onboarding_complete')
-      sessionStorage.removeItem('onboarding_personas')
-
-      router.push('/dashboard')
-    } catch (err) {
-      console.error('Save failed:', err)
-      setSaving(false)
-      setPhase('persona')
-    }
+    await supabase.from('profiles').upsert({
+      id: user.id,
+      email: user.email,
+      full_name: name.trim() || user.email.split('@')[0],
+      onboarded: true,
+      persona_blend: personaBlend,
+      persona_voice: personaVoice,
+      persona_set: true,
+      coaching_blend,
+      checkin_times: checkinTimes,
+      onboarding_complete: true,
+      created_at: new Date().toISOString(),
+    })
+    router.push('/dashboard')
   }
 
   if (!user) return null
 
-  // WELCOME SCREEN
-  if (phase === 'welcome') {
+  // ── Intro ─────────────────────────────────────────────────────────────────
+  if (phase === 'intro') {
     return (
       <>
         <Head><title>Getting Started — FocusBuddy</title></Head>
         <div className={styles.page}>
-          <div className={styles.welcomeContainer}>
-            <div className={styles.welcomeLogo}>
+          <div className={styles.introContainer}>
+            <div className={styles.introLogo}>
               <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
             </div>
-            <h1 className={styles.welcomeTitle}>Let's get to know you.</h1>
-            <p className={styles.welcomeSub}>
-              This conversation takes 5–10 minutes. That investment upfront means FocusBuddy works better for you from day one — faster results, fewer repetitive questions, a coach that already knows you.
-            </p>
-            <p className={styles.welcomeSub2}>
-              We'll ask about your work style, daily habits, what's worked before, what hasn't, and how you like to be held accountable. The more you share, the more personal this gets.
-            </p>
-            <button onClick={startConversation} className={styles.startBtn}>
-              I'm ready — let's do this →
-            </button>
-            <p className={styles.welcomeNote}>No wrong answers. This is just a conversation.</p>
+            <h1 className={styles.introTitle}>Let's set you up.</h1>
+            <p className={styles.introSub}>12 quick questions. No wrong answers. Takes about 2 minutes.</p>
+
+            <div className={styles.introForm}>
+              <div className={styles.introField}>
+                <label className={styles.introLabel}>What should we call you?</label>
+                <input
+                  type="text"
+                  placeholder="Your first name"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') setPhase('questions') }}
+                  className={styles.introInput}
+                  autoFocus
+                />
+              </div>
+
+              <div className={styles.introField}>
+                <label className={styles.introLabel}>When do you want to check in?</label>
+                <div className={styles.checkinRow}>
+                  {['morning', 'midday', 'evening'].map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => toggleCheckinTime(t)}
+                      className={`${styles.checkinToggle} ${checkinTimes.includes(t) ? styles.checkinToggleOn : ''}`}
+                    >
+                      {t.charAt(0).toUpperCase() + t.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button onClick={() => setPhase('questions')} className={styles.startBtn}>
+                Let's go →
+              </button>
+            </div>
           </div>
         </div>
       </>
     )
   }
 
-  // SAVING SCREEN
-  if (phase === 'saving') {
+  // ── Questions ─────────────────────────────────────────────────────────────
+  if (phase === 'questions') {
+    const q = QUESTIONS[currentQ]
+    const progress = (currentQ / QUESTIONS.length) * 100
+
     return (
       <>
         <Head><title>Getting Started — FocusBuddy</title></Head>
         <div className={styles.page}>
-          <div className={styles.savingContainer}>
-            <div className={styles.savingLogo}>
-              <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
-            </div>
-            <p className={styles.savingText}>Setting up your space...</p>
+          <div className={styles.progressBar}>
+            <div className={styles.progressFill} style={{ width: `${progress}%` }} />
           </div>
-        </div>
-      </>
-    )
-  }
 
-  // PERSONA SELECTION
-  if (phase === 'persona') {
-    return (
-      <>
-        <Head><title>Getting Started — FocusBuddy</title></Head>
-        <div className={styles.page}>
-          <div className={styles.personaContainer}>
-            <div className={styles.personaHeader}>
-              <h1 className={styles.personaTitle}>How do you want to be coached?</h1>
-              <p className={styles.personaSub}>
-                Pick up to 3. Your first choice is your dominant style.
-              </p>
-            </div>
+          <div className={styles.questionContainer}>
+            <span className={styles.questionCount}>{currentQ + 1} of {QUESTIONS.length}</span>
 
-            <div className={styles.personaGrid}>
-              {Object.entries(PERSONAS).map(([key, persona]) => {
-                const isSelected = selectedPersonas.includes(key)
-                const position = selectedPersonas.indexOf(key)
-                const isPrimary = position === 0
-                const isSecondary = position === 1
-
-                return (
-                  <div
-                    key={key}
-                    onClick={() => togglePersona(key)}
-                    style={{
-                      background: isSelected ? 'rgba(255,77,28,0.08)' : '#221608',
-                      border: isSelected ? '1px solid rgba(255,77,28,0.4)' : '1px solid rgba(255,200,120,0.08)',
-                      cursor: 'pointer',
-                      borderRadius: '16px',
-                      padding: '20px',
-                      transition: 'all 0.2s',
-                      position: 'relative'
-                    }}
+            <div key={animKey} className={styles.questionWrap}>
+              <h2 className={styles.questionText}>{q.text}</h2>
+              <div className={styles.optionsGrid}>
+                {q.options.map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => handleAnswer(opt.id)}
+                    className={styles.optionCard}
                   >
-                    {isSelected && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '12px',
-                        right: '12px',
-                        background: '#ff4d1c',
-                        color: '#110d06',
-                        WebkitTextFillColor: '#110d06',
-                        borderRadius: '100px',
-                        padding: '2px 10px',
-                        fontSize: '0.72rem',
-                        fontWeight: '700'
-                      }}>
-                        {BADGE_LABELS[position] || 'Accent'}
-                      </div>
-                    )}
-                    <p style={{ color: '#f0ead6', WebkitTextFillColor: '#f0ead6', fontWeight: '700', fontSize: '1rem', marginBottom: '8px' }}>
-                      {persona.label}
-                    </p>
-                    <p style={{ color: 'rgba(240,234,214,0.6)', WebkitTextFillColor: 'rgba(240,234,214,0.6)', fontSize: '0.88rem', lineHeight: '1.5', marginBottom: '12px' }}>
-                      {persona.description}
-                    </p>
-                    <p style={{ color: 'rgba(240,234,214,0.4)', WebkitTextFillColor: 'rgba(240,234,214,0.4)', fontSize: '0.82rem', lineHeight: '1.5', fontStyle: 'italic' }}>
-                      {persona.example}
-                    </p>
-                  </div>
-                )
-              })}
+                    <span className={styles.optionLetter}>{opt.id.toUpperCase()}</span>
+                    <span className={styles.optionText}>{opt.text}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  // ── Analyzing ─────────────────────────────────────────────────────────────
+  if (phase === 'analyzing') {
+    return (
+      <>
+        <Head><title>Getting Started — FocusBuddy</title></Head>
+        <div className={styles.page}>
+          <div className={styles.analyzeScreen}>
+            <div className={styles.analyzeSpinner} />
+            <p className={styles.analyzeText}>Analyzing your style...</p>
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  // ── Reveal ────────────────────────────────────────────────────────────────
+  if (phase === 'reveal') {
+    const primary = PERSONA_DEFS[personaBlend[0]]
+    const secondary = personaBlend[1] ? PERSONA_DEFS[personaBlend[1]] : null
+
+    return (
+      <>
+        <Head><title>Getting Started — FocusBuddy</title></Head>
+        <div className={styles.page}>
+          <div className={styles.revealContainer}>
+            <div className={styles.revealCard}>
+              <p className={styles.revealLabel}>Your coaching style</p>
+              <h1 className={styles.revealPersona}>{primary?.label}</h1>
+              <p className={styles.revealDesc}>{primary?.desc}</p>
+              {secondary && (
+                <p className={styles.revealSecondary}>
+                  with <strong>{secondary.label}</strong> energy
+                </p>
+              )}
             </div>
 
             <div className={styles.voicePrefBlock}>
@@ -415,12 +384,8 @@ export default function Onboarding() {
               </div>
             </div>
 
-            <button
-              onClick={handleFinish}
-              disabled={selectedPersonas.length === 0 || saving}
-              className={styles.finishBtn}
-            >
-              {saving ? 'Setting up your space...' : "This is me — let's go →"}
+            <button onClick={handleConfirm} className={styles.startBtn}>
+              This is me — let's go →
             </button>
           </div>
         </div>
@@ -428,54 +393,16 @@ export default function Onboarding() {
     )
   }
 
-  // CONVERSATION SCREEN
+  // ── Saving ────────────────────────────────────────────────────────────────
   return (
     <>
       <Head><title>Getting Started — FocusBuddy</title></Head>
       <div className={styles.page}>
-        <div className={styles.conversationContainer}>
-          <div className={styles.conversationMessages}>
-            <div className={styles.conversationSpacer} />
-            {messages.map((msg, i) => (
-              <div key={i} className={msg.role === 'assistant' ? styles.assistantBubble : styles.userBubble}>
-                {msg.content}
-              </div>
-            ))}
-            {loading && (
-              <div className={styles.assistantBubble}>
-                <span className={styles.typingDots}>···</span>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
+        <div className={styles.savingContainer}>
+          <div className={styles.savingLogo}>
+            <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
           </div>
-
-          {isComplete && (
-            <button
-              onClick={() => setPhase('persona')}
-              className={styles.finishBtn}
-              style={{ marginBottom: '16px' }}
-            >
-              Choose my coaching style →
-            </button>
-          )}
-
-          <form onSubmit={sendMessage} className={styles.conversationForm}>
-            <input
-              type="text"
-              placeholder="Type your answer..."
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              className={styles.conversationInput}
-              autoFocus
-            />
-            <button
-              type="submit"
-              disabled={loading || !input.trim()}
-              className={styles.conversationSendBtn}
-            >
-              →
-            </button>
-          </form>
+          <p className={styles.savingText}>Setting up your space...</p>
         </div>
       </div>
     </>

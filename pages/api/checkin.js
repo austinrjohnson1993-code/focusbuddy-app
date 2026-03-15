@@ -5,10 +5,10 @@ import { buildPersonaPrompt } from '../../lib/persona'
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  )
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  console.log('[checkin:client] url present:', !!url, '| service key present:', !!key, '| key prefix:', key?.slice(0, 12))
+  return createClient(url, key)
 }
 
 // ── Tool definitions ─────────────────────────────────────────────────────────
@@ -60,6 +60,17 @@ const TOOLS = [
       },
       required: ['task_id']
     }
+  },
+  {
+    name: 'archive_task',
+    description: "Archive/remove a task when the user says to remove it, delete it, or says they don't need it anymore",
+    input_schema: {
+      type: 'object',
+      properties: {
+        task_id: { type: 'string' }
+      },
+      required: ['task_id']
+    }
   }
 ]
 
@@ -85,9 +96,16 @@ async function executeTool(toolName, input, supabaseAdmin, userId) {
 
   if (toolName === 'reschedule_task') {
     const { task_id, scheduled_for, due_time } = input
-    const { data: task, error: fetchErr } = await supabaseAdmin
-      .from('tasks').select('rollover_count, title').eq('id', task_id).single()
-    if (fetchErr) console.error('[checkin:tool] reschedule_task fetch error:', fetchErr.message, 'task_id:', task_id)
+
+    let task = null
+    try {
+      const { data, error: fetchErr } = await supabaseAdmin
+        .from('tasks').select('rollover_count, title').eq('id', task_id).single()
+      if (fetchErr) console.error('[checkin:tool] reschedule_task fetch error:', JSON.stringify(fetchErr), 'task_id:', task_id)
+      else task = data
+    } catch (e) {
+      console.error('[checkin:tool] reschedule_task fetch threw:', e)
+    }
 
     const updates = {
       scheduled_for,
@@ -95,10 +113,24 @@ async function executeTool(toolName, input, supabaseAdmin, userId) {
       ...(due_time ? { due_time } : {})
     }
     console.log(`[checkin:tool] reschedule_task updating "${task?.title}" (${task_id})`, updates)
-    const { data: updated, error: updateErr } = await supabaseAdmin
-      .from('tasks').update(updates).eq('id', task_id).select().single()
-    if (updateErr) console.error('[checkin:tool] reschedule_task update error:', updateErr.message)
-    else console.log(`[checkin:tool] reschedule_task done — scheduled_for:`, updated?.scheduled_for)
+
+    let updated = null
+    let updateErr = null
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('tasks').update(updates).eq('id', task_id).select().single()
+      updateErr = error
+      updated = data
+    } catch (e) {
+      console.error('[checkin:tool] reschedule_task update threw:', e)
+      return { tool: 'reschedule_task', taskId: task_id, result: 'error', updatedTask: null }
+    }
+
+    if (updateErr) console.error('[checkin:tool] reschedule_task update error:', JSON.stringify(updateErr))
+    else {
+      console.log(`[checkin:tool] reschedule_task done — scheduled_for:`, updated?.scheduled_for)
+      console.log(`[checkin:tool:success] reschedule_task executed for task ${task_id}`)
+    }
 
     return { tool: 'reschedule_task', taskId: task_id, result: updateErr ? 'error' : 'rescheduled', updatedTask: updated || null }
   }
@@ -106,10 +138,24 @@ async function executeTool(toolName, input, supabaseAdmin, userId) {
   if (toolName === 'update_task_time') {
     const { task_id, due_time } = input
     console.log(`[checkin:tool] update_task_time — task_id: ${task_id}, due_time: ${due_time}`)
-    const { data: updated, error: updateErr } = await supabaseAdmin
-      .from('tasks').update({ due_time }).eq('id', task_id).select().single()
-    if (updateErr) console.error('[checkin:tool] update_task_time error:', updateErr.message, 'task_id:', task_id)
-    else console.log(`[checkin:tool] update_task_time done — new due_time:`, updated?.due_time)
+
+    let updated = null
+    let updateErr = null
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('tasks').update({ due_time }).eq('id', task_id).select().single()
+      updateErr = error
+      updated = data
+    } catch (e) {
+      console.error('[checkin:tool] update_task_time threw:', e)
+      return { tool: 'update_task_time', taskId: task_id, result: 'error', updatedTask: null }
+    }
+
+    if (updateErr) console.error('[checkin:tool] update_task_time error:', JSON.stringify(updateErr), 'task_id:', task_id)
+    else {
+      console.log(`[checkin:tool] update_task_time done — new due_time:`, updated?.due_time)
+      console.log(`[checkin:tool:success] update_task_time executed for task ${task_id}`)
+    }
 
     return { tool: 'update_task_time', taskId: task_id, result: updateErr ? 'error' : 'updated', updatedTask: updated || null }
   }
@@ -118,10 +164,21 @@ async function executeTool(toolName, input, supabaseAdmin, userId) {
     const { checkin_time } = input
     console.log(`[checkin:tool] schedule_morning_checkin — checkin_time: ${checkin_time}`)
     // Only update the profile — do NOT create a task
-    const { error: profileErr } = await supabaseAdmin
-      .from('profiles').update({ next_checkin_at: checkin_time }).eq('id', userId)
-    if (profileErr) console.error('[checkin:tool] schedule_morning_checkin profile error:', profileErr.message)
-    else console.log(`[checkin:tool] schedule_morning_checkin done — next_checkin_at set`)
+    let profileErr = null
+    try {
+      const { error } = await supabaseAdmin
+        .from('profiles').update({ next_checkin_at: checkin_time }).eq('id', userId)
+      profileErr = error
+    } catch (e) {
+      console.error('[checkin:tool] schedule_morning_checkin threw:', e)
+      return { tool: 'schedule_morning_checkin', taskId: null, result: 'error' }
+    }
+
+    if (profileErr) console.error('[checkin:tool] schedule_morning_checkin profile error:', JSON.stringify(profileErr))
+    else {
+      console.log(`[checkin:tool] schedule_morning_checkin done — next_checkin_at set`)
+      console.log(`[checkin:tool:success] schedule_morning_checkin executed for user ${userId}`)
+    }
 
     return { tool: 'schedule_morning_checkin', taskId: null, result: profileErr ? 'error' : 'scheduled' }
   }
@@ -130,13 +187,53 @@ async function executeTool(toolName, input, supabaseAdmin, userId) {
     const { task_id } = input
     const completedAt = new Date().toISOString()
     console.log(`[checkin:tool] complete_task — task_id: ${task_id}`)
-    const { data: updated, error: updateErr } = await supabaseAdmin
-      .from('tasks').update({ completed: true, completed_at: completedAt })
-      .eq('id', task_id).select().single()
-    if (updateErr) console.error('[checkin:tool] complete_task error:', updateErr.message, 'task_id:', task_id)
-    else console.log(`[checkin:tool] complete_task done — "${updated?.title}"`)
+
+    let updated = null
+    let updateErr = null
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('tasks').update({ completed: true, completed_at: completedAt })
+        .eq('id', task_id).select().single()
+      updateErr = error
+      updated = data
+    } catch (e) {
+      console.error('[checkin:tool] complete_task threw:', e)
+      return { tool: 'complete_task', taskId: task_id, result: 'error', updatedTask: null }
+    }
+
+    if (updateErr) console.error('[checkin:tool] complete_task error:', JSON.stringify(updateErr), 'task_id:', task_id)
+    else {
+      console.log(`[checkin:tool] complete_task done — "${updated?.title}"`)
+      console.log(`[checkin:tool:success] complete_task executed for task ${task_id}`)
+    }
 
     return { tool: 'complete_task', taskId: task_id, result: updateErr ? 'error' : 'completed', updatedTask: updated || null }
+  }
+
+  if (toolName === 'archive_task') {
+    const { task_id } = input
+    console.log(`[checkin:tool] archive_task — task_id: ${task_id}`)
+
+    let updated = null
+    let updateErr = null
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('tasks').update({ archived: true })
+        .eq('id', task_id).select().single()
+      updateErr = error
+      updated = data
+    } catch (e) {
+      console.error('[checkin:tool] archive_task threw:', e)
+      return { tool: 'archive_task', taskId: task_id, result: 'error', updatedTask: null }
+    }
+
+    if (updateErr) console.error('[checkin:tool] archive_task error:', JSON.stringify(updateErr), 'task_id:', task_id)
+    else {
+      console.log(`[checkin:tool] archive_task done — "${updated?.title}"`)
+      console.log(`[checkin:tool:success] archive_task executed for task ${task_id}`)
+    }
+
+    return { tool: 'archive_task', taskId: task_id, result: updateErr ? 'error' : 'archived', updatedTask: updated || null }
   }
 
   console.warn('[checkin:tool] unknown tool:', toolName)
@@ -213,7 +310,10 @@ export default async function handler(req, res) {
 
   const { data: profile, error: profileErr } = await supabaseAdmin
     .from('profiles').select('*').eq('id', userId).single()
-  if (profileErr || !profile) return res.status(404).json({ error: 'Profile not found' })
+  if (profileErr || !profile) {
+    console.error('[checkin] profile fetch error:', JSON.stringify(profileErr))
+    return res.status(404).json({ error: 'Profile not found' })
+  }
 
   const systemPrompt = buildPersonaPrompt(profile)
 
@@ -253,12 +353,18 @@ export default async function handler(req, res) {
     const tomorrowISO = tomorrow.toISOString()
 
     await Promise.all(pending.map(async task => {
-      const { data: fresh } = await supabaseAdmin
-        .from('tasks').select('rollover_count').eq('id', task.id).single()
-      await supabaseAdmin.from('tasks').update({
-        scheduled_for: tomorrowISO,
-        rollover_count: (fresh?.rollover_count || 0) + 1
-      }).eq('id', task.id)
+      try {
+        const { data: fresh } = await supabaseAdmin
+          .from('tasks').select('rollover_count').eq('id', task.id).single()
+        const { error: rollErr } = await supabaseAdmin.from('tasks').update({
+          scheduled_for: tomorrowISO,
+          rollover_count: (fresh?.rollover_count || 0) + 1
+        }).eq('id', task.id)
+        if (rollErr) console.error('[checkin] evening rollover error:', JSON.stringify(rollErr), 'task_id:', task.id)
+        else console.log(`[checkin:tool:success] evening rollover executed for task ${task.id}`)
+      } catch (e) {
+        console.error('[checkin] evening rollover threw:', e)
+      }
       actionsExecuted.push({ tool: 'reschedule_task', taskId: task.id, result: 'rescheduled to tomorrow' })
     }))
   }
