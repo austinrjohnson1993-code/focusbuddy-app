@@ -199,6 +199,7 @@ export default function Dashboard() {
           body: JSON.stringify({ transcript })
         })
         const parsed = await res.json()
+        console.log('[voice] Raw parsed response from /api/parse-task:', parsed)
         if (parsed.title) setNewTitle(parsed.title)
         if (parsed.due_date) setNewDueDate(parsed.due_date)
         if (parsed.due_time) setNewDueTime(parsed.due_time)
@@ -206,7 +207,7 @@ export default function Dashboard() {
         if (parsed.notes) setNewNotes(parsed.notes)
         if (parsed.recurrence) setNewRecurrence(parsed.recurrence)
       } catch (err) {
-        console.error('Voice parse error:', err)
+        console.error('[voice] Parse error:', err)
       }
       setParsing(false)
     }
@@ -247,12 +248,13 @@ export default function Dashboard() {
       due_time: task.due_time ? tomorrow.toISOString() : null,
       rollover_count: (task.rollover_count || 0) + 1
     }
+    // Update state immediately so rollover_count and due_time render without waiting for DB
+    setTasks(prev => prev.map(t => t.id === task.id ? updated : t))
     await supabase.from('tasks').update({
       scheduled_for: updated.scheduled_for,
       due_time: updated.due_time,
       rollover_count: updated.rollover_count
     }).eq('id', task.id)
-    setTasks(prev => prev.map(t => t.id === task.id ? updated : t))
   }
 
   const archiveTask = async (task) => {
