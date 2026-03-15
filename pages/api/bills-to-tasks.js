@@ -7,12 +7,7 @@ function getAdminClient() {
   )
 }
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
-
-  const { userId } = req.body
-  if (!userId) return res.status(400).json({ error: 'userId required' })
-
+export async function runBillsToTasks(userId) {
   const supabaseAdmin = getAdminClient()
 
   const { data: bills, error: billsErr } = await supabaseAdmin
@@ -21,14 +16,8 @@ export default async function handler(req, res) {
     .eq('user_id', userId)
     .eq('auto_task', true)
 
-  if (billsErr) {
-    console.error('[bills-to-tasks] Failed to fetch bills:', JSON.stringify(billsErr))
-    return res.status(500).json({ error: 'Failed to fetch bills' })
-  }
-
-  if (!bills || bills.length === 0) {
-    return res.status(200).json({ created: 0, bills: [] })
-  }
+  if (billsErr) throw new Error(billsErr.message)
+  if (!bills || bills.length === 0) return { created: 0, bills: [] }
 
   const today = new Date()
   const tomorrow = new Date(today)
@@ -41,13 +30,11 @@ export default async function handler(req, res) {
   for (const bill of bills) {
     if (bill.due_day !== todayDay && bill.due_day !== tomorrowDay) continue
 
-    const expectedTitle = `Pay: ${bill.name}`
-
     const { data: existing } = await supabaseAdmin
       .from('tasks')
       .select('id')
       .eq('user_id', userId)
-      .ilike('title', `${expectedTitle}%`)
+      .ilike('title', `Pay: ${bill.name}%`)
       .eq('completed', false)
       .limit(1)
 
@@ -56,7 +43,7 @@ export default async function handler(req, res) {
       continue
     }
 
-    const dueDate = bill.due_day === todayDay ? today : tomorrow
+    const dueDate = bill.due_day === todayDay ? new Date(today) : new Date(tomorrow)
     dueDate.setHours(9, 0, 0, 0)
     const dueISO = dueDate.toISOString()
 
@@ -84,5 +71,20 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(200).json({ created: created.length, bills: created })
+  return { created: created.length, bills: created }
+}
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  const { userId } = req.body
+  if (!userId) return res.status(400).json({ error: 'userId required' })
+
+  try {
+    const result = await runBillsToTasks(userId)
+    return res.status(200).json(result)
+  } catch (err) {
+    console.error('[bills-to-tasks] Error:', err.message)
+    return res.status(500).json({ error: err.message })
+  }
 }

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { runRollover } from '../rollover-tasks'
+import { runBillsToTasks } from '../bills-to-tasks'
 import { buildPersonaPrompt } from '../../../lib/persona'
 import { coachingMessage } from '../../../lib/anthropic'
 
@@ -69,6 +70,16 @@ export default async function handler(req, res) {
 
       pregenerated++
       console.log(`[evening-checkin] Pre-generated for ${name}`)
+
+      // 3. Create bill tasks due today or tomorrow
+      try {
+        const billResult = await runBillsToTasks(profile.id)
+        if (billResult.created > 0) {
+          console.log(`[evening-checkin] Bill tasks created for ${name}:`, billResult.bills)
+        }
+      } catch (billErr) {
+        console.error(`[evening-checkin] Bill tasks failed for ${profile.id}:`, billErr.message)
+      }
     } catch (err) {
       console.error(`[evening-checkin] Pre-gen failed for ${profile.id}:`, err.message)
     }
