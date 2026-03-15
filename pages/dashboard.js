@@ -131,30 +131,33 @@ function taskBaseDate(task) {
   return null
 }
 
+function getTasksForDate(tasks, date) {
+  return tasks.filter(t => {
+    if (t.archived) return false
+    const base = taskBaseDate(t)
+    if (!base) return false
+    if (t.recurrence === 'daily') return date >= base
+    if (t.recurrence === 'weekly') {
+      if (date < base) return false
+      const diffDays = Math.round((date - base) / 86400000)
+      return diffDays % 7 === 0
+    }
+    if (t.recurrence === 'monthly') {
+      if (date < base) return false
+      return date.getDate() === base.getDate()
+    }
+    return localDateStr(base) === localDateStr(date)
+  })
+}
+
 function getTaskOccurrencesForMonth(tasks, year, month) {
   const result = {}
-  const addToDate = (dStr, task) => {
-    if (!result[dStr]) result[dStr] = []
-    result[dStr].push(task)
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d)
+    const matches = getTasksForDate(tasks, date)
+    if (matches.length > 0) result[localDateStr(date)] = matches
   }
-  tasks.forEach(task => {
-    if (task.archived) return
-    const base = taskBaseDate(task)
-    if (!base) return
-    if (task.recurrence === 'daily') {
-      for (let i = 0; i < 365; i++) {
-        const d = new Date(base); d.setDate(d.getDate() + i)
-        if (d.getFullYear() === year && d.getMonth() === month) addToDate(localDateStr(d), task)
-      }
-    } else if (task.recurrence === 'weekly') {
-      for (let i = 0; i < 52; i++) {
-        const d = new Date(base); d.setDate(d.getDate() + i * 7)
-        if (d.getFullYear() === year && d.getMonth() === month) addToDate(localDateStr(d), task)
-      }
-    } else {
-      if (base.getFullYear() === year && base.getMonth() === month) addToDate(localDateStr(base), task)
-    }
-  })
   return result
 }
 
@@ -1091,19 +1094,8 @@ export default function Dashboard() {
 
   function calTasksForDay(dStr) {
     const [y, m, d] = dStr.split('-').map(Number)
-    const target = new Date(y, m - 1, d)
-    return tasks.filter(t => {
-      if (t.archived) return false
-      const base = taskBaseDate(t)
-      if (!base) return false
-      if (t.recurrence === 'daily') return target >= base
-      if (t.recurrence === 'weekly') {
-        if (target < base) return false
-        const diffDays = Math.round((target - base) / 86400000)
-        return diffDays % 7 === 0
-      }
-      return localDateStr(base) === dStr
-    })
+    const date = new Date(y, m - 1, d)
+    return getTasksForDate(tasks, date)
   }
 
   function calPrevMonth() { setCalMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1)) }
@@ -1651,6 +1643,7 @@ export default function Dashboard() {
                 if (!tasksByHour[h]) tasksByHour[h] = []
                 tasksByHour[h].push(t)
               })
+              const dayBillsDue = bills.filter(b => b.due_day === calDay.getDate())
               const dayLabel = calDay.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
               return (
                 <div className={styles.calViewWrap}>
@@ -1707,6 +1700,19 @@ export default function Dashboard() {
                       )
                     })}
                   </div>
+
+                  {dayBillsDue.length > 0 && (
+                    <div className={styles.calBillsBlock}>
+                      <div className={styles.calBillsLabel}>Bills Due</div>
+                      {dayBillsDue.map(bill => (
+                        <div key={bill.id} className={styles.calBillRow}>
+                          <span className={styles.calBillName}>{bill.name}</span>
+                          <span className={styles.calBillAmount}>${parseFloat(bill.amount).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
+                          <span className={styles.calBillCat}>{bill.category || 'Other'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )
             }

@@ -1651,6 +1651,37 @@
 .settingsTipsToggle:hover { border-color: rgba(255,77,28,0.25); color: var(--accent); }
 
 /* ════════════════════════════════════════════
+   CALENDAR — DAY VIEW BILLS SECTION
+   ════════════════════════════════════════════ */
+
+.calBillsBlock {
+  margin-top: 28px; padding-top: 20px;
+  border-top: 1px solid rgba(255,200,120,0.08);
+}
+.calBillsLabel {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: rgba(240,234,214,0.35); margin-bottom: 12px;
+}
+.calBillRow {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; background: rgba(255,200,120,0.03);
+  border: 1px solid rgba(255,200,120,0.07); border-radius: 10px;
+  margin-bottom: 6px;
+}
+.calBillRow:last-child { margin-bottom: 0; }
+.calBillName {
+  flex: 1; font-size: 0.88rem; color: rgba(240,234,214,0.8); font-weight: 500;
+}
+.calBillAmount {
+  font-size: 0.88rem; font-weight: 700; color: #f0ead6; white-space: nowrap;
+}
+.calBillCat {
+  font-size: 0.72rem; font-weight: 600; padding: 3px 9px;
+  border-radius: 100px; background: rgba(45,212,191,0.12);
+  color: #2dd4bf; white-space: nowrap;
+}
+
+/* ════════════════════════════════════════════
    FOCUS MUSIC STUB
    ════════════════════════════════════════════ */
 
