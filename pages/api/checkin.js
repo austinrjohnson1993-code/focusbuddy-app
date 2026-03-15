@@ -76,16 +76,17 @@ const TOOLS = [
 
 // ── Claude call ──────────────────────────────────────────────────────────────
 
-async function callClaude(messages, systemPrompt) {
-  const response = await anthropic.messages.create({
+async function callClaude(messages, systemPrompt, useTools = true) {
+  const config = {
     model: 'claude-sonnet-4-5',
     max_tokens: 1024,
     system: systemPrompt,
-    tools: TOOLS,
     messages
-  })
+  }
+  if (useTools) config.tools = TOOLS
+  const response = await anthropic.messages.create(config)
   const text = response.content.find(b => b.type === 'text')?.text ?? ''
-  const toolUses = response.content.filter(b => b.type === 'tool_use')
+  const toolUses = useTools ? response.content.filter(b => b.type === 'tool_use') : []
   return { text, toolUses }
 }
 
@@ -256,9 +257,29 @@ function fmtTaskLine(t) {
   return `- "${t.title}" | id:${t.id} | due:${due} | external:${t.consequence_level === 'external'} | rolled:${t.rollover_count || 0}x`
 }
 
-function buildContextPrompt(checkInType, profile, pending, completed, isFirstCheckin) {
+function buildContextPrompt(checkInType, profile, pending, completed, isFirstCheckin, extra) {
   const rawName = profile.full_name || ''
   const name = rawName.includes('@') ? 'there' : (rawName.split(' ')[0] || 'there')
+
+  if (checkInType === 'focus') {
+    const { focusTask, focusDuration } = extra || {}
+    return `Focus mode. User: ${name}.
+They spent ${focusDuration || 25} minutes on "${focusTask || 'their task'}" and got stuck.
+Write 2 sentences. Ask one specific question to help them identify what's in the way. Be direct, no fluff.`
+  }
+
+  if (checkInType === 'weekly_summary') {
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    const weekCompleted = completed.filter(t => t.completed_at && new Date(t.completed_at) > sevenDaysAgo)
+    const weekWins = weekCompleted.length ? weekCompleted.map(t => `"${t.title}"`).join(', ') : 'nothing completed'
+    const pendingLines = pending.length ? pending.map(fmtTaskLine).join('\n') : '- none'
+    return `Weekly review. User: ${name}.
+Completed this week: ${weekWins}.
+Still pending: ${pendingLines}.
+Write 3 sentences. Name one specific win, one pattern you noticed, one thing to focus on next week. Use real task names. Be specific and direct.`
+  }
+
   const top = topTask(pending)
   const firstFlag = isFirstCheckin
     ? '\nThis is their very first check-in. Use the "Alright, first time working together." opener.'
@@ -376,13 +397,17 @@ export default async function handler(req, res) {
       .eq('id', profile.id)
   }
 
-  const contextPrompt = buildContextPrompt(type, profile, pending, completed, isFirstCheckin)
+  const extra = { focusTask: req.body.focusTask, focusDuration: req.body.focusDuration }
+  const contextPrompt = buildContextPrompt(type, profile, pending, completed, isFirstCheckin, extra)
   console.log('[checkin] context prompt:\n', contextPrompt)
+
+  const noTools = type === 'focus' || type === 'weekly_summary'
 
   try {
     const { text, toolUses } = await callClaude(
       [{ role: 'user', content: contextPrompt }],
-      systemPrompt
+      systemPrompt,
+      !noTools
     )
     if (toolUses.length > 0) console.log('[checkin] tools called by AI:', toolUses.map(t => `${t.name}(${JSON.stringify(t.input)})`).join(', '))
     const toolActions = await Promise.all(

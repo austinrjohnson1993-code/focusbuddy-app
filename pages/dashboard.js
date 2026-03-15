@@ -795,7 +795,7 @@ export default function Dashboard() {
     const reordered = arrayMove(pendingTasks, oldIndex, newIndex)
     // Optimistic update: merge reordered pending with completed
     setTasks([...reordered, ...completedTasks])
-    await saveTaskOrder(user.id, reordered.map(t => t.id))
+    await saveTaskOrder(supabase, reordered)
   }
 
   // ── Calendar helpers ──────────────────────────────────────────────────────
