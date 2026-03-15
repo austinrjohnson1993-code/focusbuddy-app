@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { runRollover } from '../rollover-tasks'
 import { runBillsToTasks } from '../bills-to-tasks'
+import { runProgressSnapshot } from '../progress-snapshot'
 import { buildPersonaPrompt } from '../../../lib/persona'
 import { coachingMessage } from '../../../lib/anthropic'
 
@@ -79,6 +80,13 @@ export default async function handler(req, res) {
         }
       } catch (billErr) {
         console.error(`[evening-checkin] Bill tasks failed for ${profile.id}:`, billErr.message)
+      }
+
+      // 4. Save today's progress snapshot before the day ends
+      try {
+        await runProgressSnapshot(profile.id)
+      } catch (snapErr) {
+        console.error(`[evening-checkin] Progress snapshot failed for ${profile.id}:`, snapErr.message)
       }
     } catch (err) {
       console.error(`[evening-checkin] Pre-gen failed for ${profile.id}:`, err.message)

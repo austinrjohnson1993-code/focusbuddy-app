@@ -4,6 +4,23 @@ import { buildPersonaPrompt } from '../../lib/persona'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+// ── Rate limiting ─────────────────────────────────────────────────────────────
+// In-memory — resets on cold start. Good enough for abuse prevention.
+const rateLimitMap = new Map() // userId -> { count, resetAt }
+const RATE_LIMIT = 20
+const RATE_WINDOW_MS = 60 * 60 * 1000 // 1 hour
+
+function checkRateLimit(userId) {
+  const now = Date.now()
+  const entry = rateLimitMap.get(userId)
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_WINDOW_MS })
+    return false
+  }
+  entry.count++
+  return entry.count > RATE_LIMIT
+}
+
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -70,6 +87,19 @@ const TOOLS = [
         task_id: { type: 'string' }
       },
       required: ['task_id']
+    }
+  },
+  {
+    name: 'create_alarm',
+    description: "Create an alarm or reminder. Use when you tell the user you'll check back in at a specific time, or when they mention wanting a reminder.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        alarm_time: { type: 'string', description: 'ISO datetime string' },
+        title: { type: 'string', description: 'Alarm label' },
+        task_id: { type: 'string', description: 'Optional linked task UUID' }
+      },
+      required: ['alarm_time', 'title']
     }
   }
 ]
@@ -237,6 +267,41 @@ async function executeTool(toolName, input, supabaseAdmin, userId) {
     return { tool: 'archive_task', taskId: task_id, result: updateErr ? 'error' : 'archived', updatedTask: updated || null }
   }
 
+  if (toolName === 'create_alarm') {
+    const { alarm_time, title, task_id } = input
+    console.log(`[checkin:tool] create_alarm — alarm_time: ${alarm_time}, title: "${title}"`)
+
+    let inserted = null
+    let insertErr = null
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('alarms')
+        .insert({
+          user_id: userId,
+          alarm_time,
+          title,
+          task_id: task_id || null,
+          active: true,
+          triggered: false,
+        })
+        .select()
+        .single()
+      insertErr = error
+      inserted = data
+    } catch (e) {
+      console.error('[checkin:tool] create_alarm threw:', e)
+      return { tool: 'create_alarm', result: 'error', alarm: null }
+    }
+
+    if (insertErr) console.error('[checkin:tool] create_alarm error:', JSON.stringify(insertErr))
+    else {
+      console.log(`[checkin:tool] create_alarm done — id: ${inserted?.id}`)
+      console.log(`[checkin:tool:success] create_alarm executed for user ${userId}`)
+    }
+
+    return { tool: 'create_alarm', result: insertErr ? 'error' : 'created', alarm: inserted || null }
+  }
+
   console.warn('[checkin:tool] unknown tool:', toolName)
   return null
 }
@@ -320,6 +385,11 @@ export default async function handler(req, res) {
 
   const { userId, checkInType, messages } = req.body
   if (!userId) return res.status(400).json({ error: 'userId required' })
+
+  if (checkRateLimit(userId)) {
+    console.warn(`[checkin] rate limit hit for ${userId}`)
+    return res.status(429).json({ error: 'Rate limit exceeded', message: "You've been busy! Give it a moment." })
+  }
 
   const supabaseAdmin = getAdminClient()
 
