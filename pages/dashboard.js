@@ -100,6 +100,13 @@ export default function Dashboard() {
   const recognitionRef = useRef(null)
   const titleInputRef = useRef(null)
 
+  // Calendar
+  const [calView, setCalView] = useState('month')
+  const [calMonth, setCalMonth] = useState(() => {
+    const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d
+  })
+  const [calDay, setCalDay] = useState(null)
+
   useEffect(() => {
     const hour = new Date().getHours()
     if (hour < 12) setGreeting('Good morning')
@@ -265,6 +272,26 @@ export default function Dashboard() {
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.push('/')
+  }
+
+  // ── Calendar helpers ──
+  function calDStr(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+  function calTasksForDate(dStr) {
+    return tasks.filter(t => {
+      if (t.archived) return false
+      if (t.due_date) return t.due_date === dStr
+      if (t.due_time) return new Date(t.due_time).toISOString().split('T')[0] === dStr
+      if (t.scheduled_for) return new Date(t.scheduled_for).toISOString().split('T')[0] === dStr
+      return false
+    })
+  }
+  function calPrevMonth() {
+    setCalMonth(d => { const n = new Date(d); n.setMonth(n.getMonth() - 1); return n })
+  }
+  function calNextMonth() {
+    setCalMonth(d => { const n = new Date(d); n.setMonth(n.getMonth() + 1); return n })
   }
 
   const pendingTasks = sortByPriority(tasks.filter(t => !t.completed))
@@ -477,19 +504,137 @@ export default function Dashboard() {
           )}
 
           {/* CALENDAR */}
-          {activeTab === 'calendar' && (
-            <div className={styles.view}>
-              <div className={styles.header}>
-                <h1 className={styles.greetingText}>Calendar</h1>
-                <p className={styles.headerSub}>Your schedule, your way.</p>
+          {activeTab === 'calendar' && (() => {
+            const todayDStr = todayStr()
+            const year = calMonth.getFullYear()
+            const month = calMonth.getMonth()
+            const monthName = calMonth.toLocaleString('default', { month: 'long' })
+            const firstDayOfWeek = new Date(year, month, 1).getDay()
+            const daysInMonth = new Date(year, month + 1, 0).getDate()
+            const cells = []
+            for (let i = 0; i < firstDayOfWeek; i++) cells.push(null)
+            for (let d = 1; d <= daysInMonth; d++) cells.push(d)
+            while (cells.length % 7 !== 0) cells.push(null)
+
+            // ── DAY VIEW ──
+            if (calView === 'day' && calDay) {
+              const dayDStr = calDStr(calDay)
+              const dayTasks = calTasksForDate(dayDStr)
+              const unscheduled = dayTasks.filter(t => !t.due_time)
+              const scheduled = dayTasks.filter(t => !!t.due_time)
+              const HOURS = Array.from({ length: 18 }, (_, i) => i + 6) // 6am–11pm
+              const tasksByHour = {}
+              scheduled.forEach(t => {
+                const h = new Date(t.due_time).getHours()
+                if (!tasksByHour[h]) tasksByHour[h] = []
+                tasksByHour[h].push(t)
+              })
+              const dayLabel = calDay.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+
+              return (
+                <div className={styles.calViewWrap}>
+                  <div className={styles.calDayViewHeader}>
+                    <button className={styles.calBackBtn} onClick={() => setCalView('month')}>← Back</button>
+                    <div className={styles.calDayTitleBlock}>
+                      <h2 className={styles.calDayTitle}>{dayLabel}</h2>
+                      <p className={styles.calDaySub}>{dayTasks.length} task{dayTasks.length !== 1 ? 's' : ''}</p>
+                    </div>
+                    <button onClick={() => setShowAddModal(true)} className={styles.calAddBtn}>+ Add</button>
+                  </div>
+
+                  <div className={styles.calTimeline}>
+                    {unscheduled.length > 0 && (
+                      <div className={styles.calUnscheduledBlock}>
+                        <div className={styles.calSlotLabel}>Unscheduled</div>
+                        <div className={styles.calSlotTasks}>
+                          {unscheduled.map(t => (
+                            <button key={t.id}
+                              onClick={() => t.completed ? uncompleteTask(t) : completeTask(t)}
+                              className={`${styles.calTaskChip} ${t.completed ? styles.calTaskChipDone : ''} ${t.consequence_level === 'external' ? styles.calTaskChipExt : ''}`}>
+                              <span className={styles.calChipCheck}>{t.completed ? '✓' : ''}</span>
+                              <span className={styles.calChipTitle}>{t.title}</span>
+                              <div className={styles.calChipBadges}>
+                                {t.consequence_level === 'external' && <span className={styles.calChipExtBadge}>Ext</span>}
+                                {t.rollover_count > 0 && <span className={styles.calChipRollover}>↷{t.rollover_count}</span>}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {HOURS.map(h => {
+                      const slotTasks = tasksByHour[h] || []
+                      const ampm = h < 12 ? 'am' : 'pm'
+                      const label = h === 0 ? '12am' : h === 12 ? '12pm' : h < 12 ? `${h}am` : `${h - 12}pm`
+                      return (
+                        <div key={h} className={`${styles.calHourSlot} ${slotTasks.length > 0 ? styles.calHourSlotFilled : ''}`}>
+                          <div className={styles.calHourLabel}>{label}</div>
+                          <div className={styles.calHourLine} />
+                          <div className={styles.calHourTasks}>
+                            {slotTasks.map(t => (
+                              <button key={t.id}
+                                onClick={() => t.completed ? uncompleteTask(t) : completeTask(t)}
+                                className={`${styles.calTaskChip} ${t.completed ? styles.calTaskChipDone : ''} ${t.consequence_level === 'external' ? styles.calTaskChipExt : ''}`}>
+                                <span className={styles.calChipCheck}>{t.completed ? '✓' : ''}</span>
+                                <span className={styles.calChipTitle}>{t.title}</span>
+                                <div className={styles.calChipBadges}>
+                                  {t.consequence_level === 'external' && <span className={styles.calChipExtBadge}>Ext</span>}
+                                  {t.rollover_count > 0 && <span className={styles.calChipRollover}>↷{t.rollover_count}</span>}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            }
+
+            // ── MONTH VIEW ──
+            return (
+              <div className={styles.calViewWrap}>
+                <div className={styles.calMonthNav}>
+                  <button className={styles.calNavBtn} onClick={calPrevMonth}>‹</button>
+                  <h2 className={styles.calMonthLabel}>{monthName} {year}</h2>
+                  <button className={styles.calNavBtn} onClick={calNextMonth}>›</button>
+                </div>
+
+                <div className={styles.calDayHeaders}>
+                  {['S','M','T','W','T','F','S'].map((d, i) => (
+                    <div key={i} className={styles.calDayHeaderCell}>{d}</div>
+                  ))}
+                </div>
+
+                <div className={styles.calGrid}>
+                  {cells.map((day, idx) => {
+                    if (!day) return <div key={idx} className={styles.calCellEmpty} />
+                    const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                    const dayTasks = calTasksForDate(dStr)
+                    const isToday = dStr === todayDStr
+                    return (
+                      <div key={idx}
+                        className={`${styles.calCell} ${isToday ? styles.calCellToday : ''}`}
+                        onClick={() => { setCalDay(new Date(year, month, day)); setCalView('day') }}>
+                        <span className={styles.calCellNum}>{day}</span>
+                        {dayTasks.length > 0 && (
+                          <div className={styles.calDots}>
+                            {dayTasks.slice(0, 3).map((t, di) => (
+                              <span key={di} className={styles.calDot}
+                                style={{ background: t.consequence_level === 'external' ? '#ff4d1c' : 'rgba(240,234,214,0.4)' }} />
+                            ))}
+                            {dayTasks.length > 3 && <span className={styles.calDotMore}>+</span>}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
-              <div className={styles.stubCard}>
-                <div className={styles.stubIcon}>📅</div>
-                <p className={styles.stubText}>Calendar coming soon.</p>
-                <p className={styles.stubSubtext}>Internal calendar — no Google auth required. See your tasks and commitments in time.</p>
-              </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* JOURNAL */}
           {activeTab === 'journal' && (
