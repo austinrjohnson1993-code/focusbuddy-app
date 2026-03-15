@@ -81,53 +81,65 @@ async function callClaude(messages, systemPrompt) {
 // ── Tool execution ───────────────────────────────────────────────────────────
 
 async function executeTool(toolName, input, supabaseAdmin, userId) {
+  console.log(`[checkin:tool] ${toolName}`, JSON.stringify(input))
+
   if (toolName === 'reschedule_task') {
     const { task_id, scheduled_for, due_time } = input
-    const { data: task } = await supabaseAdmin
-      .from('tasks').select('rollover_count').eq('id', task_id).single()
-    await supabaseAdmin.from('tasks').update({
+    const { data: task, error: fetchErr } = await supabaseAdmin
+      .from('tasks').select('rollover_count, title').eq('id', task_id).single()
+    if (fetchErr) console.error('[checkin:tool] reschedule_task fetch error:', fetchErr.message, 'task_id:', task_id)
+
+    const updates = {
       scheduled_for,
       rollover_count: (task?.rollover_count || 0) + 1,
       ...(due_time ? { due_time } : {})
-    }).eq('id', task_id)
-    return { tool: 'reschedule_task', taskId: task_id, result: 'rescheduled' }
+    }
+    console.log(`[checkin:tool] reschedule_task updating "${task?.title}" (${task_id})`, updates)
+    const { data: updated, error: updateErr } = await supabaseAdmin
+      .from('tasks').update(updates).eq('id', task_id).select().single()
+    if (updateErr) console.error('[checkin:tool] reschedule_task update error:', updateErr.message)
+    else console.log(`[checkin:tool] reschedule_task done — scheduled_for:`, updated?.scheduled_for)
+
+    return { tool: 'reschedule_task', taskId: task_id, result: updateErr ? 'error' : 'rescheduled', updatedTask: updated || null }
   }
 
   if (toolName === 'update_task_time') {
     const { task_id, due_time } = input
-    await supabaseAdmin.from('tasks').update({ due_time }).eq('id', task_id)
-    return { tool: 'update_task_time', taskId: task_id, result: 'updated' }
+    console.log(`[checkin:tool] update_task_time — task_id: ${task_id}, due_time: ${due_time}`)
+    const { data: updated, error: updateErr } = await supabaseAdmin
+      .from('tasks').update({ due_time }).eq('id', task_id).select().single()
+    if (updateErr) console.error('[checkin:tool] update_task_time error:', updateErr.message, 'task_id:', task_id)
+    else console.log(`[checkin:tool] update_task_time done — new due_time:`, updated?.due_time)
+
+    return { tool: 'update_task_time', taskId: task_id, result: updateErr ? 'error' : 'updated', updatedTask: updated || null }
   }
 
   if (toolName === 'schedule_morning_checkin') {
     const { checkin_time } = input
-    await supabaseAdmin.from('profiles')
-      .update({ next_checkin_at: checkin_time }).eq('id', userId)
-    await supabaseAdmin.from('tasks').insert({
-      user_id: userId,
-      title: 'Morning check-in with FocusBuddy',
-      due_time: checkin_time,
-      completed: false,
-      archived: false,
-      recurrence: 'none',
-      consequence_level: 'self',
-      rollover_count: 0,
-      priority_score: 0,
-      created_at: new Date().toISOString(),
-      scheduled_for: checkin_time
-    })
-    return { tool: 'schedule_morning_checkin', taskId: null, result: 'scheduled' }
+    console.log(`[checkin:tool] schedule_morning_checkin — checkin_time: ${checkin_time}`)
+    // Only update the profile — do NOT create a task
+    const { error: profileErr } = await supabaseAdmin
+      .from('profiles').update({ next_checkin_at: checkin_time }).eq('id', userId)
+    if (profileErr) console.error('[checkin:tool] schedule_morning_checkin profile error:', profileErr.message)
+    else console.log(`[checkin:tool] schedule_morning_checkin done — next_checkin_at set`)
+
+    return { tool: 'schedule_morning_checkin', taskId: null, result: profileErr ? 'error' : 'scheduled' }
   }
 
   if (toolName === 'complete_task') {
     const { task_id } = input
-    await supabaseAdmin.from('tasks').update({
-      completed: true,
-      completed_at: new Date().toISOString()
-    }).eq('id', task_id)
-    return { tool: 'complete_task', taskId: task_id, result: 'completed' }
+    const completedAt = new Date().toISOString()
+    console.log(`[checkin:tool] complete_task — task_id: ${task_id}`)
+    const { data: updated, error: updateErr } = await supabaseAdmin
+      .from('tasks').update({ completed: true, completed_at: completedAt })
+      .eq('id', task_id).select().single()
+    if (updateErr) console.error('[checkin:tool] complete_task error:', updateErr.message, 'task_id:', task_id)
+    else console.log(`[checkin:tool] complete_task done — "${updated?.title}"`)
+
+    return { tool: 'complete_task', taskId: task_id, result: updateErr ? 'error' : 'completed', updatedTask: updated || null }
   }
 
+  console.warn('[checkin:tool] unknown tool:', toolName)
   return null
 }
 
@@ -193,6 +205,12 @@ export default async function handler(req, res) {
 
   const supabaseAdmin = getAdminClient()
 
+  // One-time cleanup: remove any stale "Morning check-in" tasks created by old tool code
+  supabaseAdmin.from('tasks')
+    .delete()
+    .eq('user_id', userId)
+    .eq('title', 'Morning check-in with FocusBuddy')
+
   const { data: profile, error: profileErr } = await supabaseAdmin
     .from('profiles').select('*').eq('id', userId).single()
   if (profileErr || !profile) return res.status(404).json({ error: 'Profile not found' })
@@ -203,6 +221,7 @@ export default async function handler(req, res) {
   if (messages && messages.length > 0) {
     try {
       const { text, toolUses } = await callClaude(messages, systemPrompt)
+      if (toolUses.length > 0) console.log('[checkin] continuation tools:', toolUses.map(t => `${t.name}(${JSON.stringify(t.input)})`).join(', '))
       const actions = await Promise.all(
         toolUses.map(tu => executeTool(tu.name, tu.input, supabaseAdmin, userId))
       )
@@ -252,12 +271,14 @@ export default async function handler(req, res) {
   }
 
   const contextPrompt = buildContextPrompt(type, profile, pending, completed, isFirstCheckin)
+  console.log('[checkin] context prompt:\n', contextPrompt)
 
   try {
     const { text, toolUses } = await callClaude(
       [{ role: 'user', content: contextPrompt }],
       systemPrompt
     )
+    if (toolUses.length > 0) console.log('[checkin] tools called by AI:', toolUses.map(t => `${t.name}(${JSON.stringify(t.input)})`).join(', '))
     const toolActions = await Promise.all(
       toolUses.map(tu => executeTool(tu.name, tu.input, supabaseAdmin, userId))
     )
