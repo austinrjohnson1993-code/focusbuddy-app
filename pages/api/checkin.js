@@ -433,6 +433,9 @@ Write the evening check-in. 2-3 sentences. One specific win or honest acknowledg
 export const config = { maxDuration: 30 }
 
 export default async function handler(req, res) {
+  console.log('[checkin] ANTHROPIC_API_KEY prefix:', process.env.ANTHROPIC_API_KEY?.slice(0, 10))
+  console.log('[checkin] KEY length:', process.env.ANTHROPIC_API_KEY?.length)
+
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const { userId, checkInType, messages, timezone } = req.body
