@@ -4,16 +4,28 @@ import { useRouter } from 'next/router'
 import Head from 'next/head'
 import styles from '../styles/Dashboard.module.css'
 
-function stripMarkdown(text) {
-  return text
-    .replace(/\*\*(.+?)\*\*/g, '$1')
-    .replace(/\*(.+?)\*/g, '$1')
-    .replace(/_{1,2}(.+?)_{1,2}/g, '$1')
-    .replace(/#+\s+/g, '')
-    .replace(/`(.+?)`/g, '$1')
-    .replace(/\[(.+?)\]\(.+?\)/g, '$1')
-    .trim()
-}
+const NAV_ITEMS = [
+  { id: 'tasks', label: 'Tasks', icon: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+    </svg>
+  )},
+  { id: 'checkin', label: 'Check-in', icon: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+    </svg>
+  )},
+  { id: 'calendar', label: 'Calendar', icon: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+  )},
+  { id: 'journal', label: 'Journal', icon: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+    </svg>
+  )},
+]
 
 export default function Dashboard() {
   const router = useRouter()
@@ -25,13 +37,6 @@ export default function Dashboard() {
   const [adding, setAdding] = useState(false)
   const [greeting, setGreeting] = useState('')
   const [activeTab, setActiveTab] = useState('tasks')
-
-  // Check-in state
-  const [checkinComplete, setCheckinComplete] = useState(false)
-  const [checkinMessages, setCheckinMessages] = useState([])
-  const [checkinInput, setCheckinInput] = useState('')
-  const [checkinLoading, setCheckinLoading] = useState(false)
-  const [checkinStarted, setCheckinStarted] = useState(false)
 
   useEffect(() => {
     const hour = new Date().getHours()
@@ -46,113 +51,21 @@ export default function Dashboard() {
       setUser(session.user)
       fetchProfile(session.user.id)
       fetchTasks(session.user.id)
-      const done = sessionStorage.getItem('checkin_done')
-      if (done) setCheckinComplete(true)
     })
   }, [])
 
   const fetchProfile = async (userId) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    if (data && data.onboarded) {
-      setProfile(data)
-    } else {
-      router.push('/onboarding')
-    }
+    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
+    if (data) setProfile(data)
+    else router.push('/onboarding')
   }
 
   const fetchTasks = async (userId) => {
     const { data } = await supabase
-      .from('tasks')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('archived', false)
+      .from('tasks').select('*').eq('user_id', userId).eq('archived', false)
       .order('created_at', { ascending: false })
     setTasks(data || [])
     setLoading(false)
-  }
-
-  useEffect(() => {
-    if (!loading && !checkinComplete && profile && !checkinStarted) {
-      setCheckinStarted(true)
-      openCheckin()
-    }
-  }, [loading, checkinComplete, profile])
-
-  const getFirstName = () => {
-    if (profile?.full_name) return profile.full_name.split(' ')[0]
-    if (user?.email) return user.email.split('@')[0]
-    return 'there'
-  }
-
-  const openCheckin = async () => {
-    setCheckinLoading(true)
-    const firstName = profile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there'
-    const pending = tasks.filter(t => !t.completed)
-
-    try {
-      const res = await fetch('/api/checkin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: 'Hey, I just opened the app.' }],
-          userName: firstName,
-          taskCount: pending.length,
-          taskTitles: pending.map(t => t.title),
-          coachingBlend: profile?.coaching_blend,
-          aiContext: profile?.ai_context
-        })
-      })
-      if (!res.ok) throw new Error(`API error ${res.status}`)
-      const data = await res.json()
-      setCheckinMessages([{ role: 'assistant', content: stripMarkdown(data.message) }])
-    } catch (err) {
-      setCheckinMessages([{ role: 'assistant', content: `Hey ${firstName} — good to see you. How are you feeling right now?` }])
-    }
-    setCheckinLoading(false)
-  }
-
-  const sendCheckinMessage = async (e) => {
-    e.preventDefault()
-    if (!checkinInput.trim() || checkinLoading) return
-
-    const userMessage = { role: 'user', content: checkinInput.trim() }
-    const updatedMessages = [...checkinMessages, userMessage]
-    setCheckinMessages(updatedMessages)
-    setCheckinInput('')
-    setCheckinLoading(true)
-
-    const firstName = profile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there'
-    const pending = tasks.filter(t => !t.completed)
-
-    try {
-      const res = await fetch('/api/checkin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: updatedMessages,
-          userName: firstName,
-          taskCount: pending.length,
-          taskTitles: pending.map(t => t.title),
-          coachingBlend: profile?.coaching_blend,
-          aiContext: profile?.ai_context
-        })
-      })
-      if (!res.ok) throw new Error(`API error ${res.status}`)
-      const data = await res.json()
-      setCheckinMessages([...updatedMessages, { role: 'assistant', content: stripMarkdown(data.message) }])
-    } catch (err) {
-      setCheckinMessages([...updatedMessages, { role: 'assistant', content: "I'm here. Take your time." }])
-    }
-    setCheckinLoading(false)
-  }
-
-  const completeCheckin = () => {
-    sessionStorage.setItem('checkin_done', 'true')
-    setCheckinComplete(true)
   }
 
   const addTask = async (e) => {
@@ -197,21 +110,9 @@ export default function Dashboard() {
     router.push('/')
   }
 
-  const resetOnboarding = async () => {
-    sessionStorage.removeItem('onboarding_phase')
-    sessionStorage.removeItem('onboarding_messages')
-    sessionStorage.removeItem('onboarding_complete')
-    sessionStorage.removeItem('onboarding_personas')
-    sessionStorage.removeItem('checkin_done')
-    if (user) {
-      await supabase.from('profiles').update({ onboarded: false, onboarding_complete: false }).eq('id', user.id)
-    }
-    router.push('/onboarding')
-  }
-
   const pendingTasks = tasks.filter(t => !t.completed)
   const completedTasks = tasks.filter(t => t.completed)
-  const firstName = getFirstName()
+  const firstName = profile?.full_name?.split(' ')[0] || 'there'
 
   if (loading) return (
     <div className={styles.loadingPage}>
@@ -219,95 +120,40 @@ export default function Dashboard() {
     </div>
   )
 
-  // CHECK-IN SCREEN
-  if (!checkinComplete) {
-    return (
-      <>
-        <Head><title>Dashboard — FocusBuddy</title></Head>
-        <div className={styles.page}>
-          <nav className={styles.nav}>
-            <a href="/" className={styles.navLogo}>
-              <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
-            </a>
-            <div className={styles.navRight}>
-              <button onClick={resetOnboarding} className={styles.resetBtn}>Reset onboarding</button>
-              <button onClick={handleSignOut} className={styles.signOutBtn}>Sign out</button>
-            </div>
-          </nav>
-
-          <main className={styles.checkinMain}>
-            <div className={styles.checkinCard}>
-              <div className={styles.checkinMessages}>
-                {checkinLoading && checkinMessages.length === 0 && (
-                  <div className={styles.checkinBubbleAssistant}>
-                    <span className={styles.typingDots}>···</span>
-                  </div>
-                )}
-                {checkinMessages.map((msg, i) => (
-                  <div key={i} className={msg.role === 'assistant' ? styles.checkinBubbleAssistant : styles.checkinBubbleUser}>
-                    {msg.content}
-                  </div>
-                ))}
-                {checkinLoading && checkinMessages.length > 0 && (
-                  <div className={styles.checkinBubbleAssistant}>
-                    <span className={styles.typingDots}>···</span>
-                  </div>
-                )}
-              </div>
-
-              {checkinMessages.length >= 2 && (
-                <button onClick={completeCheckin} className={styles.checkinSkip}>
-                  Let's go →
-                </button>
-              )}
-
-              <form onSubmit={sendCheckinMessage} className={styles.checkinForm}>
-                <input
-                  type="text"
-                  placeholder="How are you doing..."
-                  value={checkinInput}
-                  onChange={e => setCheckinInput(e.target.value)}
-                  className={styles.checkinInput}
-                  autoFocus
-                />
-                <button
-                  type="submit"
-                  disabled={checkinLoading || !checkinInput.trim()}
-                  className={styles.checkinSendBtn}
-                >
-                  →
-                </button>
-              </form>
-
-              <button onClick={completeCheckin} className={styles.checkinSkipSmall}>
-                Skip to my tasks
-              </button>
-            </div>
-          </main>
-        </div>
-      </>
-    )
-  }
-
-  // MAIN DASHBOARD
   return (
     <>
       <Head><title>Dashboard — FocusBuddy</title></Head>
-      <div className={styles.page}>
-        <nav className={styles.nav}>
-          <a href="/" className={styles.navLogo}>
+      <div className={styles.appShell}>
+
+        {/* LEFT SIDEBAR — desktop only */}
+        <aside className={styles.sidebar}>
+          <div className={styles.sidebarLogo}>
             <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
-          </a>
-          <div className={styles.navRight}>
-            <span className={styles.navEmail}>{firstName}</span>
-            <button onClick={resetOnboarding} className={styles.resetBtn}>Reset onboarding</button>
+          </div>
+          <nav className={styles.sidebarNav}>
+            {NAV_ITEMS.map(item => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`${styles.sidebarNavItem} ${activeTab === item.id ? styles.sidebarNavItemActive : ''}`}
+              >
+                <span className={styles.navIcon}>{item.icon}</span>
+                <span className={styles.navLabel}>{item.label}</span>
+              </button>
+            ))}
+          </nav>
+          <div className={styles.sidebarFooter}>
+            <span className={styles.sidebarEmail}>{user?.email}</span>
             <button onClick={handleSignOut} className={styles.signOutBtn}>Sign out</button>
           </div>
-        </nav>
+        </aside>
 
+        {/* MAIN CONTENT */}
         <main className={styles.main}>
+
+          {/* TASKS VIEW */}
           {activeTab === 'tasks' && (
-            <>
+            <div className={styles.view}>
               <div className={styles.header}>
                 <h1 className={styles.greetingText}>
                   {greeting}, <span className={styles.name}>{firstName}.</span>
@@ -340,7 +186,6 @@ export default function Dashboard() {
                     <p className={styles.emptySubtext}>Add your first task above — even something small counts.</p>
                   </div>
                 )}
-
                 {pendingTasks.length > 0 && (
                   <div className={styles.taskGroup}>
                     <div className={styles.taskGroupLabel}>To do</div>
@@ -356,7 +201,6 @@ export default function Dashboard() {
                     ))}
                   </div>
                 )}
-
                 {completedTasks.length > 0 && (
                   <div className={styles.taskGroup}>
                     <div className={styles.taskGroupLabel}>Completed today</div>
@@ -370,49 +214,70 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
-            </>
-          )}
-
-          {activeTab !== 'tasks' && (
-            <div className={styles.comingSoon}>
-              <p className={styles.comingSoonLabel}>
-                {activeTab === 'coach' ? 'Coach' : activeTab === 'progress' ? 'Progress' : 'Life'}
-              </p>
-              <p className={styles.comingSoonText}>Coming soon</p>
             </div>
           )}
+
+          {/* CHECK-IN VIEW */}
+          {activeTab === 'checkin' && (
+            <div className={styles.view}>
+              <div className={styles.header}>
+                <h1 className={styles.greetingText}>Check-in</h1>
+                <p className={styles.headerSub}>Your daily coaching conversation.</p>
+              </div>
+              <div className={styles.stubCard}>
+                <div className={styles.stubIcon}>💬</div>
+                <p className={styles.stubText}>Daily check-in coming soon.</p>
+                <p className={styles.stubSubtext}>This is where FocusBuddy will meet you each morning — brief, personal, and task-aware.</p>
+              </div>
+            </div>
+          )}
+
+          {/* CALENDAR VIEW */}
+          {activeTab === 'calendar' && (
+            <div className={styles.view}>
+              <div className={styles.header}>
+                <h1 className={styles.greetingText}>Calendar</h1>
+                <p className={styles.headerSub}>Your schedule, your way.</p>
+              </div>
+              <div className={styles.stubCard}>
+                <div className={styles.stubIcon}>📅</div>
+                <p className={styles.stubText}>Calendar coming soon.</p>
+                <p className={styles.stubSubtext}>An internal calendar — no Google auth required. Schedule tasks, set reminders, see your week at a glance.</p>
+              </div>
+            </div>
+          )}
+
+          {/* JOURNAL VIEW */}
+          {activeTab === 'journal' && (
+            <div className={styles.view}>
+              <div className={styles.header}>
+                <h1 className={styles.greetingText}>Journal</h1>
+                <p className={styles.headerSub}>Your private reflection space.</p>
+              </div>
+              <div className={styles.stubCard}>
+                <div className={styles.stubIcon}>📓</div>
+                <p className={styles.stubText}>Journal coming soon.</p>
+                <p className={styles.stubSubtext}>A private space to think out loud — no structure required. Brain dump, reflect, or just write.</p>
+              </div>
+            </div>
+          )}
+
         </main>
 
+        {/* BOTTOM NAV — mobile only */}
         <nav className={styles.bottomNav}>
-          <button
-            className={`${styles.bottomNavTab} ${activeTab === 'tasks' ? styles.bottomNavTabActive : ''}`}
-            onClick={() => setActiveTab('tasks')}
-          >
-            <span className={styles.bottomNavIcon}>☑</span>
-            <span className={styles.bottomNavLabel}>Tasks</span>
-          </button>
-          <button
-            className={`${styles.bottomNavTab} ${activeTab === 'coach' ? styles.bottomNavTabActive : ''}`}
-            onClick={() => setActiveTab('coach')}
-          >
-            <span className={styles.bottomNavIcon}>◎</span>
-            <span className={styles.bottomNavLabel}>Coach</span>
-          </button>
-          <button
-            className={`${styles.bottomNavTab} ${activeTab === 'progress' ? styles.bottomNavTabActive : ''}`}
-            onClick={() => setActiveTab('progress')}
-          >
-            <span className={styles.bottomNavIcon}>↗</span>
-            <span className={styles.bottomNavLabel}>Progress</span>
-          </button>
-          <button
-            className={`${styles.bottomNavTab} ${activeTab === 'life' ? styles.bottomNavTabActive : ''}`}
-            onClick={() => setActiveTab('life')}
-          >
-            <span className={styles.bottomNavIcon}>◈</span>
-            <span className={styles.bottomNavLabel}>Life</span>
-          </button>
+          {NAV_ITEMS.map(item => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`${styles.bottomNavItem} ${activeTab === item.id ? styles.bottomNavItemActive : ''}`}
+            >
+              <span className={styles.bottomNavIcon}>{item.icon}</span>
+              <span className={styles.bottomNavLabel}>{item.label}</span>
+            </button>
+          ))}
         </nav>
+
       </div>
     </>
   )
