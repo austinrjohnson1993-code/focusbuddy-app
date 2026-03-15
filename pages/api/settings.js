@@ -1,44 +1,54 @@
 import { createClient } from '@supabase/supabase-js'
 
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  )
-}
-
 const ALLOWED_FIELDS = ['full_name', 'accent_color', 'persona_blend', 'persona_voice', 'checkin_times']
 
 export default async function handler(req, res) {
-  if (req.method !== 'PATCH') return res.status(405).json({ error: 'Method not allowed' })
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { userId, updates } = req.body
-  if (!userId) return res.status(400).json({ error: 'userId required' })
-  if (!updates || typeof updates !== 'object') return res.status(400).json({ error: 'updates object required' })
+  console.log('[settings] PATCH received:', JSON.stringify(req.body))
 
-  const safeUpdates = {}
-  for (const key of ALLOWED_FIELDS) {
-    if (key in updates) safeUpdates[key] = updates[key]
+  // Authenticate via the user's JWT from the Authorization header
+  const token = req.headers.authorization?.replace('Bearer ', '')
+  if (!token) return res.status(401).json({ error: 'No auth token provided' })
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    { global: { headers: { Authorization: `Bearer ${token}` } } }
+  )
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    console.error('[settings] Auth error:', JSON.stringify(authError))
+    return res.status(401).json({ error: 'Unauthorized' })
   }
 
-  if (Object.keys(safeUpdates).length === 0) {
+  // Build update object from only the fields present in req.body
+  const updateObject = {}
+  for (const key of ALLOWED_FIELDS) {
+    if (key in req.body) updateObject[key] = req.body[key]
+  }
+
+  if (Object.keys(updateObject).length === 0) {
     return res.status(400).json({ error: 'No valid fields to update' })
   }
 
-  const supabaseAdmin = getAdminClient()
+  // Use service role client to bypass RLS
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
 
-  const { data: profile, error } = await supabaseAdmin
+  const { error } = await supabaseAdmin
     .from('profiles')
-    .update(safeUpdates)
-    .eq('id', userId)
-    .select()
-    .single()
+    .update(updateObject)
+    .eq('id', user.id)
 
   if (error) {
-    console.error('[settings] Failed to update profile:', JSON.stringify(error))
+    console.error('[settings] Update failed:', JSON.stringify(error))
     return res.status(500).json({ error: 'Failed to update profile' })
   }
 
-  console.log('[settings] Updated profile for', userId, '— fields:', Object.keys(safeUpdates).join(', '))
-  return res.status(200).json({ success: true, profile })
+  console.log('[settings] Updated profile for', user.id, '— fields:', Object.keys(updateObject).join(', '))
+  return res.status(200).json({ success: true, updated: updateObject })
 }
