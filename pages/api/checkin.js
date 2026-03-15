@@ -7,7 +7,7 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 // In-memory — resets on cold start. Good enough for abuse prevention.
 const rateLimitMap = new Map() // userId -> { count, resetAt }
-const RATE_LIMIT = 20
+const RATE_LIMIT = 50
 const RATE_WINDOW_MS = 60 * 60 * 1000 // 1 hour
 
 function checkRateLimit(userId) {
@@ -24,7 +24,8 @@ function checkRateLimit(userId) {
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  console.log('[checkin:client] url present:', !!url, '| service key present:', !!key, '| key prefix:', key?.slice(0, 12))
+  console.log('[checkin] admin client key prefix:', key?.slice(0, 20))
+  console.log('[checkin:client] url present:', !!url, '| service key present:', !!key)
   return createClient(url, key)
 }
 
@@ -123,7 +124,7 @@ async function callClaude(messages, systemPrompt, useTools = true) {
 // ── Tool execution ───────────────────────────────────────────────────────────
 
 async function executeTool(toolName, input, supabaseAdmin, userId) {
-  console.log(`[checkin:tool] ${toolName}`, JSON.stringify(input))
+  console.log('[checkin:executeTool] called with:', JSON.stringify({ toolName, input }))
 
   if (toolName === 'reschedule_task') {
     const { task_id, scheduled_for, due_time } = input
@@ -152,6 +153,7 @@ async function executeTool(toolName, input, supabaseAdmin, userId) {
         .from('tasks').update(updates).eq('id', task_id).select().single()
       updateErr = error
       updated = data
+      console.log('[checkin:executeTool] result:', JSON.stringify({ error, data }))
     } catch (e) {
       console.error('[checkin:tool] reschedule_task update threw:', e)
       return { tool: 'reschedule_task', taskId: task_id, result: 'error', updatedTask: null }
@@ -177,6 +179,7 @@ async function executeTool(toolName, input, supabaseAdmin, userId) {
         .from('tasks').update({ due_time }).eq('id', task_id).select().single()
       updateErr = error
       updated = data
+      console.log('[checkin:executeTool] result:', JSON.stringify({ error, data }))
     } catch (e) {
       console.error('[checkin:tool] update_task_time threw:', e)
       return { tool: 'update_task_time', taskId: task_id, result: 'error', updatedTask: null }
@@ -200,6 +203,7 @@ async function executeTool(toolName, input, supabaseAdmin, userId) {
       const { error } = await supabaseAdmin
         .from('profiles').update({ next_checkin_at: checkin_time }).eq('id', userId)
       profileErr = error
+      console.log('[checkin:executeTool] result:', JSON.stringify({ error }))
     } catch (e) {
       console.error('[checkin:tool] schedule_morning_checkin threw:', e)
       return { tool: 'schedule_morning_checkin', taskId: null, result: 'error' }
@@ -227,6 +231,7 @@ async function executeTool(toolName, input, supabaseAdmin, userId) {
         .eq('id', task_id).select().single()
       updateErr = error
       updated = data
+      console.log('[checkin:executeTool] result:', JSON.stringify({ error, data }))
     } catch (e) {
       console.error('[checkin:tool] complete_task threw:', e)
       return { tool: 'complete_task', taskId: task_id, result: 'error', updatedTask: null }
@@ -253,6 +258,7 @@ async function executeTool(toolName, input, supabaseAdmin, userId) {
         .eq('id', task_id).select().single()
       updateErr = error
       updated = data
+      console.log('[checkin:executeTool] result:', JSON.stringify({ error, data }))
     } catch (e) {
       console.error('[checkin:tool] archive_task threw:', e)
       return { tool: 'archive_task', taskId: task_id, result: 'error', updatedTask: null }
@@ -288,6 +294,7 @@ async function executeTool(toolName, input, supabaseAdmin, userId) {
         .single()
       insertErr = error
       inserted = data
+      console.log('[checkin:executeTool] result:', JSON.stringify({ error, data }))
     } catch (e) {
       console.error('[checkin:tool] create_alarm threw:', e)
       return { tool: 'create_alarm', result: 'error', alarm: null }
@@ -308,6 +315,15 @@ async function executeTool(toolName, input, supabaseAdmin, userId) {
 
 // ── Context prompt builders ───────────────────────────────────────────────────
 
+function formatLocalTime(isoString, tz) {
+  return new Date(isoString).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: tz || 'America/Chicago'
+  })
+}
+
 function topTask(pending) {
   if (!pending.length) return null
   return pending.find(t => t.consequence_level === 'external' || t.due_time)
@@ -315,19 +331,18 @@ function topTask(pending) {
     || pending[0]
 }
 
-function fmtTaskLine(t) {
-  const due = t.due_time
-    ? new Date(t.due_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-    : 'none'
+function fmtTaskLine(t, tz) {
+  const due = t.due_time ? formatLocalTime(t.due_time, tz) : 'none'
   return `- "${t.title}" | id:${t.id} | due:${due} | external:${t.consequence_level === 'external'} | rolled:${t.rollover_count || 0}x`
 }
 
 function buildContextPrompt(checkInType, profile, pending, completed, isFirstCheckin, extra) {
   const rawName = profile.full_name || ''
   const name = rawName.includes('@') ? 'there' : (rawName.split(' ')[0] || 'there')
+  const { focusTask, focusDuration, timezone } = extra || {}
+  const tz = timezone || 'America/Chicago'
 
   if (checkInType === 'focus') {
-    const { focusTask, focusDuration } = extra || {}
     return `Focus mode. User: ${name}.
 They spent ${focusDuration || 25} minutes on "${focusTask || 'their task'}" and got stuck.
 Write 2 sentences. Ask one specific question to help them identify what's in the way. Be direct, no fluff.`
@@ -338,7 +353,7 @@ Write 2 sentences. Ask one specific question to help them identify what's in the
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
     const weekCompleted = completed.filter(t => t.completed_at && new Date(t.completed_at) > sevenDaysAgo)
     const weekWins = weekCompleted.length ? weekCompleted.map(t => `"${t.title}"`).join(', ') : 'nothing completed'
-    const pendingLines = pending.length ? pending.map(fmtTaskLine).join('\n') : '- none'
+    const pendingLines = pending.length ? pending.map(t => fmtTaskLine(t, tz)).join('\n') : '- none'
     return `Weekly review. User: ${name}.
 Completed this week: ${weekWins}.
 Still pending: ${pendingLines}.
@@ -349,14 +364,14 @@ Write 3 sentences. Name one specific win, one pattern you noticed, one thing to 
   const firstFlag = isFirstCheckin
     ? '\nThis is their very first check-in. Use the "Alright, first time working together." opener.'
     : ''
-  const pendingLines = pending.length ? pending.map(fmtTaskLine).join('\n') : '- none'
+  const pendingLines = pending.length ? pending.map(t => fmtTaskLine(t, tz)).join('\n') : '- none'
   const completedTitles = completed.length
     ? completed.map(t => `"${t.title}"`).join(', ')
     : 'nothing'
 
   if (checkInType === 'morning') {
     return `It's morning. User: ${name}.
-Top priority: ${top ? `"${top.title}" | id:${top.id}${top.due_time ? ` | due ${new Date(top.due_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : ''}${top.consequence_level === 'external' ? ' | external' : ''}` : 'none'}.
+Top priority: ${top ? `"${top.title}" | id:${top.id}${top.due_time ? ` | due ${formatLocalTime(top.due_time, tz)}` : ''}${top.consequence_level === 'external' ? ' | external' : ''}` : 'none'}.
 All pending tasks:
 ${pendingLines}${firstFlag}
 Write the opening morning check-in. 2-3 sentences max. Name the top task specifically. If you commit to checking in at a specific time, call schedule_morning_checkin.`
@@ -380,10 +395,12 @@ Write the evening check-in. 2-3 sentences. One specific win or honest acknowledg
 
 // ── Handler ──────────────────────────────────────────────────────────────────
 
+export const config = { maxDuration: 30 }
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { userId, checkInType, messages } = req.body
+  const { userId, checkInType, messages, timezone } = req.body
   if (!userId) return res.status(400).json({ error: 'userId required' })
 
   if (checkRateLimit(userId)) {
@@ -461,13 +478,13 @@ export default async function handler(req, res) {
   }
 
   if (isFirstCheckin) {
-    // fire-and-forget — don't block the response
-    supabaseAdmin.from('profiles')
+    // Awaited — must persist before response so "first time" opener never repeats
+    await supabaseAdmin.from('profiles')
       .update({ last_checkin_at: new Date().toISOString() })
       .eq('id', profile.id)
   }
 
-  const extra = { focusTask: req.body.focusTask, focusDuration: req.body.focusDuration }
+  const extra = { focusTask: req.body.focusTask, focusDuration: req.body.focusDuration, timezone }
   const contextPrompt = buildContextPrompt(type, profile, pending, completed, isFirstCheckin, extra)
   console.log('[checkin] context prompt:\n', contextPrompt)
 
