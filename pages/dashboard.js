@@ -346,8 +346,10 @@ export default function Dashboard() {
   // Themes
   const [activeTheme, setActiveTheme] = useState(THEMES[0])
 
-  // Focus subtab
+  // Focus subtab (kept for any legacy refs)
   const [focusSubTab, setFocusSubTab] = useState('session')
+  // Focus accordion section
+  const [focusSection, setFocusSection] = useState('session')
 
   // Progress time band
   const [progressBand, setProgressBand] = useState('week')
@@ -1607,152 +1609,181 @@ export default function Dashboard() {
           {/* ── FOCUS ── */}
           {activeTab === 'focus' && (
             <div className={styles.focusView}>
-              {/* Sub-tab nav */}
-              <div className={styles.focusSubNav}>
-                {[['session','⏱','Session'],['fuel','🥗','Fuel'],['move','🏃','Move'],['supplements','💊','Supplements']].map(([id, icon, label]) => (
-                  <button key={id} onClick={() => setFocusSubTab(id)}
-                    className={`${styles.focusSubNavBtn} ${focusSubTab === id ? styles.focusSubNavBtnActive : ''}`}>
-                    <span className={styles.subTabIcon}>{icon}</span>
-                    <span className={styles.subTabLabel}>{label}</span>
-                  </button>
-                ))}
-              </div>
+              <div className={styles.focusAccordion}>
 
-              {/* SESSION */}
-              {focusSubTab === 'session' && <>
-                {focusPhase === 'setup' && (
-                  <div className={styles.focusSetup}>
-                    <p className={styles.focusSetupLabel}>{topTask?.due_time ? 'Time sensitive task' : 'Focus task'}</p>
-                    <h2 className={styles.focusSetupTask}>{topTask?.title || 'No tasks — add one first'}</h2>
-                    {topTask && topTaskCountdown && (
-                      <p style={{ fontSize: '13px', color: 'var(--accent)', opacity: 0.8, margin: '-8px 0 16px', fontWeight: 600 }}>{topTaskCountdown}</p>
-                    )}
-                    {topTask && (
-                      <>
-                        <p className={styles.focusDurationLabel}>Session length</p>
-                        <div className={styles.focusDurationRow} style={{ flexWrap: 'wrap', gap: '8px' }}>
-                          {[15, 25, 45].map(d => (
-                            <button key={d}
-                              onClick={() => { setFocusDuration(d); setFocusCustom('') }}
-                              className={`${styles.focusDurationBtn} ${focusDuration === d && !focusCustom ? styles.focusDurationBtnActive : ''}`}>
-                              {d}m
-                            </button>
-                          ))}
-                          <input type="number" placeholder="Custom" value={focusCustom}
-                            onChange={e => { setFocusCustom(e.target.value); setFocusDuration(0) }}
-                            className={styles.focusCustomInput} min="1" max="180"
-                            style={{ minWidth: '80px', padding: '8px 16px', whiteSpace: 'nowrap' }} />
+                {/* ── ⏱ SESSION ── */}
+                <div className={`${styles.focusAccordionCard} ${focusSection === 'session' ? styles.focusAccordionCardOpen : ''}`}>
+                  <div className={styles.focusAccordionHeader} onClick={() => setFocusSection(focusSection === 'session' ? null : 'session')}>
+                    <span className={styles.focusAccordionEmoji}>⏱</span>
+                    <span className={styles.focusAccordionTitle}>Session</span>
+                    <span className={styles.focusAccordionChevron}>▼</span>
+                  </div>
+                  {focusSection === 'session' && (
+                    <div className={styles.focusAccordionContent}>
+                      {focusPhase === 'setup' && (
+                        <div className={styles.focusSetup}>
+                          <p className={styles.focusSetupLabel}>{topTask?.due_time ? 'Time sensitive task' : 'Focus task'}</p>
+                          <h2 className={styles.focusSetupTask}>{topTask?.title || 'No tasks — add one first'}</h2>
+                          {topTask && topTaskCountdown && (
+                            <p style={{ fontSize: '13px', color: 'var(--accent)', opacity: 0.8, margin: '-8px 0 16px', fontWeight: 600 }}>{topTaskCountdown}</p>
+                          )}
+                          {topTask && (
+                            <>
+                              <p className={styles.focusDurationLabel}>Session length</p>
+                              <div className={styles.focusDurationRow} style={{ flexWrap: 'wrap', gap: '8px' }}>
+                                {[15, 25, 45].map(d => (
+                                  <button key={d}
+                                    onClick={() => { setFocusDuration(d); setFocusCustom('') }}
+                                    className={`${styles.focusDurationBtn} ${focusDuration === d && !focusCustom ? styles.focusDurationBtnActive : ''}`}>
+                                    {d}m
+                                  </button>
+                                ))}
+                                <input type="number" placeholder="Custom" value={focusCustom}
+                                  onChange={e => { setFocusCustom(e.target.value); setFocusDuration(0) }}
+                                  className={styles.focusCustomInput} min="1" max="180"
+                                  style={{ minWidth: '80px', padding: '8px 16px', whiteSpace: 'nowrap' }} />
+                              </div>
+                              <button onClick={startFocus} className={styles.focusStartBtn}>Start session →</button>
+                            </>
+                          )}
+                          {!topTask && <button onClick={() => setShowAddModal(true)} className={styles.focusStartBtn}>+ Add a task</button>}
+                          <div className={styles.focusMusicStub}>
+                            🎵 Music — connect Spotify, Apple Music, or YouTube in Settings
+                          </div>
                         </div>
-                        <button onClick={startFocus} className={styles.focusStartBtn}>Start session →</button>
-                      </>
-                    )}
-                    {!topTask && <button onClick={() => setShowAddModal(true)} className={styles.focusStartBtn}>+ Add a task</button>}
-                    <div className={styles.focusMusicStub}>
-                      🎵 Music — connect Spotify, Apple Music, or YouTube in Settings
+                      )}
+                      {focusPhase === 'active' && (
+                        <div className={styles.focusActive}>
+                          <p className={styles.focusActiveTask}>{topTask?.title}</p>
+                          <div className={styles.focusTimerDisplay}>{formatTimer(focusTimeLeft)}</div>
+                          <button onClick={toggleFocusPause} className={styles.focusPauseBtn}>{focusRunning ? 'Pause' : 'Resume'}</button>
+                          <button onClick={() => { clearInterval(focusIntervalRef.current); setFocusPhase('setup') }} className={styles.focusAbandonBtn}>Abandon session</button>
+                        </div>
+                      )}
+                      {focusPhase === 'complete' && (
+                        <div className={styles.focusComplete}>
+                          <p className={styles.focusCompleteHeading}>Time's up.</p>
+                          <p className={styles.focusCompleteTask}>{topTask?.title}</p>
+                          <p className={styles.focusCompletePrompt}>How'd it go?</p>
+                          <div className={styles.focusResultBtns}>
+                            <button onClick={() => handleFocusResult('complete')} className={styles.focusResultBtn}>Nailed it ✓</button>
+                            <button onClick={() => handleFocusResult('progress')} className={`${styles.focusResultBtn} ${styles.focusResultBtnSecondary}`}>Made progress →</button>
+                            <button onClick={() => handleFocusResult('stuck')} className={`${styles.focusResultBtn} ${styles.focusResultBtnSecondary}`}>Got stuck, help me</button>
+                          </div>
+                        </div>
+                      )}
+                      {focusPhase === 'stuck' && (
+                        <div className={styles.focusStuck}>
+                          <p className={styles.focusStuckLabel}>FocusBuddy</p>
+                          {focusAiLoading ? <div className={styles.focusStuckBubble}><span className={styles.checkinTyping}>···</span></div>
+                            : <div className={styles.focusStuckBubble}>{focusAiResponse}</div>}
+                          <div className={styles.focusStuckActions}>
+                            <button onClick={() => setFocusPhase('setup')} className={styles.focusStuckBtn}>Try again</button>
+                            <button onClick={() => switchTab('tasks')} className={`${styles.focusStuckBtn} ${styles.focusStuckBtnGhost}`}>Back to tasks</button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )}
-                {focusPhase === 'active' && (
-                  <div className={styles.focusActive}>
-                    <p className={styles.focusActiveTask}>{topTask?.title}</p>
-                    <div className={styles.focusTimerDisplay}>{formatTimer(focusTimeLeft)}</div>
-                    <button onClick={toggleFocusPause} className={styles.focusPauseBtn}>{focusRunning ? 'Pause' : 'Resume'}</button>
-                    <button onClick={() => { clearInterval(focusIntervalRef.current); setFocusPhase('setup') }} className={styles.focusAbandonBtn}>Abandon session</button>
-                  </div>
-                )}
-                {focusPhase === 'complete' && (
-                  <div className={styles.focusComplete}>
-                    <p className={styles.focusCompleteHeading}>Time's up.</p>
-                    <p className={styles.focusCompleteTask}>{topTask?.title}</p>
-                    <p className={styles.focusCompletePrompt}>How'd it go?</p>
-                    <div className={styles.focusResultBtns}>
-                      <button onClick={() => handleFocusResult('complete')} className={styles.focusResultBtn}>Nailed it ✓</button>
-                      <button onClick={() => handleFocusResult('progress')} className={`${styles.focusResultBtn} ${styles.focusResultBtnSecondary}`}>Made progress →</button>
-                      <button onClick={() => handleFocusResult('stuck')} className={`${styles.focusResultBtn} ${styles.focusResultBtnSecondary}`}>Got stuck, help me</button>
-                    </div>
-                  </div>
-                )}
-                {focusPhase === 'stuck' && (
-                  <div className={styles.focusStuck}>
-                    <p className={styles.focusStuckLabel}>FocusBuddy</p>
-                    {focusAiLoading ? <div className={styles.focusStuckBubble}><span className={styles.checkinTyping}>···</span></div>
-                      : <div className={styles.focusStuckBubble}>{focusAiResponse}</div>}
-                    <div className={styles.focusStuckActions}>
-                      <button onClick={() => setFocusPhase('setup')} className={styles.focusStuckBtn}>Try again</button>
-                      <button onClick={() => switchTab('tasks')} className={`${styles.focusStuckBtn} ${styles.focusStuckBtnGhost}`}>Back to tasks</button>
-                    </div>
-                  </div>
-                )}
-              </>}
+                  )}
+                </div>
 
-              {/* FUEL */}
-              {focusSubTab === 'fuel' && (
-                <div className={styles.focusContentCards}>
-                  <h2 className={styles.focusContentTitle}>Fuel your focus</h2>
-                  <p className={styles.focusContentSub}>What you eat before a session matters. Keep it simple.</p>
-                  {[
-                    { icon: '🥚', title: 'Protein first', body: 'Eggs, Greek yogurt, or a handful of nuts before a session. Protein stabilizes blood sugar and prevents the mid-session crash that hits ~90 minutes after a high-carb meal.' },
-                    { icon: '🍠', title: 'Complex carbs for sustained energy', body: 'Oats, sweet potato, or whole grain bread 1-2 hours before a long session. They release energy slowly — no spike, no crash. Avoid simple carbs right before starting.' },
-                    { icon: '💧', title: 'Hydration is non-negotiable', body: "Even mild dehydration (1-2%) measurably impairs cognitive function. Drink 500ml of water before your session starts. Keep a glass nearby — you'll drink more if it's visible." },
-                    { icon: '☕', title: 'Caffeine timing', body: 'Wait 90 minutes after waking before your first coffee. This avoids crashing through your cortisol peak. Caffeine peaks at 30-60 min — time it to start just before your session. Cut off by 2pm to protect sleep.' },
-                    { icon: '🚫', title: 'What to avoid', body: 'Heavy meals right before a session send blood flow to your gut. Alcohol the night before fragments sleep and tanks focus the next day. Ultra-processed foods cause inflammation that slows thinking.' },
-                  ].map(({ icon, title, body }) => (
-                    <div key={title} className={styles.focusContentCard}>
-                      <span className={styles.focusContentCardIcon}>{icon}</span>
-                      <div>
-                        <p className={styles.focusContentCardTitle}>{title}</p>
-                        <p className={styles.focusContentCardBody}>{body}</p>
+                {/* ── 🥗 FUEL ── */}
+                <div className={`${styles.focusAccordionCard} ${focusSection === 'fuel' ? styles.focusAccordionCardOpen : ''}`}>
+                  <div className={styles.focusAccordionHeader} onClick={() => setFocusSection(focusSection === 'fuel' ? null : 'fuel')}>
+                    <span className={styles.focusAccordionEmoji}>🥗</span>
+                    <span className={styles.focusAccordionTitle}>Fuel Your Focus</span>
+                    <span className={styles.focusAccordionChevron}>▼</span>
+                  </div>
+                  {focusSection === 'fuel' && (
+                    <div className={styles.focusAccordionContent}>
+                      <div className={styles.focusContentCards}>
+                        <h2 className={styles.focusContentTitle}>Fuel your focus</h2>
+                        <p className={styles.focusContentSub}>What you eat before a session matters. Keep it simple.</p>
+                        {[
+                          { icon: '🥚', title: 'Protein first', body: 'Eggs, Greek yogurt, or a handful of nuts before a session. Protein stabilizes blood sugar and prevents the mid-session crash that hits ~90 minutes after a high-carb meal.' },
+                          { icon: '🍠', title: 'Complex carbs for sustained energy', body: 'Oats, sweet potato, or whole grain bread 1-2 hours before a long session. They release energy slowly — no spike, no crash. Avoid simple carbs right before starting.' },
+                          { icon: '💧', title: 'Hydration is non-negotiable', body: "Even mild dehydration (1-2%) measurably impairs cognitive function. Drink 500ml of water before your session starts. Keep a glass nearby — you'll drink more if it's visible." },
+                          { icon: '☕', title: 'Caffeine timing', body: 'Wait 90 minutes after waking before your first coffee. This avoids crashing through your cortisol peak. Caffeine peaks at 30-60 min — time it to start just before your session. Cut off by 2pm to protect sleep.' },
+                          { icon: '🚫', title: 'What to avoid', body: 'Heavy meals right before a session send blood flow to your gut. Alcohol the night before fragments sleep and tanks focus the next day. Ultra-processed foods cause inflammation that slows thinking.' },
+                        ].map(({ icon, title, body }) => (
+                          <div key={title} className={styles.focusContentCard}>
+                            <span className={styles.focusContentCardIcon}>{icon}</span>
+                            <div>
+                              <p className={styles.focusContentCardTitle}>{title}</p>
+                              <p className={styles.focusContentCardBody}>{body}</p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
 
-              {/* MOVE */}
-              {focusSubTab === 'move' && (
-                <div className={styles.focusContentCards}>
-                  <h2 className={styles.focusContentTitle}>Move to think better</h2>
-                  <p className={styles.focusContentSub}>Physical activity directly improves executive function. Here's how to use it.</p>
-                  {[
-                    { icon: '🚶', title: '10-minute walk before a hard task', body: "A brisk 10-minute walk before a focus session increases BDNF (brain-derived neurotrophic factor) and blood flow to the prefrontal cortex. It's the single most evidence-backed pre-work ritual for cognitive performance." },
-                    { icon: '🪑', title: 'Desk stretches every 45 minutes', body: 'Neck rolls, shoulder circles, chest opener, hip flexor stretch. Takes 2 minutes. Sitting compresses the spine and restricts blood flow — brief movement resets your posture and attention.' },
-                    { icon: '⏱️', title: 'Exercise timing for focus', body: "Morning exercise improves attention for 2-4 hours after. Afternoon exercise (3-5pm) can extend peak focus into the evening. Avoid intense exercise within 3 hours of a critical cognitive task — you'll feel great but your working memory takes a temporary hit." },
-                    { icon: '🧘', title: '5-minute breathing reset', body: "Box breathing: 4 counts in, 4 hold, 4 out, 4 hold. 5 rounds. Activates the parasympathetic nervous system and lowers cortisol. Use this before a session you've been dreading or when you hit a wall." },
-                    { icon: '🏃', title: 'Exercise and ADHD', body: 'Regular aerobic exercise is one of the most powerful non-pharmacological interventions for attention and impulse control. Even 20 minutes of moderate-intensity cardio produces dopamine and norepinephrine — the same targets as stimulant medications.' },
-                  ].map(({ icon, title, body }) => (
-                    <div key={title} className={styles.focusContentCard}>
-                      <span className={styles.focusContentCardIcon}>{icon}</span>
-                      <div>
-                        <p className={styles.focusContentCardTitle}>{title}</p>
-                        <p className={styles.focusContentCardBody}>{body}</p>
+                {/* ── 🏃 MOVE ── */}
+                <div className={`${styles.focusAccordionCard} ${focusSection === 'move' ? styles.focusAccordionCardOpen : ''}`}>
+                  <div className={styles.focusAccordionHeader} onClick={() => setFocusSection(focusSection === 'move' ? null : 'move')}>
+                    <span className={styles.focusAccordionEmoji}>🏃</span>
+                    <span className={styles.focusAccordionTitle}>Move</span>
+                    <span className={styles.focusAccordionChevron}>▼</span>
+                  </div>
+                  {focusSection === 'move' && (
+                    <div className={styles.focusAccordionContent}>
+                      <div className={styles.focusContentCards}>
+                        <h2 className={styles.focusContentTitle}>Move to think better</h2>
+                        <p className={styles.focusContentSub}>Physical activity directly improves executive function. Here's how to use it.</p>
+                        {[
+                          { icon: '🚶', title: '10-minute walk before a hard task', body: "A brisk 10-minute walk before a focus session increases BDNF (brain-derived neurotrophic factor) and blood flow to the prefrontal cortex. It's the single most evidence-backed pre-work ritual for cognitive performance." },
+                          { icon: '🪑', title: 'Desk stretches every 45 minutes', body: 'Neck rolls, shoulder circles, chest opener, hip flexor stretch. Takes 2 minutes. Sitting compresses the spine and restricts blood flow — brief movement resets your posture and attention.' },
+                          { icon: '⏱️', title: 'Exercise timing for focus', body: "Morning exercise improves attention for 2-4 hours after. Afternoon exercise (3-5pm) can extend peak focus into the evening. Avoid intense exercise within 3 hours of a critical cognitive task — you'll feel great but your working memory takes a temporary hit." },
+                          { icon: '🧘', title: '5-minute breathing reset', body: "Box breathing: 4 counts in, 4 hold, 4 out, 4 hold. 5 rounds. Activates the parasympathetic nervous system and lowers cortisol. Use this before a session you've been dreading or when you hit a wall." },
+                          { icon: '🏃', title: 'Exercise and ADHD', body: 'Regular aerobic exercise is one of the most powerful non-pharmacological interventions for attention and impulse control. Even 20 minutes of moderate-intensity cardio produces dopamine and norepinephrine — the same targets as stimulant medications.' },
+                        ].map(({ icon, title, body }) => (
+                          <div key={title} className={styles.focusContentCard}>
+                            <span className={styles.focusContentCardIcon}>{icon}</span>
+                            <div>
+                              <p className={styles.focusContentCardTitle}>{title}</p>
+                              <p className={styles.focusContentCardBody}>{body}</p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
 
-              {/* SUPPLEMENTS */}
-              {focusSubTab === 'supplements' && (
-                <div className={styles.focusContentCards}>
-                  <h2 className={styles.focusContentTitle}>Evidence-based supplements</h2>
-                  <p className={styles.focusContentSub}>Always consult your doctor before starting any supplement, especially if you take medication.</p>
-                  {[
-                    { icon: '🐟', title: 'Omega-3 (EPA/DHA)', body: 'The most studied supplement for cognitive function. EPA and DHA are structural components of brain cell membranes and support communication between neurons. 1-2g of combined EPA/DHA daily. Effects build over weeks, not days.' },
-                    { icon: '🧲', title: 'Magnesium glycinate', body: 'Most people are deficient. Magnesium plays a role in over 300 enzymatic reactions, including those involved in energy production and nerve function. Glycinate form is best absorbed and gentlest on the stomach. 200-400mg before bed also improves sleep quality.' },
-                    { icon: '🍵', title: 'L-Theanine + Caffeine', body: 'The gold standard focus stack. L-theanine (100-200mg) taken with caffeine smooths out the jitteriness, extends the focus window, and reduces the crash. Found naturally together in green tea. Widely studied, consistently well-tolerated.' },
-                    { icon: '🌿', title: 'Bacopa monnieri', body: 'An adaptogenic herb with some of the strongest evidence for improving memory consolidation and reducing cognitive anxiety. Effects take 8-12 weeks to build. Take with fat. Recommended dose: 300-450mg of a 55% bacosides extract.' },
-                    { icon: '⚠️', title: 'A word on stacking', body: "More is not better. Start with one supplement, give it 4-6 weeks, evaluate honestly. Supplements work best on top of fundamentals — sleep, exercise, and nutrition. No supplement compensates for poor sleep. Talk to your doctor, especially if you take any medications." },
-                  ].map(({ icon, title, body }) => (
-                    <div key={title} className={styles.focusContentCard}>
-                      <span className={styles.focusContentCardIcon}>{icon}</span>
-                      <div>
-                        <p className={styles.focusContentCardTitle}>{title}</p>
-                        <p className={styles.focusContentCardBody}>{body}</p>
+                {/* ── 💊 SUPPLEMENTS ── */}
+                <div className={`${styles.focusAccordionCard} ${focusSection === 'supplements' ? styles.focusAccordionCardOpen : ''}`}>
+                  <div className={styles.focusAccordionHeader} onClick={() => setFocusSection(focusSection === 'supplements' ? null : 'supplements')}>
+                    <span className={styles.focusAccordionEmoji}>💊</span>
+                    <span className={styles.focusAccordionTitle}>Supplements</span>
+                    <span className={styles.focusAccordionChevron}>▼</span>
+                  </div>
+                  {focusSection === 'supplements' && (
+                    <div className={styles.focusAccordionContent}>
+                      <div className={styles.focusContentCards}>
+                        <h2 className={styles.focusContentTitle}>Evidence-based supplements</h2>
+                        <p className={styles.focusContentSub}>Always consult your doctor before starting any supplement, especially if you take medication.</p>
+                        {[
+                          { icon: '🐟', title: 'Omega-3 (EPA/DHA)', body: 'The most studied supplement for cognitive function. EPA and DHA are structural components of brain cell membranes and support communication between neurons. 1-2g of combined EPA/DHA daily. Effects build over weeks, not days.' },
+                          { icon: '🧲', title: 'Magnesium glycinate', body: 'Most people are deficient. Magnesium plays a role in over 300 enzymatic reactions, including those involved in energy production and nerve function. Glycinate form is best absorbed and gentlest on the stomach. 200-400mg before bed also improves sleep quality.' },
+                          { icon: '🍵', title: 'L-Theanine + Caffeine', body: 'The gold standard focus stack. L-theanine (100-200mg) taken with caffeine smooths out the jitteriness, extends the focus window, and reduces the crash. Found naturally together in green tea. Widely studied, consistently well-tolerated.' },
+                          { icon: '🌿', title: 'Bacopa monnieri', body: 'An adaptogenic herb with some of the strongest evidence for improving memory consolidation and reducing cognitive anxiety. Effects take 8-12 weeks to build. Take with fat. Recommended dose: 300-450mg of a 55% bacosides extract.' },
+                          { icon: '⚠️', title: 'A word on stacking', body: "More is not better. Start with one supplement, give it 4-6 weeks, evaluate honestly. Supplements work best on top of fundamentals — sleep, exercise, and nutrition. No supplement compensates for poor sleep. Talk to your doctor, especially if you take any medications." },
+                        ].map(({ icon, title, body }) => (
+                          <div key={title} className={styles.focusContentCard}>
+                            <span className={styles.focusContentCardIcon}>{icon}</span>
+                            <div>
+                              <p className={styles.focusContentCardTitle}>{title}</p>
+                              <p className={styles.focusContentCardBody}>{body}</p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
+
+              </div>
             </div>
           )}
 

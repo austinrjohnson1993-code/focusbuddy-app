@@ -1598,6 +1598,20 @@
 .focusSubNavBtnActive .subTabLabel { color: var(--accent); }
 .focusSubNavBtnActive .subTabIcon { opacity: 1; }
 
+/* ── Focus accordion ── */
+.focusAccordion { display: flex; flex-direction: column; gap: 8px; }
+.focusAccordionCard { background: rgba(255,255,255,0.04); border-radius: 12px; overflow: hidden; }
+.focusAccordionHeader {
+  display: flex; align-items: center; gap: 10px; padding: 14px 16px; cursor: pointer;
+  user-select: none; transition: background 0.15s;
+}
+.focusAccordionHeader:hover { background: rgba(255,255,255,0.04); }
+.focusAccordionEmoji { font-size: 20px; flex-shrink: 0; }
+.focusAccordionTitle { font-weight: 600; font-size: 15px; flex: 1; color: #f0ead6; }
+.focusAccordionChevron { opacity: 0.5; font-size: 12px; transition: transform 0.2s ease; margin-left: auto; }
+.focusAccordionCardOpen .focusAccordionChevron { transform: rotate(180deg); }
+.focusAccordionContent { padding: 0 16px 16px; }
+
 .focusContentCards { width: 100%; }
 .focusContentTitle {
   font-family: 'Playfair Display', serif; font-weight: 900; font-size: 1.5rem;
@@ -1767,13 +1781,13 @@
   font-style: italic; line-height: 1.5;
 }
 .learnCardHeader {
-  display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none;
+  display: flex; align-items: center; gap: 10px; padding: 14px 16px; cursor: pointer; user-select: none;
 }
+.learnCardEmoji { font-size: 20px; flex-shrink: 0; }
 .learnCardHeader .learnCardIcon { font-size: 20px; margin-bottom: 0; flex-shrink: 0; }
-.learnCardHeader .learnCardTitle { margin-bottom: 0; flex: 1; }
+.learnCardHeader .learnCardTitle { margin-bottom: 0; flex: 1; font-size: 15px; font-weight: 600; }
 .learnCardChevron {
-  font-size: 12px; color: rgba(240,234,214,0.4);
-  transition: transform 0.2s ease; flex-shrink: 0;
+  font-size: 12px; opacity: 0.5; transition: transform 0.2s ease; flex-shrink: 0; margin-left: auto;
 }
 .learnCardExpanded .learnCardChevron { transform: rotate(180deg); }
 .learnCardContent { margin-top: 14px; }
