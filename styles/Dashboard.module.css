@@ -1513,3 +1513,12 @@
   .progressStats { gap: 8px; }
   .progressStatNum { font-size: 1.6rem; }
 }
+
+/* ── Drag handle ── */
+.dragHandle {
+  width: 16px; height: 100%; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; cursor: grab; color: rgba(240,234,214,0.2);
+  transition: color 0.2s;
+}
+.dragHandle:hover { color: rgba(240,234,214,0.45); }
+.dragHandle:active { cursor: grabbing; }

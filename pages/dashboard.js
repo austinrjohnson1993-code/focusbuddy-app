@@ -1,8 +1,14 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 import styles from '../styles/Dashboard.module.css'
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
+import SortableTaskCard from '../components/SortableTaskCard'
+import { applyAccentColor, DEFAULT_ACCENTS } from '../lib/accentColor'
+import { saveTaskOrder } from '../lib/taskOrder'
+import { isDueSoon as billIsDueSoon, formatBillAmount, getBillCategory, getNextDueDate } from '../lib/billUtils'
 
 const NAV_ITEMS = [
   { id: 'tasks', label: 'Tasks', icon: (
@@ -159,13 +165,6 @@ const PERSONA_BADGE = ['Primary', 'Supporting', 'Accent']
 
 const BILL_CATEGORIES = ['Housing', 'Utilities', 'Subscriptions', 'Insurance', 'Transport', 'Food', 'Health', 'Other']
 
-const ACCENT_COLORS = [
-  { value: '#ff4d1c', label: 'Orange' },
-  { value: '#00b5a5', label: 'Teal' },
-  { value: '#8b5cf6', label: 'Purple' },
-  { value: '#3b82f6', label: 'Blue' },
-  { value: '#22c55e', label: 'Green' },
-]
 
 function getCheckinType() {
   const h = new Date().getHours()
@@ -310,11 +309,7 @@ export default function Dashboard() {
   }, [detailTask?.id])
 
   useEffect(() => {
-    if (profile?.accent_color) {
-      document.documentElement.style.setProperty('--accent', profile.accent_color)
-    } else {
-      document.documentElement.style.setProperty('--accent', '#ff4d1c')
-    }
+    applyAccentColor(profile?.accent_color)
     if (profile?.full_name) setSettingsName(profile.full_name)
   }, [profile])
 
@@ -379,6 +374,7 @@ export default function Dashboard() {
   const fetchTasks = async (userId) => {
     const { data } = await supabase
       .from('tasks').select('*').eq('user_id', userId).eq('archived', false)
+      .order('sort_order', { ascending: true, nullsLast: true })
       .order('created_at', { ascending: false })
     setTasks(data || [])
     setLoading(false)
@@ -576,6 +572,7 @@ export default function Dashboard() {
       const data = await res.json()
       if (data.message) setCheckinMessages(prev => [...prev, { role: 'assistant', content: data.message }])
       fetchTasks(user.id)
+      if (billsLoaded) fetchBills(user.id)
     } catch {
       setCheckinMessages(prev => [...prev, { role: 'assistant', content: "I'm here. Keep going." }])
     }
@@ -669,9 +666,9 @@ export default function Dashboard() {
     } else if (result === 'stuck') {
       setFocusPhase('stuck'); setFocusAiLoading(true)
       try {
-        const res = await fetch('/api/checkin', {
+        const res = await fetch('/api/focus', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id, checkInType: 'focus', focusTask: topTask?.title, focusDuration: dur })
+          body: JSON.stringify({ userId: user.id, outcome: 'stuck', taskTitle: topTask?.title, focusDuration: dur })
         })
         const data = await res.json()
         setFocusAiResponse(data.message || "What felt hardest about starting that?")
@@ -710,16 +707,26 @@ export default function Dashboard() {
   const saveSettings = async () => {
     if (!user || !settingsName.trim()) return
     setSettingsSaving(true)
-    await supabase.from('profiles').update({ full_name: settingsName.trim() }).eq('id', user.id)
+    await fetch('/api/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.id, updates: { full_name: settingsName.trim() } }),
+    })
     setProfile(prev => ({ ...prev, full_name: settingsName.trim() }))
     setSettingsSaving(false)
     showToast('Settings saved')
   }
 
   const saveAccentColor = async (color) => {
-    document.documentElement.style.setProperty('--accent', color)
+    applyAccentColor(color)
     setProfile(prev => ({ ...prev, accent_color: color }))
-    if (user) await supabase.from('profiles').update({ accent_color: color }).eq('id', user.id)
+    if (user) {
+      await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, updates: { accent_color: color } }),
+      })
+    }
   }
 
   // ── Persona ───────────────────────────────────────────────────────────────
@@ -775,6 +782,20 @@ export default function Dashboard() {
 
   const switchTab = (id) => {
     setActiveTab(id); setShowMoreDrawer(false)
+  }
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+
+  const handleDragEnd = async (event) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = pendingTasks.findIndex(t => t.id === active.id)
+    const newIndex = pendingTasks.findIndex(t => t.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+    const reordered = arrayMove(pendingTasks, oldIndex, newIndex)
+    // Optimistic update: merge reordered pending with completed
+    setTasks([...reordered, ...completedTasks])
+    await saveTaskOrder(user.id, reordered.map(t => t.id))
   }
 
   // ── Calendar helpers ──────────────────────────────────────────────────────
@@ -972,33 +993,39 @@ export default function Dashboard() {
               )}
 
               {restTasks.length > 0 && (
-                <div className={styles.taskGroup}>
-                  <div className={styles.taskGroupLabel}>Up next</div>
-                  {restTasks.map(task => {
-                    const dueFmt = task.due_time ? formatDueTime(task.due_time) : null
-                    return (
-                      <div key={task.id} className={styles.taskCard}>
-                        <button onClick={() => completeTask(task)} className={styles.taskCheck} aria-label="Complete" />
-                        <div className={styles.taskInfo} onClick={() => setDetailTask(task)} style={{ cursor: 'pointer' }}>
-                          <span className={styles.taskTitle}>{task.title}</span>
-                          {task.notes && <span className={styles.taskNotes}>{task.notes}</span>}
-                          <div className={styles.taskMeta}>
-                            {dueFmt && <span className={`${styles.taskDueTime} ${dueFmt.urgent ? styles.taskDueUrgent : ''}`}>{dueFmt.label}</span>}
-                            {task.rollover_count > 0 && <span className={styles.taskRollover}>↷ {task.rollover_count}×</span>}
-                            {task.consequence_level === 'external' && <span className={styles.taskExternal}>External</span>}
-                            {task.recurrence && task.recurrence !== 'none' && <span className={styles.taskRecurrence}>↻ {task.recurrence}</span>}
-                          </div>
-                        </div>
-                        <div className={styles.taskActions}>
-                          <button onClick={() => rescheduleTask(task)} className={styles.taskAction} title="Push to tomorrow">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
-                          </button>
-                          <button onClick={() => archiveTask(task)} className={styles.taskActionDelete} title="Remove">×</button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={restTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                    <div className={styles.taskGroup}>
+                      <div className={styles.taskGroupLabel}>Up next</div>
+                      {restTasks.map(task => {
+                        const dueFmt = task.due_time ? formatDueTime(task.due_time) : null
+                        return (
+                          <SortableTaskCard key={task.id} id={task.id}>
+                            <div className={styles.taskCard}>
+                              <button onClick={() => completeTask(task)} className={styles.taskCheck} aria-label="Complete" />
+                              <div className={styles.taskInfo} onClick={() => setDetailTask(task)} style={{ cursor: 'pointer' }}>
+                                <span className={styles.taskTitle}>{task.title}</span>
+                                {task.notes && <span className={styles.taskNotes}>{task.notes}</span>}
+                                <div className={styles.taskMeta}>
+                                  {dueFmt && <span className={`${styles.taskDueTime} ${dueFmt.urgent ? styles.taskDueUrgent : ''}`}>{dueFmt.label}</span>}
+                                  {task.rollover_count > 0 && <span className={styles.taskRollover}>↷ {task.rollover_count}×</span>}
+                                  {task.consequence_level === 'external' && <span className={styles.taskExternal}>External</span>}
+                                  {task.recurrence && task.recurrence !== 'none' && <span className={styles.taskRecurrence}>↻ {task.recurrence}</span>}
+                                </div>
+                              </div>
+                              <div className={styles.taskActions}>
+                                <button onClick={() => rescheduleTask(task)} className={styles.taskAction} title="Push to tomorrow">
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+                                </button>
+                                <button onClick={() => archiveTask(task)} className={styles.taskActionDelete} title="Remove">×</button>
+                              </div>
+                            </div>
+                          </SortableTaskCard>
+                        )
+                      })}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               )}
 
               {pendingTasks.length === 0 && completedTasks.length === 0 && (
@@ -1172,6 +1199,15 @@ export default function Dashboard() {
             for (let d = 1; d <= daysInMonth; d++) cells.push(d)
             while (cells.length % 7 !== 0) cells.push(null)
             const monthOccurrences = getTaskOccurrencesForMonth(tasks, year, month)
+            // Bills with due_day in this month
+            const billDueDays = {}
+            bills.forEach(b => {
+              if (b.due_day) {
+                const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(b.due_day).padStart(2, '0')}`
+                if (!billDueDays[dStr]) billDueDays[dStr] = []
+                billDueDays[dStr].push(b)
+              }
+            })
 
             if (calView === 'day' && calDay) {
               const dayDStr = localDateStr(calDay)
@@ -1262,18 +1298,22 @@ export default function Dashboard() {
                     if (!day) return <div key={idx} className={styles.calCellEmpty} />
                     const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
                     const dayTasks = monthOccurrences[dStr] || []
+                    const dayBills = billDueDays[dStr] || []
                     const isToday = dStr === todayDStr
                     return (
                       <div key={idx} className={`${styles.calCell} ${isToday ? styles.calCellToday : ''}`}
                         onClick={() => { setCalDay(new Date(year, month, day)); setCalView('day') }}>
                         <span className={styles.calCellNum}>{day}</span>
-                        {dayTasks.length > 0 && (
+                        {(dayTasks.length > 0 || dayBills.length > 0) && (
                           <div className={styles.calDots}>
-                            {dayTasks.slice(0, 3).map((t, di) => (
-                              <span key={di} className={styles.calDot}
-                                style={{ background: t.consequence_level === 'external' ? '#ff4d1c' : 'rgba(240,234,214,0.4)' }} />
+                            {dayTasks.slice(0, 2).map((t, di) => (
+                              <span key={`t${di}`} className={styles.calDot}
+                                style={{ background: t.consequence_level === 'external' ? 'var(--accent)' : 'rgba(240,234,214,0.4)' }} />
                             ))}
-                            {dayTasks.length > 3 && <span className={styles.calDotMore}>+</span>}
+                            {dayBills.slice(0, 1).map((b, bi) => (
+                              <span key={`b${bi}`} className={styles.calDot} style={{ background: '#00b5a5' }} />
+                            ))}
+                            {(dayTasks.length + dayBills.length) > 3 && <span className={styles.calDotMore}>+</span>}
                           </div>
                         )}
                       </div>
@@ -1476,7 +1516,7 @@ export default function Dashboard() {
                     </div>
                     <div className={styles.settingsRowRight}>
                       <div className={styles.accentSwatches}>
-                        {ACCENT_COLORS.map(({ value, label }) => (
+                        {DEFAULT_ACCENTS.map(({ value, label }) => (
                           <button key={value} title={label}
                             onClick={() => saveAccentColor(value)}
                             className={`${styles.accentSwatch} ${(profile?.accent_color || '#ff4d1c') === value ? styles.accentSwatchActive : ''}`}

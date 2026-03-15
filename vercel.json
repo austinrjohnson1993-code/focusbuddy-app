@@ -1,8 +1,6 @@
 {
   "crons": [
-    {
-      "path": "/api/cron/evening-checkin",
-      "schedule": "0 20 * * *"
-    }
+    { "path": "/api/cron/evening-checkin", "schedule": "0 20 * * *" },
+    { "path": "/api/cron/morning-checkin", "schedule": "0 8 * * *" }
   ]
 }
