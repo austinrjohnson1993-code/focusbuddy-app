@@ -102,8 +102,7 @@ function getTaskOccurrencesForMonth(tasks, year, month) {
     if (!base) return
 
     if (task.recurrence === 'daily') {
-      // Show on every day for 30 days from base date
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < 365; i++) {
         const d = new Date(base)
         d.setDate(d.getDate() + i)
         if (d.getFullYear() === year && d.getMonth() === month) {
@@ -111,8 +110,7 @@ function getTaskOccurrencesForMonth(tasks, year, month) {
         }
       }
     } else if (task.recurrence === 'weekly') {
-      // Show on same weekday every week for 8 weeks from base date
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 52; i++) {
         const d = new Date(base)
         d.setDate(d.getDate() + i * 7)
         if (d.getFullYear() === year && d.getMonth() === month) {
@@ -146,6 +144,7 @@ export default function Dashboard() {
   const [greeting, setGreeting] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
   const [completing, setCompleting] = useState(null)
+  const [detailTask, setDetailTask] = useState(null)
 
   // Add task form
   const [newTitle, setNewTitle] = useState('')
@@ -452,7 +451,7 @@ export default function Dashboard() {
                     )}
                     <div className={styles.focusCardBody}>
                       <button onClick={() => completeTask(topTask)} className={styles.focusCheck} aria-label="Complete task" />
-                      <div className={styles.focusTaskInfo}>
+                      <div className={styles.focusTaskInfo} onClick={() => setDetailTask(topTask)} style={{ cursor: 'pointer' }}>
                         <span className={styles.focusTaskTitle}>{topTask.title}</span>
                         {topTask.due_time && (() => {
                           const fmt = formatDueTime(topTask.due_time)
@@ -500,7 +499,7 @@ export default function Dashboard() {
                     return (
                       <div key={task.id} className={styles.taskCard}>
                         <button onClick={() => completeTask(task)} className={styles.taskCheck} aria-label="Complete" />
-                        <div className={styles.taskInfo}>
+                        <div className={styles.taskInfo} onClick={() => setDetailTask(task)} style={{ cursor: 'pointer' }}>
                           <span className={styles.taskTitle}>{task.title}</span>
                           {task.notes && <span className={styles.taskNotes}>{task.notes}</span>}
                           <div className={styles.taskMeta}>
@@ -628,16 +627,21 @@ export default function Dashboard() {
                         <div className={styles.calSlotLabel}>Unscheduled</div>
                         <div className={styles.calSlotTasks}>
                           {unscheduled.map(t => (
-                            <button key={t.id}
-                              onClick={() => t.completed ? uncompleteTask(t) : completeTask(t)}
+                            <div key={t.id}
                               className={`${styles.calTaskChip} ${t.completed ? styles.calTaskChipDone : ''} ${t.consequence_level === 'external' ? styles.calTaskChipExt : ''}`}>
-                              <span className={styles.calChipCheck}>{t.completed ? '✓' : ''}</span>
-                              <span className={styles.calChipTitle}>{t.title}</span>
-                              <div className={styles.calChipBadges}>
-                                {t.consequence_level === 'external' && <span className={styles.calChipExtBadge}>Ext</span>}
-                                {t.rollover_count > 0 && <span className={styles.calChipRollover}>↷{t.rollover_count}</span>}
+                              <button
+                                onClick={() => t.completed ? uncompleteTask(t) : completeTask(t)}
+                                className={styles.calChipCheck} aria-label="Toggle complete">
+                                {t.completed ? '✓' : ''}
+                              </button>
+                              <div className={styles.calChipBody} onClick={() => setDetailTask(t)}>
+                                <span className={styles.calChipTitle}>{t.title}</span>
+                                <div className={styles.calChipBadges}>
+                                  {t.consequence_level === 'external' && <span className={styles.calChipExtBadge}>Ext</span>}
+                                  {t.rollover_count > 0 && <span className={styles.calChipRollover}>↷{t.rollover_count}</span>}
+                                </div>
                               </div>
-                            </button>
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -653,16 +657,21 @@ export default function Dashboard() {
                           <div className={styles.calHourLine} />
                           <div className={styles.calHourTasks}>
                             {slotTasks.map(t => (
-                              <button key={t.id}
-                                onClick={() => t.completed ? uncompleteTask(t) : completeTask(t)}
+                              <div key={t.id}
                                 className={`${styles.calTaskChip} ${t.completed ? styles.calTaskChipDone : ''} ${t.consequence_level === 'external' ? styles.calTaskChipExt : ''}`}>
-                                <span className={styles.calChipCheck}>{t.completed ? '✓' : ''}</span>
-                                <span className={styles.calChipTitle}>{t.title}</span>
-                                <div className={styles.calChipBadges}>
-                                  {t.consequence_level === 'external' && <span className={styles.calChipExtBadge}>Ext</span>}
-                                  {t.rollover_count > 0 && <span className={styles.calChipRollover}>↷{t.rollover_count}</span>}
+                                <button
+                                  onClick={() => t.completed ? uncompleteTask(t) : completeTask(t)}
+                                  className={styles.calChipCheck} aria-label="Toggle complete">
+                                  {t.completed ? '✓' : ''}
+                                </button>
+                                <div className={styles.calChipBody} onClick={() => setDetailTask(t)}>
+                                  <span className={styles.calChipTitle}>{t.title}</span>
+                                  <div className={styles.calChipBadges}>
+                                    {t.consequence_level === 'external' && <span className={styles.calChipExtBadge}>Ext</span>}
+                                    {t.rollover_count > 0 && <span className={styles.calChipRollover}>↷{t.rollover_count}</span>}
+                                  </div>
                                 </div>
-                              </button>
+                              </div>
                             ))}
                           </div>
                         </div>
@@ -898,6 +907,77 @@ export default function Dashboard() {
                   {adding ? 'Adding...' : 'Add to my list'}
                 </button>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* TASK DETAIL MODAL */}
+        {detailTask && (
+          <div className={styles.modalOverlay} onClick={e => e.target === e.currentTarget && setDetailTask(null)}>
+            <div className={styles.modal}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.detailTitle}>{detailTask.title}</h2>
+                <button onClick={() => setDetailTask(null)} className={styles.modalClose}>×</button>
+              </div>
+
+              <div className={styles.detailBody}>
+                {(detailTask.due_time || detailTask.due_date) && (
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>Due</span>
+                    <span className={styles.detailValue}>
+                      {detailTask.due_time
+                        ? `${new Date(detailTask.due_time).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · ${new Date(detailTask.due_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
+                        : detailTask.due_date}
+                    </span>
+                  </div>
+                )}
+
+                <div className={styles.detailRow}>
+                  <span className={styles.detailLabel}>Type</span>
+                  <span className={`${styles.detailValue} ${detailTask.consequence_level === 'external' ? styles.detailValueExt : ''}`}>
+                    {detailTask.consequence_level === 'external' ? 'External commitment' : 'Personal'}
+                  </span>
+                </div>
+
+                <div className={styles.detailRow}>
+                  <span className={styles.detailLabel}>Repeats</span>
+                  <span className={styles.detailValue}>
+                    {detailTask.recurrence === 'daily' ? 'Daily' : detailTask.recurrence === 'weekly' ? 'Weekly' : 'Once'}
+                  </span>
+                </div>
+
+                {detailTask.rollover_count > 0 && (
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>Rolled over</span>
+                    <span className={styles.detailValue}>{detailTask.rollover_count}×</span>
+                  </div>
+                )}
+
+                {detailTask.notes && (
+                  <div className={styles.detailNotesBlock}>
+                    <span className={styles.detailLabel}>Notes</span>
+                    <p className={styles.detailNotesText}>{detailTask.notes}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className={styles.detailActions}>
+                {detailTask.completed ? (
+                  <button className={styles.detailBtnSecondary}
+                    onClick={() => { uncompleteTask(detailTask); setDetailTask(null) }}>
+                    Mark incomplete
+                  </button>
+                ) : (
+                  <button className={styles.detailBtnPrimary}
+                    onClick={() => { completeTask(detailTask); setDetailTask(null) }}>
+                    Mark complete
+                  </button>
+                )}
+                <button className={styles.detailBtnSecondary}
+                  onClick={() => { rescheduleTask(detailTask); setDetailTask(null) }}>
+                  Push to tomorrow
+                </button>
+              </div>
             </div>
           </div>
         )}
