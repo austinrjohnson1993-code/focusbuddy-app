@@ -23,29 +23,51 @@ function fmtList(tasks) {
   return tasks.map(fmtTask).join(', ')
 }
 
+// Pick the highest-priority pending task to name specifically
+function topTask(pending) {
+  if (!pending.length) return null
+  // prefer external or has due_time, then rollover, then first
+  return pending.find(t => t.consequence_level === 'external' || t.due_time)
+    || pending.find(t => (t.rollover_count || 0) > 0)
+    || pending[0]
+}
+
 function buildContextPrompt(checkInType, profile, pending, completed) {
   const name = profile.full_name?.split(' ')[0] || 'there'
-  const rollovers = pending.filter(t => (t.rollover_count || 0) > 0)
+  const top = topTask(pending)
+  const topCompleted = completed[0] || null
 
   if (checkInType === 'morning') {
-    const rolloverNote = rollovers.length > 0
-      ? ` Note: ${rollovers.length} task${rollovers.length !== 1 ? 's have' : ' has'} rolled over from earlier: ${fmtList(rollovers)}.`
-      : ''
-    return `It's morning. ${name} has ${pending.length} task${pending.length !== 1 ? 's' : ''} on their list: ${fmtList(pending)}.${rolloverNote} Start with a brief personal greeting using their name. Ask how they're feeling and what's on their mind. Then gently surface the top 1–2 priority tasks. Keep it under 3 sentences. Sound human, not like a notification.`
+    const taskLine = top
+      ? `Their most important task right now: ${fmtTask(top)}.`
+      : `They have no tasks on their list yet today.`
+    return `Morning check-in for ${name}. ${taskLine}
+
+Write exactly 2-3 sentences. Sentence 1: greet ${name} by name, acknowledge the morning. Sentence 2: name that specific task and why it matters (due time if it has one, or that it's external). Sentence 3 (optional): one short question — "What's in the way?" or "Ready?" or similar. Do not summarize their whole list. Do not ask how they're feeling. Reference the task by name. End with a question OR a statement, not both.`
   }
 
   if (checkInType === 'midday') {
-    const nothingDone = completed.length === 0
-      ? `They haven't completed anything yet — be gentle but direct per your persona.`
-      : `Acknowledge what they've knocked out.`
-    return `It's midday. ${name} has completed ${completed.length} task${completed.length !== 1 ? 's' : ''}: ${fmtList(completed)}. Still pending: ${fmtList(pending)}. ${nothingDone} Surface what's most important for the afternoon. Keep it under 3 sentences.`
+    const doneLine = topCompleted
+      ? `They completed "${topCompleted.title}" ${completed.length > 1 ? `and ${completed.length - 1} other${completed.length - 1 !== 1 ? 's' : ''}` : ''}.`
+      : `They haven't completed anything yet.`
+    const nextLine = top
+      ? `Most important thing still open: ${fmtTask(top)}.`
+      : `Nothing pending.`
+    return `Midday check-in for ${name}. ${doneLine} ${nextLine}
+
+Write exactly 2-3 sentences. If something got done: sentence 1 acknowledges it by name specifically. If nothing got done: sentence 1 acknowledges that honestly, no shame. Sentence 2: name the most important open task specifically and what doing it in the afternoon looks like. No lists. No summaries. Reference tasks by name. End with a question OR a statement, not both.`
   }
 
   // evening
-  const rolloverNote = rollovers.length > 0
-    ? ` ${rollovers.length} task${rollovers.length !== 1 ? 's have' : ' has'} been rolling over — note that gently.`
-    : ''
-  return `It's evening. The day is wrapping up for ${name}. Completed: ${fmtList(completed)}. Still pending (will roll to tomorrow): ${fmtList(pending)}.${rolloverNote} Lead with wins first, always — even on a hard day. Close with something brief that makes them feel good about showing up tomorrow. Keep it under 4 sentences.`
+  const winLine = topCompleted
+    ? `They completed "${topCompleted.title}" today${completed.length > 1 ? ` (plus ${completed.length - 1} more)` : ''}.`
+    : `They didn't complete any tasks today.`
+  const rollLine = pending.length > 0
+    ? `Rolling to tomorrow: ${fmtTask(pending[0])}${pending.length > 1 ? ` and ${pending.length - 1} other${pending.length - 1 !== 1 ? 's' : ''}` : ''}.`
+    : `Nothing rolls to tomorrow.`
+  return `Evening check-in for ${name}. ${winLine} ${rollLine}
+
+Write exactly 2-3 sentences. Sentence 1: name one specific win (or acknowledge the day honestly if nothing done — no toxic positivity). Sentence 2: name what rolls to tomorrow specifically. Sentence 3: one closing line that makes them feel good about showing up tomorrow — specific, not generic. No motivational poster language. End with a statement, not a question.`
 }
 
 export default async function handler(req, res) {
