@@ -3,13 +3,13 @@ import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 import styles from '../styles/Dashboard.module.css'
-import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors } from '@dnd-kit/core'
-import { SortableContext, verticalListSortingStrategy, arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
+import { DndContext, closestCenter, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import SortableTaskCard from '../components/SortableTaskCard'
 import { applyAccentColor, DEFAULT_ACCENTS } from '../lib/accentColor'
 import { saveTaskOrder } from '../lib/taskOrder'
 import { isDueSoon as billIsDueSoon, formatBillAmount, getBillCategory, getNextDueDate } from '../lib/billUtils'
-import { CHORE_PRESETS } from '../lib/chores'
+import { CHORE_PRESETS, getChoresByPreset } from '../lib/chores'
 import { requestNotificationPermission, disablePushNotifications } from '../lib/pushNotifications'
 
 const THEMES = [
@@ -46,13 +46,20 @@ function applyTheme(theme) {
   } else {
     root.removeAttribute('data-theme')
     root.style.setProperty('--bg-color', '#110d06')
-    root.style.setProperty('--card-bg', 'rgba(255,200,120,0.04)')
+    root.style.setProperty('--card-bg', '#221608')
     root.style.setProperty('--text-color', '#f0ead6')
     root.style.setProperty('--text-muted', 'rgba(240,234,214,0.5)')
     root.style.setProperty('--border-color', 'rgba(255,200,120,0.12)')
   }
   // also set --accent-rgb so rgba(var(--accent-rgb), opacity) works with this theme
   applyAccentColor(theme.accent, theme.id)
+}
+
+function loadChatHistory(key) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null } catch { return null }
+}
+function saveChatHistory(key, messages) {
+  try { localStorage.setItem(key, JSON.stringify(messages.slice(-20))) } catch {}
 }
 
 const NAV_ITEMS = [
@@ -318,6 +325,105 @@ function sanitizeInsight(raw) {
   return sentences.slice(0, 2).join(' ') + '...'
 }
 
+// ── QC Debug Panel ────────────────────────────────────────────────────────────
+
+function DebugPanel({ user, profile, tasks, bills, journalEntries, activeTab, debugRef,
+  showAddModal, showPersonaModal, showSessionEndModal, showAddBillModal, showGuideModal, showAlarmsModal }) {
+  const [minimized, setMinimized] = useState(false)
+  const [, forceUpdate] = useState(0)
+
+  const openModal = [
+    showAddModal && 'addTask',
+    showPersonaModal && 'persona',
+    showSessionEndModal && 'sessionEnd',
+    showAddBillModal && 'addBill',
+    showGuideModal && 'guide',
+    showAlarmsModal && 'alarms',
+  ].filter(Boolean).join(', ') || 'none'
+
+  const cssVars = typeof document !== 'undefined' ? {
+    accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
+    bgColor: (getComputedStyle(document.documentElement).getPropertyValue('--bg-color') || getComputedStyle(document.documentElement).getPropertyValue('--night')).trim(),
+    textColor: (getComputedStyle(document.documentElement).getPropertyValue('--text-color') || getComputedStyle(document.documentElement).getPropertyValue('--cream')).trim(),
+  } : {}
+
+  const last = debugRef.current.lastCall
+  const lastErr = debugRef.current.lastError
+
+  const copyState = () => {
+    const data = {
+      user_id: user?.id,
+      theme_id: profile?.accent_color,
+      persona_voice: profile?.persona_voice,
+      persona_blend: profile?.persona_blend,
+      onboarded: profile?.onboarded,
+      tasks: tasks.length,
+      bills: bills.length,
+      journalEntries: journalEntries.length,
+      activeTab,
+      openModal,
+      lastCall: last,
+      lastError: lastErr,
+      cssVars,
+    }
+    navigator.clipboard.writeText(JSON.stringify(data, null, 2)).catch(() => {})
+  }
+
+  return (
+    <div className={styles.debugPanel}>
+      <div className={styles.debugHeader}>
+        <span>🔧 QC Debug</span>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button className={styles.debugBtn} onClick={() => { debugRef.current.lastError = null; forceUpdate(n => n + 1) }}>CLR ERR</button>
+          <button className={styles.debugBtn} onClick={copyState}>COPY</button>
+          <button className={styles.debugBtn} onClick={() => setMinimized(m => !m)}>{minimized ? '▲' : '▼'}</button>
+        </div>
+      </div>
+      {!minimized && (
+        <div className={styles.debugBody}>
+          <div className={styles.debugSection}>
+            <div className={styles.debugLabel}>IDENTITY</div>
+            <div>uid: {user?.id ? user.id.slice(0, 8) + '…' : '—'}</div>
+            <div>theme: {profile?.accent_color || '—'}</div>
+            <div>voice: {profile?.persona_voice || '—'}</div>
+            <div>personas: {Array.isArray(profile?.persona_blend) ? profile.persona_blend.join(', ') : profile?.persona_blend || '—'}</div>
+            <div>onboarded: {String(profile?.onboarded ?? '—')}</div>
+          </div>
+          <div className={styles.debugSection}>
+            <div className={styles.debugLabel}>STATE COUNTS</div>
+            <div>tasks: {tasks.length} | bills: {bills.length} | journal: {journalEntries.length}</div>
+          </div>
+          <div className={styles.debugSection}>
+            <div className={styles.debugLabel}>LAST API CALL</div>
+            {last ? (
+              <>
+                <div>{last.method} {last.endpoint}</div>
+                <div>status: {last.status} | {last.ms}ms</div>
+                <div className={styles.debugPreview}>{last.preview}</div>
+              </>
+            ) : <div>—</div>}
+          </div>
+          <div className={styles.debugSection}>
+            <div className={styles.debugLabel}>LAST ERROR</div>
+            <div className={styles.debugError}>{lastErr || '—'}</div>
+          </div>
+          <div className={styles.debugSection}>
+            <div className={styles.debugLabel}>CSS VARS</div>
+            <div>--accent: {cssVars.accent || '—'}</div>
+            <div>--bg: {cssVars.bgColor || '—'}</div>
+            <div>--text: {cssVars.textColor || '—'}</div>
+          </div>
+          <div className={styles.debugSection}>
+            <div className={styles.debugLabel}>UI STATE</div>
+            <div>tab: {activeTab}</div>
+            <div>modal: {openModal}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
@@ -505,6 +611,32 @@ export default function Dashboard() {
   const [billParsing, setBillParsing] = useState(false)
   const billRecognitionRef = useRef(null)
 
+  // Debug overlay
+  const debugRef = useRef({ lastCall: null, lastError: null })
+  const isDebug = typeof window !== 'undefined' && window.location.search.includes('debug=true')
+
+  const loggedFetch = useCallback(async (url, opts = {}) => {
+    const t0 = Date.now()
+    try {
+      const res = await fetch(url, opts)
+      const clone = res.clone()
+      const text = await clone.text().catch(() => '')
+      debugRef.current.lastCall = {
+        endpoint: url,
+        method: opts.method || 'GET',
+        status: res.status,
+        ms: Date.now() - t0,
+        preview: text.slice(0, 120),
+      }
+      // Return a new Response so callers can still call .json() etc.
+      return new Response(text, { status: res.status, headers: res.headers })
+    } catch (err) {
+      debugRef.current.lastCall = { endpoint: url, method: opts.method || 'GET', status: 'ERR', ms: Date.now() - t0, preview: String(err) }
+      debugRef.current.lastError = String(err)
+      throw err
+    }
+  }, [])
+
   // ── Effects ──────────────────────────────────────────────────────────────
 
   // Restore theme immediately on mount from localStorage to avoid orange flash
@@ -564,15 +696,25 @@ export default function Dashboard() {
   useEffect(() => {
     if (activeTab === 'checkin' && !checkinInitialized && user) {
       setCheckinInitialized(true)
+      const historyKey = `focusbuddy_checkin_history_${user.id}`
+      const saved = loadChatHistory(historyKey)
+      if (saved && saved.length > 0) {
+        setCheckinMessages(saved)
+        return
+      }
       setCheckinLoading(true)
-      fetch('/api/checkin', {
+      loggedFetch('/api/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, checkInType: getCheckinType(), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone })
       })
         .then(r => r.json())
         .then(data => {
-          if (data.message) setCheckinMessages([{ role: 'assistant', content: data.message }])
+          if (data.message) {
+            const msgs = [{ role: 'assistant', content: data.message }]
+            setCheckinMessages(msgs)
+            saveChatHistory(historyKey, msgs)
+          }
           fetchTasks(user.id)
         })
         .catch(() => setCheckinMessages([{ role: 'assistant', content: "Hey — how are you doing today?" }]))
@@ -592,6 +734,9 @@ export default function Dashboard() {
     if (activeTab === 'journal' && user) {
       fetchJournalEntries(user.id)
       fetchJournalHistory(user.id)
+      const journalKey = `focusbuddy_journal_history_${user.id}`
+      const saved = loadChatHistory(journalKey)
+      if (saved && saved.length > 0) setJournalMessages(saved)
     }
   }, [activeTab, user])
 
@@ -696,7 +841,61 @@ export default function Dashboard() {
     }
   }, [profile])
 
+  // ── Seed / reset QC helpers (only active when ?debug=true is in URL) ──────
+
+  useEffect(() => {
+    if (!user || !isDebug) return
+    const url = new URLSearchParams(window.location.search)
+    const doSeed = url.get('seed') === 'true'
+    const doReset = url.get('reset') === 'true'
+    if (!doSeed && !doReset) return
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return
+      const headers = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      }
+
+      const cleanUrl = () => {
+        const u = new URLSearchParams(window.location.search)
+        u.delete('seed')
+        u.delete('reset')
+        const qs = u.toString()
+        window.history.replaceState({}, '', qs ? `?${qs}` : window.location.pathname)
+      }
+
+      if (doSeed) {
+        fetch('/api/seed-test-data', { method: 'POST', headers })
+          .then(r => r.json())
+          .then(data => {
+            console.log('[QC] seed complete', data)
+            cleanUrl()
+            loadAllData(user.id)
+          })
+          .catch(err => console.error('[QC] seed error', err))
+      }
+
+      if (doReset) {
+        fetch('/api/reset-test-data', { method: 'POST', headers })
+          .then(r => r.json())
+          .then(data => {
+            console.log('[QC] reset complete', data)
+            cleanUrl()
+            loadAllData(user.id)
+          })
+          .catch(err => console.error('[QC] reset error', err))
+      }
+    })
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Data fetching ─────────────────────────────────────────────────────────
+
+  const loadAllData = (userId) => {
+    fetchTasks(userId)
+    fetchBills(userId)
+    fetchJournalEntries(userId)
+  }
 
   const fetchProfile = async (userId) => {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
@@ -733,7 +932,7 @@ export default function Dashboard() {
     setWeeklySummaryInitialized(true)
     setWeeklySummaryLoading(true)
     try {
-      const res = await fetch('/api/checkin', {
+      const res = await loggedFetch('/api/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, checkInType: 'weekly_summary', timezone: Intl.DateTimeFormat().resolvedOptions().timeZone })
@@ -887,7 +1086,7 @@ export default function Dashboard() {
       const transcript = event.results[0][0].transcript
       setVoiceTranscript(transcript); setParsing(true)
       try {
-        const res = await fetch('/api/parse-task', {
+        const res = await loggedFetch('/api/parse-task', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ transcript })
         })
@@ -918,7 +1117,7 @@ export default function Dashboard() {
       const transcript = event.results[0][0].transcript
       setBillVoiceTranscript(transcript); setBillParsing(true)
       try {
-        const res = await fetch('/api/parse-bill', {
+        const res = await loggedFetch('/api/parse-bill', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ transcript })
         })
@@ -981,16 +1180,25 @@ export default function Dashboard() {
   const sendCheckinMessage = async (e) => {
     e.preventDefault()
     if (!checkinInput.trim() || checkinLoading) return
+    const historyKey = `focusbuddy_checkin_history_${user.id}`
     const userMsg = { role: 'user', content: checkinInput.trim() }
     const updated = [...checkinMessages, userMsg]
     setCheckinMessages(updated); setCheckinInput(''); setCheckinLoading(true)
     try {
-      const res = await fetch('/api/checkin', {
+      const res = await loggedFetch('/api/checkin', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, checkInType: getCheckinType(), messages: updated, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone })
       })
       const data = await res.json()
-      if (data.message) setCheckinMessages(prev => [...prev, { role: 'assistant', content: data.message }])
+      if (data.message) {
+        setCheckinMessages(prev => {
+          const next = [...prev, { role: 'assistant', content: data.message }]
+          saveChatHistory(historyKey, next)
+          return next
+        })
+      } else {
+        saveChatHistory(historyKey, updated)
+      }
       fetchTasks(user.id)
       if (billsLoaded) fetchBills(user.id)
       fetchAlarms(user.id)
@@ -1005,17 +1213,22 @@ export default function Dashboard() {
   const sendJournalMessage = async (e) => {
     e.preventDefault()
     if (!journalInput.trim() || journalLoading) return
+    const journalKey = `focusbuddy_journal_history_${user.id}`
     const content = journalInput.trim()
     const newMsg = { role: 'user', content }
     setJournalMessages(prev => [...prev, newMsg])
     setJournalInput(''); setJournalLoading(true)
     try {
-      const res = await fetch('/api/journal', {
+      const res = await loggedFetch('/api/journal', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, content, conversationHistory: journalMessages })
       })
       const data = await res.json()
-      setJournalMessages(prev => [...prev, { role: 'assistant', content: data.message }])
+      setJournalMessages(prev => {
+        const next = [...prev, { role: 'assistant', content: data.message }]
+        saveChatHistory(journalKey, next)
+        return next
+      })
       const userMsgCount = journalMessages.filter(m => m.role === 'user').length + 1
       if (!journalReminderShown && userMsgCount >= 3) { setJournalReminderShown(true); setShowJournalReminder(true) }
       if (data.extractedTasks?.length > 0) setJournalPendingTask(data.extractedTasks[0])
@@ -1095,7 +1308,7 @@ export default function Dashboard() {
       setFocusPhase('stuck'); setFocusAiLoading(true)
       switchTab('checkin')
       try {
-        const res = await fetch('/api/focus', {
+        const res = await loggedFetch('/api/focus', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: user.id, outcome: 'stuck', taskTitle: topTask?.title, focusDuration: dur })
         })
@@ -1152,7 +1365,7 @@ export default function Dashboard() {
   const saveSettings = async () => {
     if (!user || !settingsName.trim()) return
     setSettingsSaving(true)
-    await fetch('/api/settings', {
+    await loggedFetch('/api/settings', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: user.id, updates: { full_name: settingsName.trim() } }),
@@ -1170,7 +1383,7 @@ export default function Dashboard() {
     if (user) {
       // Direct Supabase update for reliability, plus API route as backup
       await supabase.from('profiles').update({ accent_color: theme.id }).eq('id', user.id)
-      fetch('/api/settings', {
+      loggedFetch('/api/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, updates: { accent_color: theme.id } }),
@@ -1303,7 +1516,7 @@ export default function Dashboard() {
     if (!bulkText.trim()) { showToast('Paste or speak your tasks first'); return }
     setBulkParsing(true)
     try {
-      const res = await fetch('/api/parse-bulk-tasks', {
+      const res = await loggedFetch('/api/parse-bulk-tasks', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: bulkText })
       })
@@ -1361,7 +1574,7 @@ export default function Dashboard() {
 
   const handleRunRollover = async () => {
     try {
-      const res = await fetch('/api/rollover-tasks', { method: 'POST' })
+      const res = await loggedFetch('/api/rollover-tasks', { method: 'POST' })
       const data = await res.json()
       showToast(`Rolled ${data.rolled} task${data.rolled !== 1 ? 's' : ''}`)
       if (data.rolled > 0) fetchTasks(user.id)
@@ -1398,8 +1611,8 @@ export default function Dashboard() {
   }
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 100, tolerance: 8 } })
   )
 
   const handleDragEnd = async (event) => {
@@ -1822,6 +2035,13 @@ export default function Dashboard() {
                   {checkinLoading && <div className={styles.checkinBubbleAI}><span className={styles.checkinTyping}>···</span></div>}
                   <div ref={checkinEndRef} />
                 </div>
+                {checkinMessages.length > 1 && (
+                  <button className={styles.clearHistoryBtn} onClick={() => {
+                    try { localStorage.removeItem(`focusbuddy_checkin_history_${user.id}`) } catch {}
+                    setCheckinMessages([])
+                    setCheckinInitialized(false)
+                  }}>Clear history</button>
+                )}
                 <form onSubmit={sendCheckinMessage} className={styles.checkinForm}>
                   <input type="text" placeholder="Reply..." value={checkinInput}
                     onChange={e => setCheckinInput(e.target.value)}
@@ -2250,6 +2470,12 @@ export default function Dashboard() {
               )}
 
               {/* Input */}
+              {journalMessages.length > 1 && (
+                <button className={styles.clearHistoryBtn} onClick={() => {
+                  try { localStorage.removeItem(`focusbuddy_journal_history_${user.id}`) } catch {}
+                  setJournalMessages([])
+                }}>Clear history</button>
+              )}
               <form onSubmit={sendJournalMessage} className={styles.journalForm}>
                 <textarea placeholder="What's on your mind..."
                   value={journalInput}
@@ -2474,13 +2700,20 @@ export default function Dashboard() {
                     </div>
                     <div className={styles.settingsRowRight}>
                       <div className={styles.themeSwatches}>
-                        {THEMES.map(theme => (
-                          <button key={theme.id} title={theme.name}
-                            onClick={() => saveTheme(theme)}
-                            className={`${styles.accentSwatch} ${activeTheme?.id === theme.id ? styles.accentSwatchActive : ''}`}
-                            style={{ background: theme.accent }}
-                          />
-                        ))}
+                        {THEMES.map(theme => {
+                          const swatchBg = theme.id === 'paper' ? '#f5f0e8' : theme.id === 'midnight' ? '#000000' : theme.accent
+                          return (
+                            <div key={theme.id} className={styles.swatchWrap}>
+                              <button title={theme.name}
+                                onClick={() => saveTheme(theme)}
+                                className={`${styles.accentSwatch} ${activeTheme?.id === theme.id ? styles.accentSwatchActive : ''}`}
+                                style={{ background: swatchBg }}
+                              />
+                              {theme.id === 'paper' && <span className={styles.swatchBadge}>Light</span>}
+                              <span className={styles.swatchLabel}>{theme.name}</span>
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   </div>
@@ -2588,7 +2821,7 @@ export default function Dashboard() {
                       {isActive ? (
                         <button className={styles.choreRemoveBtn} onClick={async () => {
                           const { data: { session: choreSession } } = await supabase.auth.getSession()
-                          await fetch('/api/chores', {
+                          await loggedFetch('/api/chores', {
                             method: 'DELETE',
                             headers: choreSession ? { Authorization: `Bearer ${choreSession.access_token}` } : {},
                           })
@@ -2598,15 +2831,41 @@ export default function Dashboard() {
                         }}>Remove</button>
                       ) : (
                         <button className={styles.choreSetupBtn} onClick={async () => {
-                          const { data: { session: choreSession } } = await supabase.auth.getSession()
-                          await fetch('/api/chores', {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json',
-                              ...(choreSession ? { Authorization: `Bearer ${choreSession.access_token}` } : {}),
-                            },
-                            body: JSON.stringify({ preset: preset.id }),
+                          const chorePreset = getChoresByPreset(preset.id)
+                          if (!chorePreset) return
+                          const today = new Date()
+                          today.setHours(9, 0, 0, 0)
+                          let weekdayIndex = 0
+                          const choreTasks = chorePreset.chores.map(chore => {
+                            let scheduledFor
+                            if (chore.recurrence === 'daily') {
+                              scheduledFor = new Date(today)
+                            } else if (chore.recurrence === 'monthly') {
+                              scheduledFor = new Date(today)
+                              scheduledFor.setDate(scheduledFor.getDate() + 14)
+                            } else {
+                              // weekly, biweekly, twice-weekly → spread across next 7 days
+                              scheduledFor = new Date(today)
+                              scheduledFor.setDate(scheduledFor.getDate() + (weekdayIndex % 7))
+                              weekdayIndex++
+                            }
+                            return {
+                              user_id: user.id,
+                              title: chore.title,
+                              recurrence: chore.recurrence === 'daily' ? 'daily' : chore.recurrence === 'monthly' ? 'monthly' : 'weekly',
+                              consequence_level: 'self',
+                              completed: false,
+                              archived: false,
+                              rollover_count: 0,
+                              priority_score: 0,
+                              notes: null,
+                              due_time: null,
+                              scheduled_for: scheduledFor.toISOString(),
+                              created_at: new Date().toISOString(),
+                            }
                           })
+                          await supabase.from('tasks').insert(choreTasks)
+                          await supabase.from('profiles').update({ chore_preset: preset.id }).eq('id', user.id)
                           setProfile(prev => ({ ...prev, chore_preset: preset.id }))
                           fetchTasks(user.id)
                           showToast('Chore routine added to your tasks')
@@ -3602,6 +3861,24 @@ export default function Dashboard() {
         )}
 
       </div>
+
+      {isDebug && (
+        <DebugPanel
+          user={user}
+          profile={profile}
+          tasks={tasks}
+          bills={bills}
+          journalEntries={journalEntries}
+          activeTab={activeTab}
+          debugRef={debugRef}
+          showAddModal={showAddModal}
+          showPersonaModal={showPersonaModal}
+          showSessionEndModal={showSessionEndModal}
+          showAddBillModal={showAddBillModal}
+          showGuideModal={showGuideModal}
+          showAlarmsModal={showAlarmsModal}
+        />
+      )}
     </>
   )
 }
