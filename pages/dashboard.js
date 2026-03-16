@@ -1232,6 +1232,7 @@ export default function Dashboard() {
     setPersonaSaving(true)
     const updates = { persona_blend: personaSelection, persona_voice: personaVoice, persona_set: true }
     await supabase.from('profiles').update(updates).eq('id', user.id)
+    setProfile(prev => ({ ...prev, persona_blend: personaSelection, persona_voice: personaVoice }))
     setPersonaSaving(false); setShowPersonaModal(false)
     showToast('Persona updated')
   }
@@ -2586,16 +2587,24 @@ export default function Dashboard() {
                       </div>
                       {isActive ? (
                         <button className={styles.choreRemoveBtn} onClick={async () => {
-                          await fetch('/api/chores', { method: 'DELETE' })
+                          const { data: { session: choreSession } } = await supabase.auth.getSession()
+                          await fetch('/api/chores', {
+                            method: 'DELETE',
+                            headers: choreSession ? { Authorization: `Bearer ${choreSession.access_token}` } : {},
+                          })
                           setProfile(prev => ({ ...prev, chore_preset: null }))
                           fetchTasks(user.id)
                           showToast('Chore routine removed')
                         }}>Remove</button>
                       ) : (
                         <button className={styles.choreSetupBtn} onClick={async () => {
+                          const { data: { session: choreSession } } = await supabase.auth.getSession()
                           await fetch('/api/chores', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: {
+                              'Content-Type': 'application/json',
+                              ...(choreSession ? { Authorization: `Bearer ${choreSession.access_token}` } : {}),
+                            },
                             body: JSON.stringify({ preset: preset.id }),
                           })
                           setProfile(prev => ({ ...prev, chore_preset: preset.id }))

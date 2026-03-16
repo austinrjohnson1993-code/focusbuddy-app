@@ -3,7 +3,7 @@
   justify-content: center; font-size: 2rem;
 }
 
-.appShell { min-height: 100vh; display: flex; background: #110d06 var(--accent-gradient); }
+.appShell { min-height: 100vh; display: flex; background: var(--bg-color, #110d06) var(--accent-gradient); }
 
 /* ── Sidebar ── */
 .sidebar {
@@ -890,12 +890,13 @@
 /* Message list */
 .checkinMessages {
   flex: 1;
+  overflow-y: auto;
+  padding: 16px 0;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  gap: 10px;
-  overflow-y: auto;
-  padding: 16px 0 20px;
+  justify-content: flex-end;
+  gap: 12px;
+  min-height: 0;
 }
 
 .checkinSpacer { flex: 1; min-height: 12px; }
@@ -927,9 +928,15 @@
 }
 
 .checkinTyping {
-  font-size: 1.3rem;
-  letter-spacing: 4px;
+  display: inline-block;
+  font-size: 1.2rem;
+  letter-spacing: 2px;
   color: rgba(240,234,214,0.35);
+  animation: typingPulse 1.2s ease-in-out infinite;
+}
+@keyframes typingPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
 }
 
 /* Input row */
@@ -1288,7 +1295,16 @@
 }
 .learnReferralClose:hover { color: rgba(240,234,214,0.75); }
 
-.journalMessages { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.journalMessages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 12px;
+  min-height: 0;
+}
 .journalBubbleAI {
   background: #221608; border: 1px solid rgba(255,200,120,0.1);
   border-radius: 18px 18px 18px 4px; padding: 14px 18px;
