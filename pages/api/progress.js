@@ -44,6 +44,8 @@ export default async function handler(req, res) {
   if (type === 'daily') {
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
+    const todayEnd = new Date()
+    todayEnd.setHours(23, 59, 59, 999)
 
     const [{ data: tasks, error: tasksErr }, { data: profile }, { count: journalCount }] = await Promise.all([
       supabaseAdmin
@@ -58,6 +60,7 @@ export default async function handler(req, res) {
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
         .gte('created_at', todayStart.toISOString())
+        .lte('created_at', todayEnd.toISOString())
     ])
 
     if (tasksErr) return res.status(500).json({ error: 'Failed to fetch tasks' })

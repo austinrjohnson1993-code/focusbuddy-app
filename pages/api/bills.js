@@ -9,7 +9,7 @@ function getAdminClient() {
 
 const VALID_FREQUENCIES = ['monthly', 'weekly', 'yearly', 'quarterly', 'one-time', 'bimonthly']
 const VALID_CATEGORIES = ['housing', 'utilities', 'subscriptions', 'insurance', 'debt', 'medical', 'transport', 'food', 'other']
-const VALID_BILL_TYPES = ['bill', 'loan', 'debt']
+const VALID_BILL_TYPES = ['bill', 'loan', 'credit_card']
 
 const BILL_FIELDS = [
   'name', 'amount', 'due_day', 'frequency', 'category',
@@ -69,27 +69,39 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: `bill_type must be one of: ${VALID_BILL_TYPES.join(', ')}` })
     }
 
-    const insert = { user_id: userId }
-    for (const key of BILL_FIELDS) {
-      if (key in body) insert[key] = body[key]
+    const insertObj = {
+      user_id: userId,
+      name: body.name,
+      amount: body.amount || 0,
+      due_day: body.due_day || null,
+      frequency: body.frequency || 'monthly',
+      category: body.category || 'other',
+      auto_task: body.auto_task || false,
+      autopay: body.autopay || false,
+      account: body.account || null,
+      url: body.url || null,
+      remind_days: body.remind_days || 3,
+      is_variable: body.is_variable || false,
+      notes: body.notes || null,
+      bill_type: body.bill_type || 'bill',
+      interest_rate: body.interest_rate || null,
     }
-    if (!insert.bill_type) insert.bill_type = 'bill'
 
-    console.log('[bills:POST] inserting:', JSON.stringify(insert))
+    console.log('[bills:POST] inserting:', JSON.stringify(insertObj))
 
-    const { data: bill, error } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from('bills')
-      .insert(insert)
+      .insert(insertObj)
       .select()
       .single()
 
     if (error) {
       console.error('[bills:POST] insert error:', JSON.stringify(error))
-      return res.status(400).json({ error: error.message, details: error.details, hint: error.hint })
+      return res.status(400).json({ error: error.message, hint: error.hint })
     }
 
-    console.log(`[bills:POST] Created bill "${bill.name}" for ${userId}`)
-    return res.status(201).json({ success: true, bill })
+    console.log(`[bills:POST] Created bill "${data.name}" for ${userId}`)
+    return res.status(200).json({ success: true, bill: data })
   }
 
   // PATCH { id, ...updates } — update bill fields

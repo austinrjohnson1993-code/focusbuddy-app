@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 const ALLOWED_FIELDS = ['full_name', 'accent_color', 'persona_blend', 'persona_voice', 'checkin_times']
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+  if (!['POST', 'PATCH'].includes(req.method)) return res.status(405).json({ error: 'Method not allowed' })
 
   console.log('[settings] PATCH received:', JSON.stringify(req.body))
 
