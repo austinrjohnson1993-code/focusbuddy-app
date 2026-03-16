@@ -3,8 +3,8 @@ import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 import styles from '../styles/Dashboard.module.css'
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
-import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
+import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy, arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import SortableTaskCard from '../components/SortableTaskCard'
 import { applyAccentColor, DEFAULT_ACCENTS } from '../lib/accentColor'
 import { saveTaskOrder } from '../lib/taskOrder'
@@ -518,10 +518,29 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (activeTab === 'journal' && user) {
-      if (!journalEntriesLoaded) fetchJournalEntries(user.id)
+      fetchJournalEntries(user.id)
       fetchJournalHistory(user.id)
     }
   }, [activeTab, user])
+
+  // Global Escape key → close topmost modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key !== 'Escape') return
+      if (showSessionEndModal) { setShowSessionEndModal(false); return }
+      if (showPersonaModal) { setShowPersonaModal(false); return }
+      if (showAlarmsModal) { setShowAlarmsModal(false); return }
+      if (showGuideModal) { setShowGuideModal(false); return }
+      if (showAddBillModal) { setShowAddBillModal(false); return }
+      if (detailTask) { setDetailTask(null); setDetailEditing(false); return }
+      if (showAddModal) { setShowAddModal(false); return }
+      if (showMoreDrawer) { setShowMoreDrawer(false); return }
+      if (showTutorial) { setShowTutorial(false); return }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [showSessionEndModal, showPersonaModal, showAlarmsModal, showGuideModal,
+      showAddBillModal, detailTask, showAddModal, showMoreDrawer, showTutorial])
 
   useEffect(() => {
     if (activeTab === 'progress' && user && !weeklySummaryInitialized) {
@@ -1006,6 +1025,14 @@ export default function Dashboard() {
     }
   }
 
+  const handleAbandonSession = () => {
+    if (window.confirm('Abandon this focus session?')) {
+      clearInterval(focusIntervalRef.current)
+      setFocusRunning(false); setFocusPhase('setup')
+      setSessionEndType('abandoned'); setShowSessionEndModal(true)
+    }
+  }
+
   // ── Finance ───────────────────────────────────────────────────────────────
 
   const addBill = async (e) => {
@@ -1247,10 +1274,14 @@ export default function Dashboard() {
     setActiveTab(id); setShowMoreDrawer(false)
   }
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
 
   const handleDragEnd = async (event) => {
     const { active, over } = event
+    console.log('[dnd] drag ended:', active.id, '→', over?.id)
     if (!over || active.id === over.id) return
     if (!dragHintDismissed) dismissDragHint()
     const oldIndex = pendingTasks.findIndex(t => t.id === active.id)
@@ -1459,7 +1490,9 @@ export default function Dashboard() {
                         ↷ Rolled over {topTask.rollover_count}×
                         {topTask.rollover_count >= 2 && (
                           <button className={styles.breakItDown} onClick={() => {
-                            setNewTitle(`First step: ${topTask.title}`); setShowAddModal(true)
+                            setNewTitle(`First step: ${topTask.title}`)
+                            setNewDueDate(topTask.scheduled_for ? new Date(topTask.scheduled_for).toISOString().split('T')[0] : '')
+                            setShowAddModal(true)
                           }}>· Break it down →</button>
                         )}
                       </div>
@@ -1681,7 +1714,7 @@ export default function Dashboard() {
                           {topTask && (
                             <>
                               <p className={styles.focusDurationLabel}>Session length</p>
-                              <div className={styles.focusDurationRow} style={{ flexWrap: 'wrap', gap: '8px' }}>
+                              <div className={styles.focusDurationRow}>
                                 {[15, 25, 45].map(d => (
                                   <button key={d}
                                     onClick={() => { setFocusDuration(d); setFocusCustom('') }}
@@ -1689,11 +1722,18 @@ export default function Dashboard() {
                                     {d}m
                                   </button>
                                 ))}
-                                <input type="number" placeholder="Custom" value={focusCustom}
-                                  onChange={e => { setFocusCustom(e.target.value); setFocusDuration(0) }}
-                                  className={styles.focusCustomInput} min="1" max="180"
-                                  style={{ minWidth: '80px', padding: '8px 16px', whiteSpace: 'nowrap' }} />
+                                <button
+                                  onClick={() => { setFocusDuration(0); setFocusCustom('') }}
+                                  className={`${styles.focusDurationBtn} ${focusDuration === 0 ? styles.focusDurationBtnActive : ''}`}>
+                                  Custom
+                                </button>
                               </div>
+                              {focusDuration === 0 && (
+                                <input type="number" placeholder="Minutes" value={focusCustom}
+                                  onChange={e => setFocusCustom(e.target.value)}
+                                  className={styles.focusCustomInput} min="1" max="180"
+                                  autoFocus />
+                              )}
                               <button onClick={startFocus} className={styles.focusStartBtn}>Start session →</button>
                             </>
                           )}
@@ -1708,13 +1748,7 @@ export default function Dashboard() {
                           <p className={styles.focusActiveTask}>{topTask?.title}</p>
                           <div className={styles.focusTimerDisplay}>{formatTimer(focusTimeLeft)}</div>
                           <button onClick={toggleFocusPause} className={styles.focusPauseBtn}>{focusRunning ? 'Pause' : 'Resume'}</button>
-                          <button onClick={() => {
-                            if (window.confirm("Abandon this focus session? Your progress won't be saved.")) {
-                              clearInterval(focusIntervalRef.current)
-                              setFocusRunning(false); setFocusPhase('setup')
-                              setSessionEndType('abandoned'); setShowSessionEndModal(true)
-                            }
-                          }} className={styles.focusAbandonBtn}>Abandon session</button>
+                          <button onClick={handleAbandonSession} className={styles.focusAbandonBtn}>Abandon session</button>
                         </div>
                       )}
                       {focusPhase === 'complete' && (
