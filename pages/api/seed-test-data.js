@@ -14,16 +14,10 @@ export default async function handler(req, res) {
   const token = req.headers.authorization?.replace('Bearer ', '')
   if (!token) return res.status(401).json({ error: 'No auth token provided' })
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    { global: { headers: { Authorization: `Bearer ${token}` } } }
-  )
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) return res.status(401).json({ error: 'Unauthorized' })
-
   const supabaseAdmin = getAdminClient()
+  const { data: { user } } = await supabaseAdmin.auth.getUser(token)
+  if (!user) return res.status(401).json({ error: 'Unauthorized' })
+
   const userId = user.id
 
   // Date helpers

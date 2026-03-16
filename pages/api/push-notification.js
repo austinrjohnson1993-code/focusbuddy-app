@@ -1,16 +1,15 @@
 // To generate VAPID keys run:
 //   npx web-push generate-vapid-keys
-// Then add to .env.local:
-//   VAPID_PUBLIC_KEY=...
-//   VAPID_PRIVATE_KEY=...
-//   NEXT_PUBLIC_VAPID_PUBLIC_KEY=... (same as VAPID_PUBLIC_KEY)
+// Then add to .env.local and Vercel env vars:
+//   NEXT_PUBLIC_VAPID_KEY=...   (public key, exposed to browser)
+//   VAPID_PRIVATE_KEY=...       (private key, server only)
 
 import webpush from 'web-push';
 import { createClient } from '@supabase/supabase-js';
 
 webpush.setVapidDetails(
   'mailto:hello@focusbuddy.app',
-  process.env.VAPID_PUBLIC_KEY,
+  process.env.NEXT_PUBLIC_VAPID_KEY,
   process.env.VAPID_PRIVATE_KEY
 );
 
