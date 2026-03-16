@@ -42,7 +42,7 @@
   cursor: pointer;
 }
 
-.appShell { min-height: 100vh; display: flex; background-color: var(--bg-color, #110d06); background-image: var(--accent-gradient); }
+.appShell { min-height: 100vh; display: flex; background: var(--bg-color, #110d06); }
 
 /* ── Sidebar ── */
 .sidebar {
@@ -1024,12 +1024,12 @@
 .checkinSendBtn:disabled { opacity: 0.35; cursor: not-allowed; }
 
 .clearHistoryBtn {
-  background: none; border: none; font-size: 0.72rem;
-  color: rgba(240,234,214,0.22); cursor: pointer; padding: 0 0 8px;
+  background: none; border: 1px solid var(--accent); border-radius: 100px;
+  font-size: 0.72rem; color: var(--accent); cursor: pointer; padding: 4px 12px;
   font-family: 'Figtree', sans-serif; align-self: flex-start;
-  transition: color 0.15s;
+  transition: opacity 0.15s; opacity: 0.7;
 }
-.clearHistoryBtn:hover { color: rgba(240,234,214,0.5); }
+.clearHistoryBtn:hover { opacity: 1; }
 
 /* ════════════════════════════════════════════
    PERSONA SETTINGS MODAL
@@ -1219,7 +1219,7 @@
 .focusActive { display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%; }
 .focusActiveTask { font-size: 0.88rem; color: rgba(240,234,214,0.45); margin-bottom: 20px; }
 .focusTimerDisplay {
-  font-family: 'Figtree', 'Inter', sans-serif; font-size: clamp(4rem, 15vw, 6rem);
+  font-family: 'Figtree', 'Inter', sans-serif !important; font-size: clamp(4rem, 15vw, 6rem);
   font-weight: 700; color: var(--text-color, #f0ead6); letter-spacing: -2px; line-height: 1; margin-bottom: 32px;
 }
 .focusPauseBtn {
@@ -1656,6 +1656,38 @@
 }
 .dragHandle:hover { color: rgba(240,234,214,0.45); }
 .dragHandle:active { cursor: grabbing; }
+
+/* ════════════════════════════════════════════
+   ROUTINES CARD
+   ════════════════════════════════════════════ */
+
+.routinesGroup {
+  margin-top: 20px;
+  background: var(--card-bg, #1a1108);
+  border: 1px solid rgba(255,200,120,0.07);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.routinesHeader {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px; background: none; border: none; cursor: pointer;
+  font-size: 0.88rem; font-weight: 600; color: rgba(240,234,214,0.65);
+  font-family: 'Figtree', sans-serif; text-align: left; transition: color 0.15s;
+}
+.routinesHeader:hover { color: rgba(240,234,214,0.9); }
+.routinesChevron { font-size: 0.65rem; opacity: 0.5; }
+.routinesList { padding: 0 12px 10px; display: flex; flex-direction: column; gap: 6px; }
+.routineItem {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 4px;
+  border-top: 1px solid rgba(255,200,120,0.05);
+}
+.routineTitle { flex: 1; font-size: 0.85rem; color: rgba(240,234,214,0.6); }
+.routineBadge {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: rgba(240,234,214,0.25); background: rgba(255,200,120,0.06);
+  border-radius: 100px; padding: 2px 8px;
+}
 
 /* ════════════════════════════════════════════
    COMING UP SECTION

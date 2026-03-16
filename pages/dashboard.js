@@ -535,6 +535,10 @@ export default function Dashboard() {
   const [showSessionEndModal, setShowSessionEndModal] = useState(false)
   const [sessionEndType, setSessionEndType] = useState('complete') // 'complete' | 'abandoned'
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false)
+  const [showStuckModal, setShowStuckModal] = useState(false)
+  const [stuckConfirmRemove, setStuckConfirmRemove] = useState(false)
+  const [stuckTask, setStuckTask] = useState(null)
+  const [routinesExpanded, setRoutinesExpanded] = useState(false)
   const [electedTaskId, setElectedTaskId] = useState(null) // user-starred priority task (UI only)
 
   // Progress
@@ -636,6 +640,7 @@ export default function Dashboard() {
   const [settingsName, setSettingsName] = useState('')
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [notifMorning, setNotifMorning] = useState(true)
+  const [notifMidday, setNotifMidday] = useState(false)
   const [notifEvening, setNotifEvening] = useState(true)
   const [notifPermission, setNotifPermission] = useState(() => typeof Notification !== 'undefined' ? Notification.permission : 'default')
 
@@ -1404,9 +1409,13 @@ export default function Dashboard() {
   const saveSettings = async () => {
     if (!user || !settingsName.trim()) return
     setSettingsSaving(true)
+    const { data: { session: settingsSession } } = await supabase.auth.getSession()
     await loggedFetch('/api/settings', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(settingsSession ? { Authorization: `Bearer ${settingsSession.access_token}` } : {}),
+      },
       body: JSON.stringify({ userId: user.id, updates: { full_name: settingsName.trim() } }),
     })
     setProfile(prev => ({ ...prev, full_name: settingsName.trim() }))
@@ -1422,11 +1431,16 @@ export default function Dashboard() {
     if (user) {
       // Direct Supabase update for reliability, plus API route as backup
       await supabase.from('profiles').update({ accent_color: theme.id }).eq('id', user.id)
-      loggedFetch('/api/settings', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, updates: { accent_color: theme.id } }),
-      }).catch(() => {})
+      supabase.auth.getSession().then(({ data: { session: themeSession } }) => {
+        loggedFetch('/api/settings', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(themeSession ? { Authorization: `Bearer ${themeSession.access_token}` } : {}),
+          },
+          body: JSON.stringify({ userId: user.id, updates: { accent_color: theme.id } }),
+        }).catch(() => {})
+      })
     }
   }
 
@@ -1707,8 +1721,22 @@ export default function Dashboard() {
 
   // ── Derived values ────────────────────────────────────────────────────────
 
-  const allPendingTasks = sortBySchedule(tasks.filter(t => !t.completed))
-  const completedTasks = tasks.filter(t => t.completed)
+  // Chore identification: match titles from active chore preset
+  const choreTitleSet = (() => {
+    if (!profile?.chore_preset) return new Set()
+    const preset = getChoresByPreset(profile.chore_preset)
+    return preset ? new Set(preset.chores.map(c => c.title)) : new Set()
+  })()
+  const isChoreTask = (t) => choreTitleSet.size > 0 && choreTitleSet.has(t.title)
+
+  const allPendingTasks = sortBySchedule(tasks.filter(t => !t.completed && !isChoreTask(t)))
+  const pendingChores = sortBySchedule(tasks.filter(t => !t.completed && isChoreTask(t) && (() => {
+    if (!t.scheduled_for) return false
+    const sf = new Date(t.scheduled_for)
+    const now = new Date()
+    return sf.getFullYear() === now.getFullYear() && sf.getMonth() === now.getMonth() && sf.getDate() === now.getDate()
+  })()))
+  const completedTasks = tasks.filter(t => t.completed && !isChoreTask(t))
   const rawName = profile?.full_name || ''
   const firstName = rawName.includes('@') ? 'there' : (rawName.split(' ')[0] || 'there')
   const electedTask = electedTaskId ? (allPendingTasks.find(t => t.id === electedTaskId) || null) : null
@@ -1824,7 +1852,7 @@ export default function Dashboard() {
   return (
     <>
       <Head><title>Dashboard — FocusBuddy</title></Head>
-      <div className={styles.appShell} style={{ background: `var(--accent-gradient), #110d06` }}>
+      <div className={styles.appShell}>
 
         {/* SIDEBAR */}
         <aside className={styles.sidebar}>
@@ -2110,6 +2138,27 @@ export default function Dashboard() {
                       </span>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* ── Routines ── */}
+              {pendingChores.length > 0 && (
+                <div className={styles.routinesGroup}>
+                  <button className={styles.routinesHeader} onClick={() => setRoutinesExpanded(v => !v)}>
+                    <span>🧹 Routines — {pendingChores.length} task{pendingChores.length !== 1 ? 's' : ''} today</span>
+                    <span className={styles.routinesChevron}>{routinesExpanded ? '▲' : '▼'}</span>
+                  </button>
+                  {routinesExpanded && (
+                    <div className={styles.routinesList}>
+                      {pendingChores.map(task => (
+                        <div key={task.id} className={styles.routineItem}>
+                          <button onClick={() => completeTask(task)} className={styles.taskCheck} aria-label="Complete" />
+                          <span className={styles.routineTitle}>{task.title}</span>
+                          <span className={styles.routineBadge}>{task.recurrence}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -2892,6 +2941,7 @@ export default function Dashboard() {
                 <div className={styles.settingsCard}>
                   {[
                     { key: 'morning', label: 'Morning check-in', sub: 'Daily at 8am', val: notifMorning, set: setNotifMorning },
+                    { key: 'midday', label: 'Midday check-in', sub: 'Daily at 12pm', val: notifMidday, set: setNotifMidday },
                     { key: 'evening', label: 'Evening wrap-up', sub: 'Daily at 9pm', val: notifEvening, set: setNotifEvening },
                   ].map(({ key, label, sub, val, set }) => (
                     <div key={key} className={`${styles.settingsRow} ${notifPermission !== 'granted' ? styles.settingsRowDisabled : ''}`}>
@@ -3039,7 +3089,7 @@ export default function Dashboard() {
 
               {/* Sub-tab nav */}
               <div className={styles.financeSubTabs}>
-                {[['bills','🧾','Bills'],['budget','📊','Budget'],['learn','📚','Learn'],['insights','🤖','Insights']].map(([id, icon, label]) => (
+                {[['bills','🧾','Bills'],['plans','📊','Plans'],['knowledge','📚','Knowledge'],['insights','🤖','Insights']].map(([id, icon, label]) => (
                   <button key={id} onClick={() => setFinanceSub(id)}
                     className={`${styles.financeSubTab} ${financeSub === id ? styles.financeSubTabActive : ''}`}>
                     <span className={styles.subTabIcon}>{icon}</span>
@@ -3128,7 +3178,7 @@ export default function Dashboard() {
               )}
 
               {/* ── BUDGET ── */}
-              {financeSub === 'budget' && (() => {
+              {financeSub === 'plans' && (() => {
                 const freqMultiplier = { weekly: 4.33, biweekly: 2.17, bimonthly: 2, monthly: 1 }[incomeFrequency] || 1
                 const normalizedIncome = monthlyIncome * freqMultiplier
                 return (
@@ -3249,8 +3299,8 @@ export default function Dashboard() {
                 )
               })()}
 
-              {/* ── LEARN ── */}
-              {financeSub === 'learn' && (
+              {/* ── KNOWLEDGE ── */}
+              {financeSub === 'knowledge' && (
                 <div>
                   {[
                     {
@@ -3289,6 +3339,30 @@ export default function Dashboard() {
                       tag: "If you wait until the end of the month to save what's left, there's never anything left.",
                       impl: "1. Decide a savings amount — even 5% of income to start. 2. Set an automatic transfer for payday, the moment money lands. 3. Transfer to a separate account you don't see daily. 4. Treat it like rent — not optional. 5. Increase by 1% every 3 months.",
                     },
+                    {
+                      key: 'savings-accounts', icon: '💳', title: 'Types of Savings Accounts',
+                      body: 'High-yield savings accounts (HYSA) currently offer 4–5% APY, compared to 0.5% at standard savings accounts. The difference matters. $10,000 earning 4.5% vs 0.5% yields $400 more per year.',
+                      tag: 'Free money — pick the right account and your savings earn while you sleep.',
+                      impl: '1. Research HYSA options (Ally, Marcus, Wealthfront). 2. Open one — most have no minimum balance and no fees. 3. Link it to your checking account for easy transfers. 4. Keep your emergency fund here (3–6 months of expenses). 5. Keep regular bills and spending in your checking account.',
+                    },
+                    {
+                      key: 'roth-ira', icon: '📈', title: 'Roth IRA vs Traditional IRA',
+                      body: 'Roth IRA: You contribute after-tax dollars, they grow tax-free, and you withdraw tax-free in retirement. Traditional IRA: You contribute pre-tax (tax deduction now), they grow tax-deferred, and you pay taxes on withdrawal. 2026 contribution limit: $7,000.',
+                      tag: 'If you expect to be in a higher tax bracket in retirement, Roth is usually the better choice for younger savers.',
+                      impl: '1. Open a Roth IRA at a brokerage (Fidelity, Vanguard, Charles Schwab). 2. Contribute up to $7,000 per year (adjust for your income limits). 3. Invest in a low-cost index fund (S&P 500, total market, or target-date fund). 4. Set up auto-contributions if possible. 5. Don\'t withdraw early — let it compound for decades.',
+                    },
+                    {
+                      key: '401k-basics', icon: '🎯', title: '401k Basics',
+                      body: 'An employer-sponsored retirement account. Your contributions come from your paycheck pre-tax. Many employers match a percentage of what you contribute — that\'s free money. 2026 contribution limit: $23,500.',
+                      tag: 'Always contribute enough to get the full employer match. It\'s an instant return on investment.',
+                      impl: '1. If your employer offers a 401k, enroll immediately. 2. Set your contribution to at least match the employer contribution percentage (often 3–6%). 3. If you can afford more, increase by 1% every raise. 4. Choose an investment option — usually a target-date fund matching your retirement year. 5. After maxing the 401k match, max your Roth IRA, then increase 401k contributions.',
+                    },
+                    {
+                      key: 'index-funds', icon: '📊', title: 'Index Funds vs Actively Managed',
+                      body: 'Index funds track the whole market (e.g., S&P 500) with low fees (0.03–0.20%). Actively managed funds try to beat the market, charge higher fees (0.5–2%), and usually fail. Over 10+ years, 80–90% of active funds underperform their index.',
+                      tag: 'Why pay more for a worse outcome? Index funds are boring, and that\'s the point.',
+                      impl: '1. For long-term retirement accounts, choose low-cost index funds. 2. Good options: VOO (Vanguard S&P 500), VTI (Vanguard Total Stock Market), SPLG (SPDR S&P 500). 3. Avoid funds with expense ratios above 0.25%. 4. Set and forget — rebalance once a year. 5. Don\'t chase trends or try to time the market.',
+                    },
                   ].map(({ key, icon, title, body, tag, impl }) => {
                     const isOpen = expandedLearnCard === title
                     return (
@@ -3309,7 +3383,7 @@ export default function Dashboard() {
                                 className={styles.learnCardApplyBtn}
                                 onClick={() => {
                                   setLearnReferral(key)
-                                  setFinanceSub('budget')
+                                  setFinanceSub('plans')
                                   window.scrollTo({ top: 0, behavior: 'smooth' })
                                 }}
                               >
@@ -3330,9 +3404,9 @@ export default function Dashboard() {
                   <span style={{ fontSize: '2.5rem' }}>🤖</span>
                   <p className={styles.greetingText} style={{ fontSize: '1.15rem' }}>Financial Insights</p>
                   <p className={styles.headerSub} style={{ maxWidth: '360px', textAlign: 'center' }}>
-                    Once you've added your bills and income, FocusBuddy will analyze your spending and give you personalized recommendations — what to cut, what to protect, and where you have room to breathe.
+                    Enter your income in Plans and add your bills to get personalized financial insights.
                   </p>
-                  <button className={styles.addTaskBtn} onClick={() => setFinanceSub('budget')}>
+                  <button className={styles.addTaskBtn} onClick={() => setFinanceSub('plans')}>
                     Set up my budget →
                   </button>
                 </div>
@@ -3694,9 +3768,46 @@ export default function Dashboard() {
                 <div className={styles.focusResultBtns}>
                   <button onClick={() => handleFocusResult('complete')} className={styles.focusResultBtn}>✓ Nailed it</button>
                   <button onClick={() => handleFocusResult('progress')} className={`${styles.focusResultBtn} ${styles.focusResultBtnSecondary}`}>▶ Made progress</button>
-                  <button onClick={() => { setShowSessionEndModal(false); switchTab('checkin') }} className={`${styles.focusResultBtn} ${styles.focusResultBtnSecondary}`}>🧱 Got stuck</button>
+                  <button onClick={() => { setShowSessionEndModal(false); setStuckTask(topTask); setStuckConfirmRemove(false); setShowStuckModal(true) }} className={`${styles.focusResultBtn} ${styles.focusResultBtnSecondary}`}>🧱 Got stuck</button>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* STUCK RESOLUTION MODAL */}
+        {showStuckModal && (
+          <div className={styles.modalOverlay} onClick={e => e.target === e.currentTarget && (setShowStuckModal(false), setStuckConfirmRemove(false))}>
+            <div className={styles.modal}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.detailTitle}>What do you want to do with this?</h2>
+                <button onClick={() => { setShowStuckModal(false); setStuckConfirmRemove(false) }} className={styles.modalClose}>×</button>
+              </div>
+              {stuckTask && <p className={styles.sessionEndTask}>{stuckTask.title}</p>}
+              <p className={styles.sessionEndPrompt} style={{ marginBottom: '20px' }}>No judgment — let's figure out the next step.</p>
+              {stuckConfirmRemove ? (
+                <div>
+                  <p style={{ fontSize: '0.92rem', color: 'rgba(240,234,214,0.6)', marginBottom: '18px', lineHeight: 1.5 }}>
+                    Are you sure? This will remove <strong style={{ color: 'var(--text-color, #f0ead6)' }}>{stuckTask?.title}</strong> from your list.
+                  </p>
+                  <div className={styles.focusResultBtns}>
+                    <button onClick={async () => { if (stuckTask) { await archiveTask(stuckTask) } setShowStuckModal(false); setStuckConfirmRemove(false) }} className={styles.focusResultBtn}>Yes, remove it</button>
+                    <button onClick={() => setStuckConfirmRemove(false)} className={`${styles.focusResultBtn} ${styles.focusResultBtnSecondary}`}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.focusResultBtns} style={{ flexDirection: 'column' }}>
+                  <button onClick={() => { if (stuckTask) { setDetailTask(stuckTask); openDetailEdit() } setShowStuckModal(false) }} className={styles.focusResultBtn}>
+                    📅 Reschedule it
+                  </button>
+                  <button onClick={() => setStuckConfirmRemove(true)} className={`${styles.focusResultBtn} ${styles.focusResultBtnSecondary}`}>
+                    🗑 Remove it
+                  </button>
+                  <button onClick={() => { setShowStuckModal(false); setStuckConfirmRemove(false) }} className={`${styles.focusResultBtn} ${styles.focusResultBtnSecondary}`}>
+                    ✓ Keep it on my list
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -3933,10 +4044,10 @@ export default function Dashboard() {
         {/* TUTORIAL OVERLAY — FIX 4 */}
         {showTutorial && (() => {
           const TUTORIAL_STEPS = [
-            { icon: '☑️', title: 'Your Task Deck', body: 'Your #1 priority stays at the top. Drag to reorder. Tap any task to see details or edit it. The top task becomes your focus card.' },
-            { icon: '💬', title: 'Daily Check-ins', body: "FocusBuddy checks in 3× a day — morning, midday, and evening. It adjusts your task list automatically based on what you tell it." },
-            { icon: '🎯', title: 'Focus Sessions', body: "Start a countdown timer for your top task — 15, 25, or 45 minutes. When time's up, tell it how it went and FocusBuddy responds." },
-            { icon: '📓', title: 'Journal', body: 'Think out loud. FocusBuddy listens, reflects back what it hears, and can turn anything you mention into a task. Entries are saved automatically.' },
+            { icon: '☑️', title: 'Your Task Deck', body: 'Add tasks by typing or tapping the mic. Star a task to set it as your priority focus. Drag to reorder. Tap any task to edit details, set a due time, or add notes.' },
+            { icon: '💬', title: 'Your AI Coach Checks In', body: 'Three times a day — morning, midday, and evening — FocusBuddy reaches out. It knows your task list and coaches you in your style. The more you engage, the smarter it gets.' },
+            { icon: '🎯', title: 'Lock In With Focus Mode', body: 'Pick a task, pick a duration (5 to 60 minutes), and go. When time\'s up, tell FocusBuddy how it went. Nailed it, made progress, or got stuck — each response shapes what happens next.' },
+            { icon: '📓', title: 'Think Out Loud', body: 'The journal is your private space. FocusBuddy listens, reflects back what it notices, and asks one good question. If you mention something that sounds like a task, it offers to add it. Entries are saved automatically.' },
           ]
           const step = TUTORIAL_STEPS[tutorialStep]
           const isLast = tutorialStep === TUTORIAL_STEPS.length - 1

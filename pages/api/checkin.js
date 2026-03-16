@@ -444,8 +444,36 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { userId, checkInType, messages, timezone } = req.body
+  const { userId, checkInType, messages, timezone, tasks: clientTasks } = req.body
   if (!userId) return res.status(400).json({ error: 'userId required' })
+
+  // ── Next Move fast path ────────────────────────────────────────────────────
+  if (checkInType === 'next_move') {
+    try {
+      const supabaseAdmin = getAdminClient()
+      const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', userId).single()
+      const systemPrompt = buildPersonaPrompt(profile || {})
+      const pending = (clientTasks || []).filter(t => !t.completed && !t.archived)
+      const taskLines = pending.length
+        ? pending.slice(0, 10).map(t => {
+            const due = t.due_time ? ` | due ${new Date(t.due_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''
+            const rolled = t.rollover_count > 0 ? ` | rolled ${t.rollover_count}x` : ''
+            const ext = t.consequence_level === 'external' ? ' | external' : ''
+            return `- "${t.title}"${due}${rolled}${ext}`
+          }).join('\n')
+        : '- no pending tasks'
+      const prompt = `The user has tapped "What's my next move?" on their task list. Here are their pending tasks:\n${taskLines}\n\nRespond with exactly ONE directive. Name the single best task to start right now in **bold**. Add one sentence explaining why (due time, external commitment, or momentum). Total response: under 30 words. No greeting, no filler.`
+      const { text } = await callClaude(
+        [{ role: 'user', content: prompt }],
+        systemPrompt,
+        false
+      )
+      return res.status(200).json({ message: text })
+    } catch (err) {
+      console.error('[checkin] next_move error:', err.message)
+      return res.status(500).json({ error: 'Failed to get next move' })
+    }
+  }
 
   const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: timezone || 'America/Chicago' })
   const tomorrowStr = new Date(Date.now() + 86400000).toLocaleDateString('en-CA', { timeZone: timezone || 'America/Chicago' })
