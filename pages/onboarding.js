@@ -276,8 +276,8 @@ export default function Onboarding() {
       <>
         <Head><title>Getting Started — FocusBuddy</title></Head>
         <div className={styles.page}>
-          <div className={styles.introContainer}>
-            <div className={styles.introLogo}>
+          <div className={styles.contextContainer}>
+            <div className={styles.contextLogo}>
               <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
             </div>
             <h1 className={styles.introTitle}>What brings you here?</h1>
