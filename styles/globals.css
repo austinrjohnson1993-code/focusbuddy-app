@@ -51,3 +51,11 @@ input, textarea { font-family: 'Figtree', sans-serif; }
 
 .brand .focus { color: var(--cream); }
 .brand .buddy { color: var(--accent); }
+
+/* ── Paper theme overrides — light background, dark text ── */
+[data-theme="paper"] body {
+  background: #f5f0e8;
+  background-image: radial-gradient(ellipse at top left, rgba(200,190,170,0.3) 0%, transparent 60%);
+  color: #1a1a1a;
+}
+[data-theme="paper"] .brand .focus { color: #1a1a1a; }

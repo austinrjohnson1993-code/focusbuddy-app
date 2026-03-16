@@ -188,7 +188,7 @@ export default function Onboarding() {
   const [answers, setAnswers] = useState(Array(QUESTIONS.length).fill(null))
   const [animKey, setAnimKey] = useState(0)
   const [personaBlend, setPersonaBlend] = useState([])
-  const [personaVoice, setPersonaVoice] = useState('voice_a')
+  const [personaVoice, setPersonaVoice] = useState('warm_gentle')
   const [rankItems, setRankItems] = useState([...RANK_ITEMS_DEFAULT])
   const [rankDragIdx, setRankDragIdx] = useState(null)
 
@@ -501,21 +501,23 @@ export default function Onboarding() {
 
             <div className={styles.voicePrefBlock}>
               <p className={styles.voicePrefLabel}>Voice preference</p>
-              <div className={styles.voicePrefRow}>
-                <button
-                  type="button"
-                  onClick={() => setPersonaVoice('voice_a')}
-                  className={`${styles.voicePrefBtn} ${personaVoice === 'voice_a' ? styles.voicePrefBtnActive : ''}`}
-                >
-                  Voice A — Warm and conversational
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPersonaVoice('voice_b')}
-                  className={`${styles.voicePrefBtn} ${personaVoice === 'voice_b' ? styles.voicePrefBtnActive : ''}`}
-                >
-                  Voice B — Clear and direct
-                </button>
+              <div className={styles.mhGrid}>
+                {[
+                  { id: 'warm_gentle',     emoji: '🌊', label: 'Warm & Gentle',      desc: 'Supportive, encouraging, patient' },
+                  { id: 'warm_direct',     emoji: '🎯', label: 'Warm & Direct',       desc: 'Caring but no-nonsense, clear action steps' },
+                  { id: 'bold_direct',     emoji: '⚡', label: 'Bold & Direct',       desc: 'High energy, blunt, gets you moving' },
+                  { id: 'calm_analytical', emoji: '🧠', label: 'Calm & Analytical',   desc: 'Logical, structured, systems-focused' },
+                ].map(opt => (
+                  <div
+                    key={opt.id}
+                    onClick={() => setPersonaVoice(opt.id)}
+                    className={`${styles.mhCard} ${personaVoice === opt.id ? styles.mhCardSelected : ''}`}
+                  >
+                    <div className={styles.mhCardEmoji}>{opt.emoji}</div>
+                    <div className={styles.mhCardLabel}>{opt.label}</div>
+                    <div className={styles.mhCardDesc}>{opt.desc}</div>
+                  </div>
+                ))}
               </div>
             </div>
 

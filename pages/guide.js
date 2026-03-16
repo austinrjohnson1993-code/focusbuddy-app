@@ -11,22 +11,22 @@ const SECTIONS = [
   },
   {
     title: '✅ The task deck',
-    body: "Your task deck is not a to-do list — it's a priority stack. The top task is your focus. Drag to reorder. The app tracks how many times a task gets pushed to tomorrow (rollover count) and surfaces that in your check-in. Add tasks by typing, voice, or bulk import — paste a whole brain dump and the AI parses it.",
+    body: "Your task deck is not a to-do list — it's a priority stack. The top task is your focus. Drag to reorder. Star any task (☆) to make it your priority focus — no star required, the deck orders tasks by due time automatically. The app tracks how many times a task gets pushed to tomorrow (rollover count) and surfaces that in your check-in. Add tasks by typing, voice, or bulk import — paste a whole brain dump and the AI parses it.",
     tip: "Use the notes field to add context — location, who to call, what to bring. The AI coach reads your notes.",
   },
   {
     title: '💬 Daily check-ins',
-    body: "Check-in is the core loop. FocusBuddy opens a brief conversation 1-3 times a day depending on your settings. It knows your task list, notices patterns, and can reschedule, complete, or create tasks directly from the conversation. You don't have to do anything — just reply.",
+    body: "Check-in is the core loop. FocusBuddy opens a brief conversation 1-3 times a day depending on your settings. It knows your task list, notices patterns, and can reschedule, complete, or create tasks directly from the conversation. The AI can create, reschedule, and complete tasks directly from the conversation — you don't have to do anything separately. Just reply.",
     tip: "Tell it anything mid-conversation. 'I need to pick up Sarah's gift at 6pm' — it will add the task.",
   },
   {
     title: '🎯 Focus sessions',
-    body: "Go to Focus when you're ready to work. Pick your top task, set a timer (15, 25, or 45 min), and start. The Fuel, Move, and Supplements tabs give you science-backed prep tips. Use them before a session — they actually make a difference.",
+    body: "Go to Focus when you're ready to work. Pick your top task, set a timer (5, 15, 25, 45, or 60 min), and start. The Fuel, Move, and Supplements tabs give you science-backed prep tips. Use them before a session — they actually make a difference. When your timer ends, tell FocusBuddy how it went: Nailed it marks it complete, Made progress resets the timer, Got stuck routes you to a coaching response.",
     tip: "25 minutes is the sweet spot for most people. Long enough to get into flow, short enough to not dread starting.",
   },
   {
     title: '📅 Calendar',
-    body: "The calendar shows your tasks and bills together. Orange dots are tasks, teal dots are bills. Click any day to see the full list. Recurring tasks show up on every matching day automatically.",
+    body: "The calendar shows your tasks and bills together. Orange dots are tasks, teal dots are bills. Click any day to see the full list. Recurring tasks show up on every matching day automatically. Drag any task — scheduled or unscheduled — to a time slot to schedule or reschedule it.",
     tip: "Use the calendar to spot collisions — two external commitments on the same day, a bill due the same week as a big purchase.",
   },
   {
@@ -36,7 +36,7 @@ const SECTIONS = [
   },
   {
     title: '💰 Finance',
-    body: "Add your recurring bills under Finance → Bills. Go to Budget and enter your income to see your 50/30/20 breakdown. The Learn tab explains the financial concepts behind the numbers. The Insights tab will give AI-powered recommendations once your data is filled in.",
+    body: "Add your recurring bills under Finance → Bills. Go to Budget and enter your income to see your 50/30/20 breakdown. Add interest rates and bill types (Bill, Loan, Credit Card) to your bills to unlock debt payoff calculations in the Learn tab. The Insights tab will give AI-powered recommendations once your data is filled in.",
     tip: "Even rough estimates are useful. Put in your approximate income and watch the surplus/deficit number — it's a fast reality check.",
   },
   {
@@ -46,7 +46,7 @@ const SECTIONS = [
   },
   {
     title: '⚙️ Settings',
-    body: "Change your display name, switch themes, update your coaching persona, enable push notifications, and connect external services. The theme color applies everywhere in the app including the logo and background gradient.",
+    body: "Change your display name, switch themes, update your coaching persona, enable push notifications, and connect external services. The theme color applies everywhere in the app including the logo and background gradient. Set up your chore cadence under Settings to automatically populate recurring household tasks into your task deck and calendar.",
     tip: "Enable push notifications for check-in reminders to actually land on your phone or desktop.",
   },
 ]

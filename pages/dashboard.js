@@ -23,13 +23,24 @@ const THEMES = [
   { id: 'cyan-electric', name: 'Electric', accent: '#06b6d4', gradient: 'radial-gradient(ellipse at top left, rgba(5,70,100,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(5,50,80,0.35) 0%, transparent 60%)', logo: '#06b6d4' },
   { id: 'indigo-night', name: 'Night', accent: '#6366f1', gradient: 'radial-gradient(ellipse at top left, rgba(30,20,100,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(20,15,80,0.35) 0%, transparent 60%)', logo: '#6366f1' },
   { id: 'drill-sergeant', name: 'Command', accent: '#ef4444', gradient: 'radial-gradient(ellipse at top left, rgba(100,10,10,0.5) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(80,5,5,0.4) 0%, transparent 60%)', logo: '#ef4444' },
+  { id: 'midnight', name: 'Midnight', accent: '#ffffff', gradient: 'radial-gradient(ellipse at top left, rgba(40,40,40,0.5) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(20,20,20,0.4) 0%, transparent 60%)', logo: '#ffffff', bg: '#000000' },
+  { id: 'paper', name: 'Paper', accent: '#000000', gradient: 'none', logo: '#000000', bg: '#f5f0e8', textColor: '#1a1a1a' },
 ]
 
 function applyTheme(theme) {
   if (!theme || typeof document === 'undefined') return
-  document.documentElement.style.setProperty('--accent', theme.accent)
-  document.documentElement.style.setProperty('--accent-gradient', theme.gradient)
-  document.documentElement.style.setProperty('--logo-color', theme.logo)
+  const root = document.documentElement
+  root.style.setProperty('--accent', theme.accent)
+  root.style.setProperty('--accent-gradient', theme.gradient)
+  root.style.setProperty('--logo-color', theme.logo)
+  // Override background/text for themes that need it (Midnight, Paper)
+  root.style.setProperty('--night', theme.bg || '#0d1117')
+  root.style.setProperty('--cream', theme.textColor || '#f0ead6')
+  if (theme.id === 'paper') {
+    root.setAttribute('data-theme', 'paper')
+  } else {
+    root.removeAttribute('data-theme')
+  }
   // also set --accent-rgb so rgba(var(--accent-rgb), opacity) works with this theme
   applyAccentColor(theme.accent)
 }
