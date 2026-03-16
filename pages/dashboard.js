@@ -29,6 +29,8 @@ function applyTheme(theme) {
   document.documentElement.style.setProperty('--accent', theme.accent)
   document.documentElement.style.setProperty('--accent-gradient', theme.gradient)
   document.documentElement.style.setProperty('--logo-color', theme.logo)
+  // also set --accent-rgb so rgba(var(--accent-rgb), opacity) works with this theme
+  applyAccentColor(theme.accent)
 }
 
 const NAV_ITEMS = [
@@ -432,6 +434,19 @@ export default function Dashboard() {
   const billRecognitionRef = useRef(null)
 
   // ── Effects ──────────────────────────────────────────────────────────────
+
+  // Restore theme immediately on mount from localStorage to avoid orange flash
+  // while profile loads from Supabase (profile effect will correct it if needed)
+  useEffect(() => {
+    try {
+      const savedColor = localStorage.getItem('fb_accent_color')
+      if (savedColor) {
+        const theme = THEMES.find(t => t.id === savedColor) || THEMES.find(t => t.accent === savedColor)
+        if (theme) applyTheme(theme)
+        else applyAccentColor(savedColor)
+      }
+    } catch {}
+  }, [])
 
   useEffect(() => {
     const hour = new Date().getHours()
