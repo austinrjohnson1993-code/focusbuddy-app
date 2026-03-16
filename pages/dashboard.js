@@ -1,11 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 import styles from '../styles/Dashboard.module.css'
-import { DndContext, closestCenter, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core'
-import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
-import SortableTaskCard from '../components/SortableTaskCard'
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
 import { applyAccentColor, DEFAULT_ACCENTS } from '../lib/accentColor'
 import { saveTaskOrder } from '../lib/taskOrder'
 import { isDueSoon as billIsDueSoon, formatBillAmount, getBillCategory, getNextDueDate } from '../lib/billUtils'
@@ -424,6 +422,42 @@ function DebugPanel({ user, profile, tasks, bills, journalEntries, activeTab, de
   )
 }
 
+// ── Error Boundary ─────────────────────────────────────────────────────────────
+
+class TabErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error }
+  }
+  componentDidCatch(error, info) {
+    console.error('[TabErrorBoundary]', this.props.tabName, error, info)
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className={styles.tabErrorFallback}>
+          <p className={styles.tabErrorTitle}>
+            Something went wrong loading {this.props.tabName}.
+          </p>
+          <p className={styles.tabErrorDetail}>
+            {this.state.error?.message || 'Unknown error'}
+          </p>
+          <button
+            className={styles.tabErrorRetry}
+            onClick={() => this.setState({ hasError: false, error: null })}
+          >
+            Try again
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
@@ -611,6 +645,10 @@ export default function Dashboard() {
   const [billParsing, setBillParsing] = useState(false)
   const billRecognitionRef = useRef(null)
 
+  // Next move
+  const [nextMoveLoading, setNextMoveLoading] = useState(false)
+  const [nextMoveResult, setNextMoveResult] = useState(null) // { raw, taskName, taskId }
+
   // Debug overlay
   const debugRef = useRef({ lastCall: null, lastError: null })
   const isDebug = typeof window !== 'undefined' && window.location.search.includes('debug=true')
@@ -771,8 +809,9 @@ export default function Dashboard() {
       showAddBillModal, detailTask, showAddModal, showMoreDrawer, showTutorial])
 
   useEffect(() => {
-    if (activeTab === 'progress' && user && !weeklySummaryInitialized) {
-      fetchWeeklySummary()
+    if (activeTab === 'progress' && user) {
+      if (!weeklySummaryInitialized) fetchWeeklySummary()
+      fetchJournalEntries(user.id) // refresh so Today journalCount is current
     }
   }, [activeTab, user])
 
@@ -1539,7 +1578,7 @@ export default function Dashboard() {
         due_time, consequence_level: t.consequence_level || 'self',
         notes: t.notes || null, recurrence: t.recurrence || 'none',
         rollover_count: 0, priority_score: 0,
-        created_at: new Date().toISOString(), scheduled_for: new Date().toISOString()
+        created_at: new Date().toISOString(), scheduled_for: t.due_date ? new Date(`${t.due_date}T09:00`).toISOString() : new Date().toISOString()
       }
     })
     const { data } = await supabase.from('tasks').insert(inserts).select()
@@ -1581,6 +1620,39 @@ export default function Dashboard() {
     } catch { showToast('Rollover failed') }
   }
 
+  const fetchNextMove = async () => {
+    if (!user || nextMoveLoading) return
+    setNextMoveLoading(true)
+    setNextMoveResult(null)
+    try {
+      const pending = tasks.filter(t => !t.completed && !t.archived)
+      const res = await loggedFetch('/api/checkin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: 'NEXT_MOVE_REQUEST',
+          tasks: pending,
+          userId: user.id,
+          checkInType: 'next_move',
+        })
+      })
+      const data = await res.json()
+      const raw = data.message || ''
+      // Extract bolded task name if present (**task name**)
+      const boldMatch = raw.match(/\*\*(.+?)\*\*/)
+      const taskName = boldMatch ? boldMatch[1] : null
+      // Find matching task id
+      const matchedTask = taskName
+        ? pending.find(t => t.title.toLowerCase().includes(taskName.toLowerCase()))
+        : null
+      setNextMoveResult({ raw, taskName, taskId: matchedTask?.id || null })
+    } catch {
+      setNextMoveResult({ raw: 'Something went wrong. Try again.', taskName: null, taskId: null })
+    } finally {
+      setNextMoveLoading(false)
+    }
+  }
+
   const handleSignOut = async () => {
     await supabase.auth.signOut(); router.push('/')
   }
@@ -1610,22 +1682,16 @@ export default function Dashboard() {
     setActiveTab(id); setShowMoreDrawer(false)
   }
 
-  const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 100, tolerance: 8 } })
-  )
-
-  const handleDragEnd = async (event) => {
-    const { active, over } = event
-    console.log('[dnd] onDragEnd:', active.id, over?.id)
-    if (!over || active.id === over.id) return
+  const handleDragEnd = async (result) => {
+    if (!result.destination) return
+    if (result.destination.index === result.source.index) return
     if (!dragHintDismissed) dismissDragHint()
-    const oldIndex = allPendingTasks.findIndex(t => t.id === active.id)
-    const newIndex = allPendingTasks.findIndex(t => t.id === over.id)
-    if (oldIndex === -1 || newIndex === -1) return
-    const reordered = arrayMove(allPendingTasks, oldIndex, newIndex)
+    const reordered = Array.from(allPendingTasks)
+    const [moved] = reordered.splice(result.source.index, 1)
+    reordered.splice(result.destination.index, 0, moved)
     setTasks([...reordered, ...completedTasks])
     await saveTaskOrder(supabase, reordered)
+    console.log('[dnd] reordered:', reordered.map(t => t.title))
   }
 
   // ── Calendar helpers ──────────────────────────────────────────────────────
@@ -1801,6 +1867,7 @@ export default function Dashboard() {
 
           {/* ── TASKS ── */}
           {activeTab === 'tasks' && (
+          <TabErrorBoundary tabName="Tasks">
             <div className={styles.view}>
               <div className={styles.viewHeader}>
                 <div>
@@ -1817,6 +1884,62 @@ export default function Dashboard() {
                   <span>+</span> Add task
                 </button>
               </div>
+
+              {/* ── Next Move Button ── */}
+              {allPendingTasks.length > 0 && (
+                <div className={styles.nextMoveWrap}>
+                  <button
+                    className={styles.nextMoveBtn}
+                    onClick={fetchNextMove}
+                    disabled={nextMoveLoading}
+                  >
+                    {nextMoveLoading
+                      ? <><span className={styles.nextMoveSpinner} /> thinking…</>
+                      : <>What&rsquo;s my next move? &rarr;</>
+                    }
+                  </button>
+                  {nextMoveResult && (
+                    <div className={styles.nextMoveCard}>
+                      <button
+                        className={styles.nextMoveDismiss}
+                        onClick={() => setNextMoveResult(null)}
+                        aria-label="Dismiss"
+                      >✕</button>
+                      <p className={styles.nextMoveText}>
+                        {nextMoveResult.taskName ? (
+                          (() => {
+                            const parts = nextMoveResult.raw.split(/\*\*(.+?)\*\*/)
+                            return parts.map((part, i) => {
+                              if (i % 2 === 1) {
+                                // This is the bolded task name
+                                const matchedTask = tasks.find(t => t.title.toLowerCase().includes(part.toLowerCase()))
+                                return (
+                                  <strong
+                                    key={i}
+                                    className={styles.nextMoveTaskName}
+                                    onClick={() => {
+                                      if (matchedTask) {
+                                        setElectedTaskId(matchedTask.id)
+                                        setNextMoveResult(null)
+                                      }
+                                    }}
+                                    style={matchedTask ? { cursor: 'pointer' } : {}}
+                                  >
+                                    {part}
+                                  </strong>
+                                )
+                              }
+                              return <span key={i}>{part}</span>
+                            })
+                          })()
+                        ) : (
+                          nextMoveResult.raw
+                        )}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className={styles.focusCardWrap}>
                 {electedTask ? (
@@ -1901,56 +2024,59 @@ export default function Dashboard() {
                       <button onClick={dismissDragHint} className={styles.dragHintClose}>×</button>
                     </div>
                   )}
-                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                    <SortableContext items={allPendingTasks.map(t => String(t.id))} strategy={verticalListSortingStrategy}>
-                      <div className={styles.taskGroup}>
-                        <div className={styles.taskGroupLabel}>Up next</div>
-                        {allPendingTasks.map(task => {
-                          const dueFmt = task.due_time ? formatDueTime(task.due_time) : null
-                          const dateLabel = getTaskDateLabel(task)
-                          const countdown = getCountdownDisplay(task.due_time, tickNow)
-                          const dateDisplay = countdown
-                            ? null
-                            : (dateLabel
-                                ? (dueFmt ? `${dateLabel} · ${dueFmt.label}` : dateLabel)
-                                : (dueFmt ? dueFmt.label : null))
-                          const isElected = task.id === electedTaskId
-                          return (
-                            <SortableTaskCard key={task.id} id={String(task.id)}>
-                              {(dragHandleProps) => (
-                                <div className={styles.taskCard}>
-                                  <button
-                                    className={`${styles.starBtn} ${isElected ? styles.starBtnActive : ''}`}
-                                    onClick={() => setElectedTaskId(isElected ? null : task.id)}
-                                    title={isElected ? 'Remove priority' : 'Set as priority focus'}
-                                  >{isElected ? '★' : '☆'}</button>
-                                  <div className={styles.dragHandle} {...dragHandleProps} title="Drag to reorder">⠿</div>
-                                  <button onClick={() => completeTask(task)} className={styles.taskCheck} aria-label="Complete" />
-                                  <div className={styles.taskInfo} onClick={() => setDetailTask(task)} style={{ cursor: 'pointer' }}>
-                                    <span className={styles.taskTitle}>{task.title}</span>
-                                    {task.notes && <span className={styles.taskNotes}>{task.notes}</span>}
-                                    <div className={styles.taskMeta}>
-                                      {countdown && <span className={`${styles.taskDueTime} ${styles.taskDueUrgent}`} style={{ color: 'var(--accent)' }}>{countdown}</span>}
-                                      {!countdown && dateDisplay && <span className={`${styles.taskDueTime} ${dueFmt?.urgent ? styles.taskDueUrgent : ''}`}>{dateDisplay}</span>}
-                                      {task.rollover_count > 0 && <span className={styles.taskRollover}>↷ {task.rollover_count}×</span>}
-                                      {task.consequence_level === 'external' && <span className={styles.taskExternal}>External</span>}
-                                      {task.recurrence && task.recurrence !== 'none' && <span className={styles.taskRecurrence}>↻ {task.recurrence}</span>}
+                  <DragDropContext onDragEnd={handleDragEnd}>
+                    <Droppable droppableId="upnext-tasks">
+                      {(provided) => (
+                        <div className={styles.taskGroup} ref={provided.innerRef} {...provided.droppableProps}>
+                          <div className={styles.taskGroupLabel}>Up next</div>
+                          {allPendingTasks.map((task, index) => {
+                            const dueFmt = task.due_time ? formatDueTime(task.due_time) : null
+                            const dateLabel = getTaskDateLabel(task)
+                            const countdown = getCountdownDisplay(task.due_time, tickNow)
+                            const dateDisplay = countdown
+                              ? null
+                              : (dateLabel
+                                  ? (dueFmt ? `${dateLabel} · ${dueFmt.label}` : dateLabel)
+                                  : (dueFmt ? dueFmt.label : null))
+                            const isElected = task.id === electedTaskId
+                            return (
+                              <Draggable key={String(task.id)} draggableId={String(task.id)} index={index}>
+                                {(provided) => (
+                                  <div ref={provided.innerRef} {...provided.draggableProps} className={styles.taskCard}>
+                                    <button
+                                      className={`${styles.starBtn} ${isElected ? styles.starBtnActive : ''}`}
+                                      onClick={() => setElectedTaskId(isElected ? null : task.id)}
+                                      title={isElected ? 'Remove priority' : 'Set as priority focus'}
+                                    >{isElected ? '★' : '☆'}</button>
+                                    <span {...provided.dragHandleProps} className={styles.dragHandle} title="Drag to reorder">⠿</span>
+                                    <button onClick={() => completeTask(task)} className={styles.taskCheck} aria-label="Complete" />
+                                    <div className={styles.taskInfo} onClick={() => setDetailTask(task)} style={{ cursor: 'pointer' }}>
+                                      <span className={styles.taskTitle}>{task.title}</span>
+                                      {task.notes && <span className={styles.taskNotes}>{task.notes}</span>}
+                                      <div className={styles.taskMeta}>
+                                        {countdown && <span className={`${styles.taskDueTime} ${styles.taskDueUrgent}`} style={{ color: 'var(--accent)' }}>{countdown}</span>}
+                                        {!countdown && dateDisplay && <span className={`${styles.taskDueTime} ${dueFmt?.urgent ? styles.taskDueUrgent : ''}`}>{dateDisplay}</span>}
+                                        {task.rollover_count > 0 && <span className={styles.taskRollover}>↷ {task.rollover_count}×</span>}
+                                        {task.consequence_level === 'external' && <span className={styles.taskExternal}>External</span>}
+                                        {task.recurrence && task.recurrence !== 'none' && <span className={styles.taskRecurrence}>↻ {task.recurrence}</span>}
+                                      </div>
+                                    </div>
+                                    <div className={styles.taskActions}>
+                                      <button onClick={() => rescheduleTask(task)} className={styles.taskAction} title="Push to tomorrow">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+                                      </button>
+                                      <button onClick={() => archiveTask(task)} className={styles.taskActionDelete} title="Remove">×</button>
                                     </div>
                                   </div>
-                                  <div className={styles.taskActions}>
-                                    <button onClick={() => rescheduleTask(task)} className={styles.taskAction} title="Push to tomorrow">
-                                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
-                                    </button>
-                                    <button onClick={() => archiveTask(task)} className={styles.taskActionDelete} title="Remove">×</button>
-                                  </div>
-                                </div>
-                              )}
-                            </SortableTaskCard>
-                          )
-                        })}
-                      </div>
-                    </SortableContext>
-                  </DndContext>
+                                )}
+                              </Draggable>
+                            )
+                          })}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
                 </>
               )}
 
@@ -2000,10 +2126,13 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
+          </TabErrorBoundary>
           )}
 
           {/* ── CHECK-IN ── */}
-          {activeTab === 'checkin' && (() => {
+          {activeTab === 'checkin' && (
+          <TabErrorBoundary tabName="Check-in">
+          {(() => {
             const type = getCheckinType()
             const typeLabel = type === 'morning' ? 'Morning check-in' : type === 'midday' ? 'Midday check-in' : 'Evening check-in'
             const personaLabel = (() => {
@@ -2051,9 +2180,12 @@ export default function Dashboard() {
               </div>
             )
           })()}
+          </TabErrorBoundary>
+          )}
 
           {/* ── FOCUS ── */}
           {activeTab === 'focus' && (
+          <TabErrorBoundary tabName="Focus">
             <div className={styles.focusView}>
               <div className={styles.focusAccordion}>
 
@@ -2245,10 +2377,13 @@ export default function Dashboard() {
 
               </div>
             </div>
+          </TabErrorBoundary>
           )}
 
           {/* ── CALENDAR ── */}
-          {activeTab === 'calendar' && (() => {
+          {activeTab === 'calendar' && (
+          <TabErrorBoundary tabName="Calendar">
+          {(() => {
             const todayDStr = todayStr()
             const year = calMonth.getFullYear()
             const month = calMonth.getMonth()
@@ -2423,9 +2558,12 @@ export default function Dashboard() {
               </div>
             )
           })()}
+          </TabErrorBoundary>
+          )}
 
           {/* ── JOURNAL ── */}
           {activeTab === 'journal' && (
+          <TabErrorBoundary tabName="Journal">
             <div className={styles.view}>
               <div className={styles.viewHeader}>
                 <div>
@@ -2535,10 +2673,12 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
+          </TabErrorBoundary>
           )}
 
           {/* ── PROGRESS ── */}
           {activeTab === 'progress' && (
+          <TabErrorBoundary tabName="Progress">
             <div className={styles.view}>
               <div className={styles.header}>
                 <h1 className={styles.greetingText}>Progress</h1>
@@ -2555,6 +2695,10 @@ export default function Dashboard() {
               </div>
 
               {progressBand === 'today' && (() => {
+                if (!user?.id) {
+                  console.error('[Progress] No userId available for daily fetch')
+                  return <p style={{color:'rgba(240,234,214,0.5)', padding:'24px 0'}}>Loading...</p>
+                }
                 if (progressTodayError) return <p style={{color:'rgba(240,234,214,0.5)', padding:'24px 0'}}>Couldn't load today's stats. Try refreshing.</p>
                 try {
                   const todayTasks = tasks.filter(t => t.completed && t.completed_at && new Date(t.completed_at).toDateString() === new Date().toDateString())
@@ -2656,10 +2800,12 @@ export default function Dashboard() {
                 )
               })()}
             </div>
+          </TabErrorBoundary>
           )}
 
           {/* ── SETTINGS ── */}
           {activeTab === 'settings' && (
+          <TabErrorBoundary tabName="Settings">
             <div className={styles.settingsView}>
               <div className={styles.header}>
                 <h1 className={styles.greetingText}>Settings</h1>
@@ -2883,10 +3029,12 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
+          </TabErrorBoundary>
           )}
 
           {/* ── FINANCE ── */}
           {activeTab === 'finance' && (
+          <TabErrorBoundary tabName="Finance">
             <div className={styles.view}>
 
               {/* Sub-tab nav */}
@@ -3191,6 +3339,7 @@ export default function Dashboard() {
               )}
 
             </div>
+          </TabErrorBoundary>
           )}
 
         </main>

@@ -35,7 +35,7 @@ async function callHaiku(prompt) {
 // Strip markdown headers/formatting and truncate to first sentence
 function sanitizeInsight(text) {
   if (!text) return null
-  // Remove lines that start with # (markdown headers like "# The Drill Sergeant")
+  // Remove lines starting with # (e.g. "# The Drill Sergeant")
   const lines = text.split('\n').filter(line => !line.trim().startsWith('#'))
   let cleaned = lines.join(' ').trim()
   // Strip bold, italic, inline code
@@ -46,7 +46,7 @@ function sanitizeInsight(text) {
     .replace(/`(.+?)`/g, '$1')
     .replace(/\s+/g, ' ')
     .trim()
-  // Truncate to first sentence: ". " or "! " or "? " followed by a capital letter
+  // Truncate to first sentence
   const firstSentence = cleaned.match(/^(.+?[.!?])\s+[A-Z]/)
   if (firstSentence) cleaned = firstSentence[1]
   return cleaned || null
@@ -55,9 +55,11 @@ function sanitizeInsight(text) {
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
-  // T2-A: userId and type are read from query params — confirmed correct
-  // TERMINAL 1 NOTE: dashboard.js must pass userId in the fetch call:
-  //   fetch(`/api/progress?type=daily&userId=${session.user.id}&timezone=${tz}`)
+  // userId is read from query params — confirmed correct
+  // TERMINAL 1 NOTE: all progress fetch calls must include userId:
+  //   fetch(`/api/progress?type=daily&userId=${user.id}&timezone=${tz}`)
+  //   fetch(`/api/progress?type=weekly&userId=${user.id}`)
+  //   fetch(`/api/progress?type=monthly&userId=${user.id}`)
   const { userId, type = 'weekly', timezone = 'UTC' } = req.query
   if (!userId) return res.status(400).json({ error: 'userId required' })
 
@@ -71,7 +73,6 @@ export default async function handler(req, res) {
     const todayStart = new Date(`${todayStr}T00:00:00`)
     const todayEnd = new Date(`${tomorrowStr}T00:00:00`)
 
-    // T2-A: journal_entries filtered by user_id and created_at in user's timezone window
     const [{ data: tasks, error: tasksErr }, { data: profile }, { count: journalCount }] = await Promise.all([
       supabaseAdmin
         .from('tasks')
@@ -81,6 +82,7 @@ export default async function handler(req, res) {
         .gte('completed_at', todayStart.toISOString())
         .lt('completed_at', todayEnd.toISOString()),
       supabaseAdmin.from('profiles').select('persona_blend').eq('id', userId).single(),
+      // journal_entries filtered by user_id + created_at in user's timezone window
       supabaseAdmin
         .from('journal_entries')
         .select('*', { count: 'exact', head: true })
@@ -98,15 +100,21 @@ export default async function handler(req, res) {
     const raw = await callHaiku(prompt)
     const insight = sanitizeInsight(raw) ?? "You're making moves — keep going."
 
-    // T2-A: journalCount returned as-is — key name matches frontend expectation
-    return res.status(200).json({ type: 'daily', insight, tasksCompleted: tasks?.length ?? 0, journalCount: journalCount ?? 0 })
+    return res.status(200).json({
+      type: 'daily',
+      insight,
+      tasksCompleted: tasks?.length ?? 0,
+      journalCount: journalCount ?? 0
+    })
   }
 
   // ── monthly ───────────────────────────────────────────────────────────────
   if (type === 'monthly') {
-    // T2-B: pull exactly 30 days of snapshots, not just calendar month-to-date
+    // Pull exactly 30 days of snapshots (rolling window, not calendar month-to-date)
     const now = new Date()
     const monthName = now.toLocaleString('en-US', { month: 'long', year: 'numeric' })
+    const currentMonth = now.toLocaleString('en-US', { month: 'long' }) // e.g. "March"
+    const currentYear = now.getFullYear()
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
     const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0]
@@ -132,10 +140,10 @@ export default async function handler(req, res) {
     const bestDay = best ? { date: best.snapshot_date, count: best.tasks_completed } : null
 
     const persona = profile?.persona_blend?.join(', ') || 'coach'
-    // T2-B: explicitly different prompt from weekly — 30-day scope, trend/pattern focus, month name required
-    const prompt = `This is a MONTHLY summary covering the past 30 days. Identify a meaningful trend or pattern across the whole month, not just this week. Reference the month by name. One sentence only. No markdown. No headers. Do not label by persona. Persona: ${persona}. Month: ${monthName}. Total tasks completed in the past 30 days: ${totalTasks}. Best single day: ${bestDay?.date ?? 'none'} with ${bestDay?.count ?? 0} tasks. Be specific about the pattern or growth you see.`
+    // T2-D: explicitly different from weekly — 30-day scope, trend/pattern, month name required, no "this week"
+    const prompt = `You are summarizing a user's productivity for the ENTIRE MONTH OF ${currentMonth.toUpperCase()} ${currentYear} — the last 30 days. This is NOT a weekly summary. Identify a meaningful pattern or trend across the whole month. Reference the month by name (${currentMonth}). One sentence only. No markdown. No headers. No mention of 'this week'. Do not label by persona. Persona: ${persona}. Total tasks completed in ${currentMonth}: ${totalTasks}. Best single day: ${bestDay?.date ?? 'none'} with ${bestDay?.count ?? 0} tasks.`
     const raw = await callHaiku(prompt)
-    const insight = sanitizeInsight(raw) ?? `You completed ${totalTasks} tasks in ${monthName}.`
+    const insight = sanitizeInsight(raw) ?? `You completed ${totalTasks} tasks in ${currentMonth}.`
 
     return res.status(200).json({ type: 'monthly', insight, totalTasks, bestDay })
   }
@@ -156,6 +164,9 @@ export default async function handler(req, res) {
     t => t.completed && t.completed_at && new Date(t.completed_at) > sevenDaysAgo
   )
 
+  // T2-C: compute count from fresh query data before building prompt
+  const completedThisWeekCount = completedThisWeek.length
+
   let streak = 0
   for (let i = 0; i < 30; i++) {
     const day = new Date()
@@ -175,7 +186,9 @@ export default async function handler(req, res) {
     ? Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0][0]
     : 'N/A'
 
-  if ((tasks || []).filter(t => t.completed).length === 0) {
+  const totalCompleted = (tasks || []).filter(t => t.completed).length
+
+  if (totalCompleted === 0) {
     return res.status(200).json({
       type: 'weekly',
       insight: NEW_USER_INSIGHT,
@@ -192,9 +205,11 @@ export default async function handler(req, res) {
   const completedTitles = completedThisWeek.length
     ? completedThisWeek.map(t => `"${t.title}"`).join(', ')
     : 'none this week'
-  const weeklyPrompt = `Respond with a SINGLE sentence only. No headers, no bullet points, no markdown, no line breaks. One sentence maximum. Do not label by persona. In one persona-voiced sentence, give an encouraging weekly summary about the last 7 days. Persona: ${persona}. Completed this week: ${completedTitles}. Streak: ${streak} days. Be specific.`
+
+  // T2-C: pass explicit count into prompt so AI cannot contradict the visible wins list
+  const weeklyPrompt = `Respond with a SINGLE sentence only. No headers, no bullet points, no markdown, no line breaks. One sentence maximum. Do not label by persona. In one persona-voiced sentence, give an encouraging weekly summary about the last 7 days. The user completed exactly ${completedThisWeekCount} task${completedThisWeekCount !== 1 ? 's' : ''} this week. Persona: ${persona}. Tasks completed: ${completedTitles}. Streak: ${streak} days. Do not say "zero completions" — the count is ${completedThisWeekCount}. Be specific.`
   const raw = await callHaiku(weeklyPrompt)
-  const insight = sanitizeInsight(raw) ?? `You completed ${completedThisWeek.length} tasks this week.`
+  const insight = sanitizeInsight(raw) ?? `You completed ${completedThisWeekCount} task${completedThisWeekCount !== 1 ? 's' : ''} this week.`
 
   return res.status(200).json({
     type: 'weekly',
@@ -202,6 +217,6 @@ export default async function handler(req, res) {
     completedThisWeek,
     streak,
     bestDay,
-    totalCompleted: (tasks || []).filter(t => t.completed).length,
+    totalCompleted,
   })
 }
