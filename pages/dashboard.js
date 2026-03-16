@@ -10,6 +10,7 @@ import { applyAccentColor, DEFAULT_ACCENTS } from '../lib/accentColor'
 import { saveTaskOrder } from '../lib/taskOrder'
 import { isDueSoon as billIsDueSoon, formatBillAmount, getBillCategory, getNextDueDate } from '../lib/billUtils'
 import { CHORE_PRESETS } from '../lib/chores'
+import { requestNotificationPermission, disablePushNotifications } from '../lib/pushNotifications'
 
 const THEMES = [
   { id: 'orange-bronze', name: 'Classic', accent: '#ff4d1c', gradient: 'radial-gradient(ellipse at top left, rgba(101,60,10,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(80,45,8,0.35) 0%, transparent 60%)', logo: '#ff4d1c' },
@@ -373,9 +374,11 @@ export default function Dashboard() {
   const [activeAlarmBanner, setActiveAlarmBanner] = useState(null)
   const alarmIntervalRef = useRef(null)
 
-  // Journal reminder
+  // Journal reminder + hint
   const [journalReminderShown, setJournalReminderShown] = useState(false)
   const [showJournalReminder, setShowJournalReminder] = useState(false)
+  const [journalHintVisible, setJournalHintVisible] = useState(false)
+  const prevTabRef = useRef(null)
 
   // FIX 1: Drag hint
   const [dragHintDismissed, setDragHintDismissed] = useState(false)
@@ -522,6 +525,17 @@ export default function Dashboard() {
       fetchJournalHistory(user.id)
     }
   }, [activeTab, user])
+
+  // Auto-save journal session and show toast when leaving the journal tab
+  useEffect(() => {
+    if (prevTabRef.current === 'journal' && activeTab !== 'journal') {
+      if (journalMessages && journalMessages.length > 0) {
+        if (user) fetchJournalEntries(user.id)
+        showToast('Journal session saved')
+      }
+    }
+    prevTabRef.current = activeTab
+  }, [activeTab])
 
   // Global Escape key → close topmost modal
   useEffect(() => {
@@ -1087,6 +1101,40 @@ export default function Dashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, updates: { accent_color: theme.id } }),
       }).catch(() => {})
+    }
+  }
+
+  // ── Push notification toggle ───────────────────────────────────────────────
+
+  const handleEnablePush = async () => {
+    try {
+      const sub = await requestNotificationPermission()
+      if (sub) {
+        await supabase.from('profiles').update({
+          push_notifications_enabled: true,
+          push_subscription: sub.toJSON()
+        }).eq('id', user.id)
+        try { localStorage.setItem('fb_push_enabled', 'true') } catch {}
+        setProfile(prev => ({ ...prev, push_notifications_enabled: true }))
+        setNotifPermission('granted')
+        showToast('Push notifications enabled')
+      } else {
+        showToast('Permission denied')
+      }
+    } catch (err) {
+      console.error('[push] enable error:', err)
+      showToast('Could not enable notifications')
+    }
+  }
+
+  const handleDisablePush = async () => {
+    try {
+      await disablePushNotifications(supabase, user.id)
+      setProfile(prev => ({ ...prev, push_notifications_enabled: false }))
+      showToast('Push notifications disabled')
+    } catch (err) {
+      console.error('[push] disable error:', err)
+      showToast('Could not disable notifications')
     }
   }
 
@@ -2106,9 +2154,22 @@ export default function Dashboard() {
               {/* Input */}
               <form onSubmit={sendJournalMessage} className={styles.journalForm}>
                 <textarea placeholder="What's on your mind..."
-                  value={journalInput} onChange={e => setJournalInput(e.target.value)}
+                  value={journalInput}
+                  onChange={e => { setJournalInput(e.target.value); setJournalHintVisible(false) }}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendJournalMessage(e) } }}
+                  onFocus={() => {
+                    try {
+                      if (!localStorage.getItem('fb_journal_hint_dismissed')) {
+                        setJournalHintVisible(true)
+                        localStorage.setItem('fb_journal_hint_dismissed', '1')
+                        setTimeout(() => setJournalHintVisible(false), 5000)
+                      }
+                    } catch {}
+                  }}
                   className={styles.journalTextarea} rows={3} />
+                {journalHintVisible && (
+                  <p className={styles.journalAutoSaveHint}>Your conversation saves automatically when you leave this tab.</p>
+                )}
                 <div className={styles.journalFormFooter}>
                   <span className={styles.journalHint}>Shift+Enter for new line</span>
                   <button type="submit" disabled={journalLoading || !journalInput.trim()} className={styles.journalSendBtn}>Send →</button>
@@ -2367,12 +2428,14 @@ export default function Dashboard() {
                       <span className={styles.settingsRowLabel}>Push notifications</span>
                       <span className={styles.settingsRowSub}>Required for alarms &amp; check-ins</span>
                     </div>
-                    {notifPermission === 'granted' ? (
-                      <span className={styles.notifGrantedLabel}>Enabled ✓</span>
-                    ) : notifPermission === 'denied' ? (
+                    {notifPermission === 'denied' ? (
                       <span className={styles.notifDeniedMsg}>Blocked in browser settings</span>
+                    ) : profile?.push_notifications_enabled ? (
+                      <button className={styles.notifEnabledBtn} onClick={handleDisablePush}>
+                        Enabled ✓
+                      </button>
                     ) : (
-                      <button className={styles.connectionBtn} onClick={() => typeof Notification !== 'undefined' && Notification.requestPermission().then(p => { setNotifPermission(p); showToast(p === 'granted' ? 'Notifications enabled' : 'Permission denied') })}>
+                      <button className={styles.connectionBtn} onClick={handleEnablePush}>
                         Enable
                       </button>
                     )}

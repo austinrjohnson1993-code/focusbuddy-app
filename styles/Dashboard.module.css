@@ -1331,6 +1331,7 @@
 .journalTextarea::placeholder { color: rgba(240,234,214,0.2); }
 .journalFormFooter { display: flex; align-items: center; justify-content: space-between; }
 .journalHint { font-size: 0.75rem; color: rgba(240,234,214,0.22); }
+.journalAutoSaveHint { font-size: 0.75rem; color: rgba(240,234,214,0.38); margin: 6px 0 2px; font-style: italic; }
 .journalSendBtn {
   background: var(--accent); color: #110d06; border: none; border-radius: 100px;
   padding: 10px 24px; font-size: 0.88rem; font-weight: 700;
@@ -1519,6 +1520,7 @@
 .notifToggleOn::after { transform: translateX(18px); background: var(--accent); }
 .notifDeniedMsg { font-size: 12px; color: rgba(240,234,214,0.45); line-height: 1.5; margin-top: 6px; }
 .notifGrantedLabel { font-size: 12px; color: #4caf50; font-weight: 600; }
+.notifEnabledBtn { font-size: 12px; color: #4caf50; font-weight: 600; background: rgba(76,175,80,0.12); border: 1px solid rgba(76,175,80,0.3); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
 
 /* Connection rows */
 .connectionRow {
