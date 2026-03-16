@@ -225,7 +225,7 @@ function formatTimer(seconds) {
 }
 
 function fmtMoney(n) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(parseFloat(n) || 0)
 }
 
 function getTaskDateLabel(task) {
@@ -1763,7 +1763,7 @@ export default function Dashboard() {
                         </span>
                         <span className={styles.comingUpTitle}>
                           {item.title}
-                          {item.type === 'bill' && item.amount ? ` · $${parseFloat(item.amount).toFixed(0)}` : ''}
+                          {item.type === 'bill' && item.amount ? ` · ${fmtMoney(item.amount)}` : ''}
                         </span>
                       </div>
                       <span className={`${styles.comingUpDue} ${item.daysUntil <= 1 ? styles.comingUpDueSoon : ''}`}>
@@ -2150,7 +2150,7 @@ export default function Dashboard() {
                       {dayBillsDue.map(bill => (
                         <div key={bill.id} className={styles.calBillRow}>
                           <span className={styles.calBillName}>{bill.name}</span>
-                          <span className={styles.calBillAmount}>${parseFloat(bill.amount).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
+                          <span className={styles.calBillAmount}>{fmtMoney(bill.amount)}</span>
                           <span className={styles.calBillCat}>{bill.category || 'Other'}</span>
                         </div>
                       ))}
