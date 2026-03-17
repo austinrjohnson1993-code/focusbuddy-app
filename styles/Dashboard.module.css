@@ -647,6 +647,40 @@
   background: var(--accent);
 }
 .calendarHint { text-align: center; opacity: 0.4; font-size: 13px; margin-top: 16px; }
+
+/* Upcoming tasks section — always visible below month grid */
+.calUpcomingSection {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,200,120,0.08);
+}
+.calUpcomingLabel {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(240,234,214,0.35); margin-bottom: 12px;
+}
+.calUpcomingEmpty {
+  font-size: 0.85rem; color: rgba(240,234,214,0.28); line-height: 1.6;
+  text-align: center; padding: 16px 0;
+}
+.calUpcomingList { display: flex; flex-direction: column; gap: 6px; }
+.calUpcomingRow {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,200,120,0.03); border: 1px solid rgba(255,200,120,0.07);
+  border-radius: 10px; padding: 10px 14px; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.calUpcomingRow:hover { border-color: rgba(255,200,120,0.14); background: rgba(255,200,120,0.06); }
+.calUpcomingDate {
+  font-size: 0.72rem; font-weight: 700; color: var(--accent); flex-shrink: 0;
+  min-width: 68px; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.calUpcomingTitle { flex: 1; font-size: 0.88rem; color: rgba(240,234,214,0.7); line-height: 1.3; }
+.calUpcomingExt {
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent); background: rgba(255,77,28,0.12); border: 1px solid rgba(255,77,28,0.2);
+  border-radius: 4px; padding: 2px 5px; flex-shrink: 0;
+}
+
 .calHourSlotFilled { min-height: 52px; }
 .timeSlotDragOver { background: rgba(var(--accent-rgb), 0.1); border-radius: 4px; transition: background 0.1s; }
 .calHourLabel {
@@ -1272,6 +1306,27 @@
   font-size: 0.8rem; color: rgba(240,234,214,0.28); width: 100%;
 }
 
+/* Focus idle/no-tasks inspiring empty state */
+.focusIdleEmpty {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  width: 100%; padding: 8px 0 4px;
+}
+.focusIdleHeadline {
+  font-family: 'Playfair Display', serif; font-weight: 900;
+  font-size: clamp(1.6rem, 5vw, 2.2rem); color: var(--text-color, #f0ead6);
+  letter-spacing: -0.02em; margin-bottom: 10px; line-height: 1.15;
+}
+.focusIdleSub {
+  font-size: 0.92rem; color: rgba(240,234,214,0.45); margin-bottom: 28px; line-height: 1.6; max-width: 260px;
+}
+.focusIdleAddLink {
+  margin-top: 14px; background: transparent; border: none;
+  color: rgba(240,234,214,0.35); font-size: 0.82rem; font-family: 'Figtree', sans-serif;
+  cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+  transition: color 0.2s; padding: 4px;
+}
+.focusIdleAddLink:hover { color: rgba(240,234,214,0.6); }
+
 .focusComplete { display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%; }
 .focusCompleteHeading {
   font-family: 'Playfair Display', serif; font-weight: 900; font-size: 2.4rem;
@@ -1482,6 +1537,27 @@
 .progressWinTime { font-size: 0.72rem; color: rgba(240,234,214,0.28); flex-shrink: 0; }
 
 .progressEmpty { text-align: center; padding: 40px 20px; }
+
+/* Day-one empty state for Progress/Today band */
+.progressDayOneEmpty {
+  text-align: center; padding: 36px 20px 28px;
+  background: linear-gradient(135deg, rgba(255,200,120,0.03) 0%, rgba(255,77,28,0.015) 100%);
+  border: 1px solid rgba(255,200,120,0.08); border-radius: 16px; margin-top: 4px;
+}
+.progressDayOneHeadline {
+  font-family: 'Playfair Display', serif; font-weight: 900;
+  font-size: clamp(1.3rem, 4vw, 1.7rem); color: rgba(240,234,214,0.85);
+  letter-spacing: -0.02em; margin-bottom: 8px; line-height: 1.2;
+}
+.progressDayOneSub {
+  font-size: 0.88rem; color: rgba(240,234,214,0.38); line-height: 1.6; margin-bottom: 20px;
+}
+.progressDayOneCta {
+  background: transparent; border: 1px solid rgba(255,77,28,0.22); border-radius: 100px;
+  padding: 9px 22px; color: var(--accent); font-size: 0.85rem; font-weight: 600;
+  font-family: 'Figtree', sans-serif; cursor: pointer; transition: all 0.2s;
+}
+.progressDayOneCta:hover { background: rgba(255,77,28,0.08); border-color: rgba(255,77,28,0.4); }
 
 .progressSummaryCard {
   background: linear-gradient(135deg, rgba(255,200,120,0.04) 0%, rgba(255,77,28,0.02) 100%); border: 1px solid rgba(255,200,120,0.1);

@@ -2253,13 +2253,20 @@ export default function Dashboard() {
                     <div className={styles.focusAccordionContent}>
                       {focusPhase === 'setup' && (
                         <div className={styles.focusSetup}>
-                          <p className={styles.focusSetupLabel}>{topTask ? focusLabel : 'No tasks'}</p>
-                          <h2 className={styles.focusSetupTask}>{topTask?.title || 'No tasks — add one first'}</h2>
-                          {topTask && topTaskCountdown && (
-                            <p style={{ fontSize: '13px', color: 'var(--accent)', opacity: 0.8, margin: '-8px 0 16px', fontWeight: 600 }}>{topTaskCountdown}</p>
-                          )}
-                          {topTask && (
+                          {!topTask ? (
+                            <div className={styles.focusIdleEmpty}>
+                              <p className={styles.focusIdleHeadline}>Ready to lock in?</p>
+                              <p className={styles.focusIdleSub}>Pick a task, set your timer, and get into flow.</p>
+                              <button onClick={() => switchTab('tasks')} className={styles.focusStartBtn}>Pick a Task →</button>
+                              <button onClick={() => setShowAddModal(true)} className={styles.focusIdleAddLink}>or add a new task</button>
+                            </div>
+                          ) : (
                             <>
+                              <p className={styles.focusSetupLabel}>{focusLabel}</p>
+                              <h2 className={styles.focusSetupTask}>{topTask.title}</h2>
+                              {topTaskCountdown && (
+                                <p style={{ fontSize: '13px', color: 'var(--accent)', opacity: 0.8, margin: '-8px 0 16px', fontWeight: 600 }}>{topTaskCountdown}</p>
+                              )}
                               <p className={styles.focusDurationLabel}>Session length</p>
                               <div className={styles.focusDurationRow}>
                                 {[5, 15, 25, 45, 60].map(d => (
@@ -2284,7 +2291,6 @@ export default function Dashboard() {
                               <button onClick={startFocus} className={styles.focusStartBtn}>Start session →</button>
                             </>
                           )}
-                          {!topTask && <button onClick={() => setShowAddModal(true)} className={styles.focusStartBtn}>+ Add a task</button>}
                           <div className={styles.focusMusicStub}>
                             🎵 Music — connect Spotify, Apple Music, or YouTube in Settings
                           </div>
@@ -2609,6 +2615,44 @@ export default function Dashboard() {
                   })}
                 </div>
                 <p className={styles.calendarHint}>Tap a day to view your schedule</p>
+
+                {/* ── Upcoming tasks list — always visible below month grid ── */}
+                {(() => {
+                  const upcomingTasks = tasks
+                    .filter(t => !t.completed && !t.archived && t.due_date)
+                    .sort((a, b) => (a.due_date < b.due_date ? -1 : a.due_date > b.due_date ? 1 : 0))
+                  const today = todayStr()
+                  const tomorrow = tomorrowStr()
+                  const fmtUpcomingDate = (dateStr) => {
+                    if (dateStr === today) return 'Today'
+                    if (dateStr === tomorrow) return 'Tomorrow'
+                    const [y, m, d] = dateStr.split('-').map(Number)
+                    const dt = new Date(y, m - 1, d)
+                    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+                    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+                    const diffDays = Math.round((dt - new Date(today)) / 86400000)
+                    if (diffDays <= 6) return `${days[dt.getDay()]} ${months[dt.getMonth()]} ${d}`
+                    return `${days[dt.getDay()]} ${months[dt.getMonth()]} ${d}`
+                  }
+                  return (
+                    <div className={styles.calUpcomingSection}>
+                      <p className={styles.calUpcomingLabel}>Upcoming tasks</p>
+                      {upcomingTasks.length === 0 ? (
+                        <p className={styles.calUpcomingEmpty}>No upcoming tasks — add a due date to any task to see it here.</p>
+                      ) : (
+                        <div className={styles.calUpcomingList}>
+                          {upcomingTasks.map(t => (
+                            <div key={t.id} className={styles.calUpcomingRow} onClick={() => setDetailTask(t)}>
+                              <div className={styles.calUpcomingDate}>{fmtUpcomingDate(t.due_date)}</div>
+                              <div className={styles.calUpcomingTitle}>{t.title}</div>
+                              {t.consequence_level === 'external' && <span className={styles.calUpcomingExt}>Ext</span>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
               </div>
             )
           })()}
@@ -2777,7 +2821,13 @@ export default function Dashboard() {
                             </div>
                           ))}
                         </div>
-                      ) : <div className={styles.progressEmpty}><p className={styles.emptyText}>Nothing completed yet today.</p><p className={styles.emptySubtext}>Complete a task to see it here.</p></div>}
+                      ) : (
+                        <div className={styles.progressDayOneEmpty}>
+                          <p className={styles.progressDayOneHeadline}>Day one starts now.</p>
+                          <p className={styles.progressDayOneSub}>Complete your first task and it'll show up here.</p>
+                          <button onClick={() => setActiveTab('tasks')} className={styles.progressDayOneCta}>Go to Tasks</button>
+                        </div>
+                      )}
                     </div>
                   )
                 } catch (e) {
