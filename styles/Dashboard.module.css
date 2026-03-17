@@ -75,8 +75,8 @@
 .signOutBtn:hover { border-color: rgba(255,77,28,0.3); color: var(--accent); }
 
 /* ── Main ── */
-.main { flex: 1; margin-left: 220px; min-height: 100vh; }
-.view { max-width: 680px; margin: 0 auto; padding: 52px 32px 120px; }
+.main { flex: 1; margin-left: 220px; min-height: 100vh; height: 100%; overflow-y: auto; display: flex; flex-direction: column; }
+.view { max-width: 680px; margin: 0 auto; padding: 52px 32px 120px; flex: 1; min-height: 0; overflow-y: auto; }
 
 .viewHeader {
   display: flex; align-items: flex-start; justify-content: space-between;
@@ -427,6 +427,9 @@
   max-width: 760px;
   margin: 0 auto;
   padding: 52px 32px 120px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 /* ── Month nav ── */
@@ -1169,6 +1172,7 @@
 .focusView {
   max-width: 600px; margin: 0 auto; width: 100%; padding: 52px 32px 120px;
   display: flex; flex-direction: column; align-items: center;
+  flex: 1; min-height: 0; overflow-y: auto;
 }
 .focusSetup { display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%; }
 .focusSetupLabel {
