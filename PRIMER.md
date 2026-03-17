@@ -1,32 +1,41 @@
 # FocusBuddy PRIMER
-Updated: March 17, 2026 · Session 9 · ~8hrs · ~70hrs total
+Updated: March 17, 2026 · Session 9 · ~8 hrs this session · ~70 hrs total
 
 ## Score
 6.0/10 → 7.5/10 this session
 
-## What got done
-- Paper theme removed ✅
+## What Got Done
+- Paper theme removed entirely ✅
 - Display name save fixed ✅
 - Monthly insight decoupled from weekly ✅
-- Dead space fixed: Focus, Calendar, Progress ✅
-- Baseline profile system built + deployed ✅
-- All 3 users backfilled with profiles ✅
-- Baseline profile injected into check-in + journal ✅
-- Backfill API route created ✅
-- frontend-design skill installed at ~/.claude/skills/skills/
+- Dead space fixed on Focus, Calendar, Progress tabs ✅
+- Baseline profile system built and deployed ✅
+- All 3 users backfilled with coaching profiles ✅
+- Baseline profile injected into checkin.js and journal.js ✅
+- frontend-design skill installed ✅
 
-## Still open
-- Check-in dead space — accepted as correct chat UI behavior
-- Persona voice differentiation — deferred to future session
-- Visual/aesthetic pass — NOT STARTED, next priority
-- Rate limiting on AI endpoints — launch blocker
-- Stripe subscription gating — launch blocker
+## Still Broken
+- Check-in dead space — ACCEPTED. Do not attempt to fix again.
+- Finance Insights empty state copy — says wrong thing. Quick fix T2.
+- Timer font in Focus tab — still Playfair. Fix in visual polish pass.
+- Persona voice differentiation — deferred. Do not attempt without fresh strategy.
 
-## Next session opens with
-1. Read frontend-design skill SKILL.md
-2. Left extension visual audit report (was running when session closed)
-3. Full visual pass — icons, typography, empty states, micro-interactions
-4. Rate limiting on AI endpoints
+## Do Not Touch
+- checkin.js persona voice logic — deferred
+- Check-in CSS — accepted behavior, stop iterating
 
-## Do not touch
-- checkin.js persona voice — deferred, needs fresh thinking
+## Next Session Opens With
+1. Read ~/.claude/skills/skills/frontend-design/SKILL.md before touching anything
+2. Fire left extension QC sweep — get baseline score
+3. npm install @phosphor-icons/react — full icon replacement pass
+4. Fix timer font in Focus tab
+5. Fix Finance Insights empty state copy
+6. After visual pass hits 8.0+ — rate limiting on AI endpoints
+
+## Launch Blockers Remaining
+1. Rate limiting on AI endpoints
+2. Stripe subscription gating
+3. App score 8.5/10 — currently 7.5/10
+
+## Target Launch
+April 14, 2026 (soft launch to waitlist)
