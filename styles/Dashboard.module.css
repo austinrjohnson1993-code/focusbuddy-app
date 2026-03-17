@@ -2434,3 +2434,60 @@
 .nextMoveTaskName:hover {
   text-decoration-color: var(--accent);
 }
+
+/* ════════════════════════════════════════════
+   PAPER THEME — Icon Visibility Fixes
+   ════════════════════════════════════════════ */
+/* Paper theme (cream background #f5f0e8) requires dark icon colors
+   to maintain visibility. Light colors like rgba(240,234,214,0.2-0.4)
+   are nearly invisible on cream. Using dark bronze (#3a3028) for contrast. */
+
+[data-theme="paper"] .dragHandle {
+  color: #3a3028;
+}
+[data-theme="paper"] .dragHandle:hover {
+  color: #2a2018;
+}
+
+[data-theme="paper"] .starBtn {
+  color: #4a4238;
+}
+[data-theme="paper"] .starBtn:hover {
+  color: #2a2018;
+}
+
+[data-theme="paper"] .taskAction {
+  color: #3a3028;
+  border-color: rgba(58, 48, 40, 0.2);
+}
+[data-theme="paper"] .taskAction:hover {
+  border-color: rgba(58, 48, 40, 0.4);
+  color: #1a1008;
+}
+
+[data-theme="paper"] .taskActionDelete {
+  color: #3a3028;
+  border-color: rgba(58, 48, 40, 0.2);
+}
+[data-theme="paper"] .taskActionDelete:hover {
+  border-color: #e74c3c;
+  color: #e74c3c;
+}
+
+[data-theme="paper"] .focusAction {
+  color: #3a3028;
+  border-color: rgba(58, 48, 40, 0.15);
+}
+[data-theme="paper"] .focusAction:hover {
+  border-color: rgba(58, 48, 40, 0.3);
+  color: #000000;
+}
+
+[data-theme="paper"] .focusActionDelete {
+  color: #3a3028;
+  border-color: rgba(58, 48, 40, 0.15);
+}
+[data-theme="paper"] .focusActionDelete:hover {
+  border-color: #e74c3c;
+  color: #e74c3c;
+}

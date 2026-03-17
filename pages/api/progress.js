@@ -141,7 +141,7 @@ export default async function handler(req, res) {
 
     const persona = profile?.persona_blend?.join(', ') || 'coach'
     // T2-D: explicitly different from weekly — 30-day scope, trend/pattern, month name required, no "this week"
-    const prompt = `You are summarizing a user's productivity for the ENTIRE MONTH OF ${currentMonth.toUpperCase()} ${currentYear} — the last 30 days. This is NOT a weekly summary. Identify a meaningful pattern or trend across the whole month. Reference the month by name (${currentMonth}). One sentence only. No markdown. No headers. No mention of 'this week'. Do not label by persona. Persona: ${persona}. Total tasks completed in ${currentMonth}: ${totalTasks}. Best single day: ${bestDay?.date ?? 'none'} with ${bestDay?.count ?? 0} tasks.`
+    const prompt = `Respond with a SINGLE sentence only. No headers, no bullet points, no markdown, no line breaks. One sentence maximum. Do not label by persona. In one persona-voiced sentence, give an encouraging monthly summary for this month (${currentMonth}). This is a 30-day rolling window summary, NOT a weekly one. Identify a meaningful trend or pattern. Persona: ${persona}. Total tasks completed this month: ${totalTasks}. Best day: ${bestDay?.date ?? 'none'} with ${bestDay?.count ?? 0} tasks. Be specific.`
     const raw = await callHaiku(prompt)
     const insight = sanitizeInsight(raw) ?? `You completed ${totalTasks} tasks in ${currentMonth}.`
 

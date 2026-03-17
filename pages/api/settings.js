@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-const ALLOWED_FIELDS = ['full_name', 'accent_color', 'persona_blend', 'persona_voice', 'checkin_times']
+const ALLOWED_FIELDS = ['display_name', 'full_name', 'accent_color', 'persona_blend', 'persona_voice', 'checkin_times']
 
 function getAdminClient() {
   return createClient(
