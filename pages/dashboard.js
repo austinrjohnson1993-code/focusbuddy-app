@@ -2642,7 +2642,7 @@ export default function Dashboard() {
                 {(() => {
                   const taskDateStr = (t) => {
                     if (t.due_date) return t.due_date
-                    if (t.scheduled_for) return new Date(t.scheduled_for).toISOString().split('T')[0]
+                    if (t.scheduled_for) return localDateStr(new Date(t.scheduled_for))
                     return null
                   }
                   const upcomingTasks = tasks
