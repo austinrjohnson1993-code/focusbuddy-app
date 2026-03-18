@@ -82,13 +82,11 @@ export default async function handler(req, res) {
         .gte('completed_at', todayStart.toISOString())
         .lt('completed_at', todayEnd.toISOString()),
       supabaseAdmin.from('profiles').select('persona_blend').eq('id', userId).single(),
-      // journal_entries filtered by user_id + created_at in user's timezone window
+      // journal_entries — lifetime total for this user
       supabaseAdmin
         .from('journal_entries')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .gte('created_at', todayStart.toISOString())
-        .lt('created_at', todayEnd.toISOString())
     ])
 
     if (tasksErr) return res.status(500).json({ error: 'Failed to fetch tasks' })

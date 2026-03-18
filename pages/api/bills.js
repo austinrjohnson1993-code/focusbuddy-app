@@ -87,20 +87,40 @@ export default async function handler(req, res) {
       interest_rate: body.interest_rate || null,
     }
 
-    console.log('[bills:POST] inserting:', JSON.stringify(insertObj))
-
-    const { data, error } = await supabaseAdmin
+    // Deduplication: check for existing bill with same name for this user
+    const { data: existing } = await supabaseAdmin
       .from('bills')
-      .insert(insertObj)
-      .select()
+      .select('id')
+      .eq('user_id', userId)
+      .ilike('name', insertObj.name.trim())
       .single()
 
+    let data, error
+    if (existing) {
+      // Update instead of insert
+      console.log(`[bills:POST] Duplicate detected — updating existing bill "${insertObj.name}" (${existing.id})`)
+      const { name: _n, user_id: _u, ...updateFields } = insertObj
+      ;({ data, error } = await supabaseAdmin
+        .from('bills')
+        .update(updateFields)
+        .eq('id', existing.id)
+        .select()
+        .single())
+    } else {
+      console.log('[bills:POST] inserting:', JSON.stringify(insertObj))
+      ;({ data, error } = await supabaseAdmin
+        .from('bills')
+        .insert(insertObj)
+        .select()
+        .single())
+    }
+
     if (error) {
-      console.error('[bills:POST] insert error:', JSON.stringify(error))
+      console.error('[bills:POST] save error:', JSON.stringify(error))
       return res.status(400).json({ error: error.message, hint: error.hint })
     }
 
-    console.log(`[bills:POST] Created bill "${data.name}" for ${userId}`)
+    console.log(`[bills:POST] ${existing ? 'Updated' : 'Created'} bill "${data.name}" for ${userId}`)
     return res.status(200).json({ success: true, bill: data })
   }
 
