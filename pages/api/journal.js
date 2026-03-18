@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk'
+rebrand: FocusBuddy → Cinisimport Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 import { buildPersonaPrompt } from '../../lib/persona'
 import { checkDailyRateLimit, rateLimitErrorResponse } from '../../lib/rateLimit'
@@ -176,7 +176,7 @@ Only include a [TASK: ...] line if something genuinely actionable was mentioned.
     if (isConversationEnd(displayText)) {
       const allMessages = [...messages, { role: 'assistant', content: displayText }]
       const conversationText = allMessages
-        .map(m => `${m.role === 'user' ? 'User' : 'FocusBuddy'}: ${m.content}`)
+        .map(m => `${m.role === 'user' ? 'User' : 'Cinis'}: ${m.content}`)
         .join('\n\n')
 
       const summaryPrompt = `In one sentence describe what this journal conversation covered. If it seems personal or emotional (relationships, feelings, struggles), return exactly: 'Personal entry.' Otherwise describe the topic factually.\n\nConversation:\n${conversationText}`
