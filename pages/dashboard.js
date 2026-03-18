@@ -2640,9 +2640,17 @@ export default function Dashboard() {
 
                 {/* ── Upcoming tasks list — always visible below month grid ── */}
                 {(() => {
+                  const taskDateStr = (t) => {
+                    if (t.due_date) return t.due_date
+                    if (t.scheduled_for) return new Date(t.scheduled_for).toISOString().split('T')[0]
+                    return null
+                  }
                   const upcomingTasks = tasks
-                    .filter(t => !t.completed && !t.archived && t.due_date)
-                    .sort((a, b) => (a.due_date < b.due_date ? -1 : a.due_date > b.due_date ? 1 : 0))
+                    .filter(t => !t.completed && !t.archived && taskDateStr(t))
+                    .sort((a, b) => {
+                      const da = taskDateStr(a), db = taskDateStr(b)
+                      return da < db ? -1 : da > db ? 1 : 0
+                    })
                   const today = todayStr()
                   const tomorrow = tomorrowStr()
                   const fmtUpcomingDate = (dateStr) => {
@@ -2652,8 +2660,6 @@ export default function Dashboard() {
                     const dt = new Date(y, m - 1, d)
                     const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
                     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-                    const diffDays = Math.round((dt - new Date(today)) / 86400000)
-                    if (diffDays <= 6) return `${days[dt.getDay()]} ${months[dt.getMonth()]} ${d}`
                     return `${days[dt.getDay()]} ${months[dt.getMonth()]} ${d}`
                   }
                   return (
@@ -2664,10 +2670,11 @@ export default function Dashboard() {
                       ) : (
                         <div className={styles.calUpcomingList}>
                           {upcomingTasks.map(t => {
-                            const isOverdue = t.due_date < today
+                            const dateStr = taskDateStr(t)
+                            const isOverdue = dateStr < today
                             return (
                             <div key={t.id} className={styles.calUpcomingRow} onClick={() => setDetailTask(t)}>
-                              <div className={`${styles.calUpcomingDate}${isOverdue ? ` ${styles.calUpcomingDateOverdue}` : ''}`}>{isOverdue ? 'Overdue' : fmtUpcomingDate(t.due_date)}</div>
+                              <div className={`${styles.calUpcomingDate}${isOverdue ? ` ${styles.calUpcomingDateOverdue}` : ''}`}>{isOverdue ? 'Overdue' : fmtUpcomingDate(dateStr)}</div>
                               <div className={styles.calUpcomingTitle}>{t.title}</div>
                               {t.consequence_level === 'external' && <span className={styles.calUpcomingExt}>Ext</span>}
                             </div>
