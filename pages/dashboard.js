@@ -10,6 +10,7 @@ import { isDueSoon as billIsDueSoon, formatBillAmount, getBillCategory, getNextD
 import { CHORE_PRESETS, getChoresByPreset } from '../lib/chores'
 import { requestNotificationPermission, disablePushNotifications } from '../lib/pushNotifications'
 import { CheckSquare, ChatCircle, Target, CalendarBlank, Notebook, Wallet, ChartLineUp, Plus, Trash, Archive, Star, Gear, MagnifyingGlass, X, CaretLeft, CaretRight, CaretDown, Receipt, Scales, Books, Robot, List, Timer, ChartBar, Lightning, ArrowCounterClockwise, CheckCircle, Microphone } from '@phosphor-icons/react'
+import UpgradeModal from '../components/UpgradeModal'
 
 const THEMES = [
   { id: 'orange-bronze', name: 'Classic', accent: '#ff4d1c', gradient: 'radial-gradient(ellipse at top left, rgba(101,60,10,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(80,45,8,0.35) 0%, transparent 60%)', logo: '#ff4d1c' },
@@ -639,6 +640,10 @@ export default function Dashboard() {
   const [nextMoveLoading, setNextMoveLoading] = useState(false)
   const [nextMoveResult, setNextMoveResult] = useState(null) // { raw, taskName, taskId }
 
+  // Upgrade modal
+  const [upgradeModalTrigger, setUpgradeModalTrigger] = useState(null) // 'limit' | 'memory' | 'proactive'
+  const [memoryBannerDismissed, setMemoryBannerDismissed] = useState(false)
+
   // Debug overlay
   const debugRef = useRef({ lastCall: null, lastError: null })
   const isDebug = typeof window !== 'undefined' && window.location.search.includes('debug=true')
@@ -736,12 +741,22 @@ export default function Dashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, checkInType: getCheckinType(), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone })
       })
-        .then(r => r.json())
+        .then(r => {
+          if (r.status === 429) { setUpgradeModalTrigger('limit'); return null }
+          return r.json()
+        })
         .then(data => {
+          if (!data) return
           if (data.message) {
             const msgs = [{ role: 'assistant', content: data.message }]
             setCheckinMessages(msgs)
             saveChatHistory(historyKey, msgs)
+            // Track session count for memory gap banner
+            try {
+              const key = `cinis_checkin_sessions_${user.id}`
+              const count = parseInt(localStorage.getItem(key) || '0', 10) + 1
+              localStorage.setItem(key, String(count))
+            } catch {}
           }
           fetchTasks(user.id)
         })
@@ -1246,6 +1261,11 @@ export default function Dashboard() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, checkInType: getCheckinType(), messages: updated, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone })
       })
+      if (res.status === 429) {
+        setUpgradeModalTrigger('limit')
+        setCheckinLoading(false)
+        return
+      }
       const data = await res.json()
       if (data.message) {
         setCheckinMessages(prev => {
@@ -1995,6 +2015,54 @@ export default function Dashboard() {
                 </div>
               )}
 
+              {/* ── Morning proactive card (free users, 6am–12pm) ── */}
+              {(() => {
+                const hour = new Date().getHours()
+                const isFree = profile?.subscription_status !== 'pro'
+                if (!isFree || hour < 6 || hour >= 12) return null
+                return (
+                  <div style={{
+                    background: 'rgba(255,102,68,0.06)',
+                    border: '1px solid rgba(255,102,68,0.18)',
+                    borderRadius: '12px',
+                    padding: '16px 18px',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                    opacity: 0.85,
+                  }}>
+                    <div>
+                      <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: '14px', fontWeight: 600, color: 'rgba(240,234,214,0.7)', marginBottom: '2px' }}>
+                        Your coach sent you a message this morning.
+                      </div>
+                      <div style={{ fontFamily: "'Figtree', sans-serif", fontSize: '12px', color: 'rgba(240,234,214,0.4)' }}>
+                        Unlock daily proactive check-ins with Pro.
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setUpgradeModalTrigger('proactive')}
+                      style={{
+                        flexShrink: 0,
+                        padding: '8px 14px',
+                        background: 'linear-gradient(135deg, #FF6644, #FF4500)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontFamily: "'Figtree', sans-serif",
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      See what they said
+                    </button>
+                  </div>
+                )
+              })()}
+
               <div className={styles.focusCardWrap}>
                 {electedTask ? (
                   <>
@@ -2219,6 +2287,44 @@ export default function Dashboard() {
             })()
             return (
               <div className={styles.checkinWrap}>
+                {/* ── Memory gap banner (free users, after 3rd session) ── */}
+                {(() => {
+                  if (memoryBannerDismissed) return null
+                  if (profile?.subscription_status === 'pro') return null
+                  let sessionCount = 0
+                  try { sessionCount = parseInt(localStorage.getItem(`cinis_checkin_sessions_${user?.id}`) || '0', 10) } catch {}
+                  if (sessionCount < 3) return null
+                  return (
+                    <div style={{
+                      background: 'rgba(255,102,68,0.07)',
+                      border: '1px solid rgba(255,102,68,0.2)',
+                      borderRadius: '10px',
+                      padding: '12px 16px',
+                      marginBottom: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '10px',
+                    }}>
+                      <span style={{ fontFamily: "'Figtree', sans-serif", fontSize: '13px', color: 'rgba(240,234,214,0.75)' }}>
+                        I start fresh each day on free.
+                      </span>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                        <button
+                          onClick={() => setUpgradeModalTrigger('memory')}
+                          style={{ background: 'none', border: 'none', color: '#FF6644', fontFamily: "'Figtree', sans-serif", fontSize: '13px', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                        >
+                          See Pro
+                        </button>
+                        <button
+                          onClick={() => setMemoryBannerDismissed(true)}
+                          style={{ background: 'none', border: 'none', color: 'rgba(240,234,214,0.3)', fontSize: '16px', cursor: 'pointer', padding: '0 2px', lineHeight: 1 }}
+                          aria-label="Dismiss"
+                        >×</button>
+                      </div>
+                    </div>
+                  )
+                })()}
                 <div className={styles.checkinHeader}>
                   <div>
                     <div className={styles.checkinTypeTag}>{typeLabel}</div>
@@ -3160,10 +3266,37 @@ export default function Dashboard() {
                 })}
               </div>
 
+              {/* Subscription management (Pro users only) */}
+              {profile?.subscription_status === 'pro' && (
+                <div className={styles.settingsSection}>
+                  <p className={styles.settingsSectionLabel}>Subscription</p>
+                  <div className={styles.settingsCard}>
+                    <div className={styles.settingsRow}>
+                      <div className={styles.settingsRowLeft}>
+                        <span className={styles.settingsRowLabel}>Pro plan</span>
+                        <span className={styles.settingsRowSub}>$14/mo · Active</span>
+                      </div>
+                      <button
+                        className={styles.connectionBtn}
+                        onClick={async () => {
+                          try {
+                            const res = await loggedFetch('/api/stripe/portal', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+                            const data = await res.json()
+                            if (data.url) window.location.href = data.url
+                          } catch {}
+                        }}
+                      >
+                        Manage
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* How to get the most out of Cinis */}
               <div className={styles.settingsSection}>
                 <button className={styles.settingsTipsToggle} onClick={() => setShowGuideModal(true)}>
-                  How to get the most out of Cinis 
+                  How to get the most out of Cinis
                 </button>
               </div>
             </div>
@@ -4223,6 +4356,8 @@ export default function Dashboard() {
           showAlarmsModal={showAlarmsModal}
         />
       )}
+
+      <UpgradeModal trigger={upgradeModalTrigger} onClose={() => setUpgradeModalTrigger(null)} />
     </>
   )
 }
