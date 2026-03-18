@@ -16,26 +16,24 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Cinis — The app that meets you in the middle</title>
+        <title>Cinis — AI that reaches out, not waits</title>
       </Head>
       <div className={styles.page}>
         <nav className={styles.nav}>
-          <span className="brand" style={{ fontSize: '1.4rem' }}>
-            <span className="focus">Focus</span><span className="buddy">Buddy</span>
-          </span>
+          <span className={styles.logo}>Cinis</span>
           <div className={styles.navLinks}>
             <a href="/login" className={styles.loginLink}>Sign in</a>
             <a href="/signup" className={styles.signupLink}>Get started free</a>
           </div>
         </nav>
         <div className={styles.hero}>
-          <div className={styles.badge}>Early Access — Now Open</div>
+          <div className={styles.badge}>EARLY ACCESS — NOW OPEN</div>
           <h1 className={styles.headline}>
-            Your brain isn't broken.<br />It just needs a better <em>buddy.</em>
+            The AI that shows up for you.
           </h1>
           <p className={styles.sub}>
-            Not another app waiting for you to use it.<br />
-            One that actually meets you in the middle.
+            Not an app you have to remember to open.<br />
+            A partner that reaches out and meets you where you are.
           </p>
           <div className={styles.ctas}>
             <a href="/signup" className={styles.primaryCta}>Create free account</a>

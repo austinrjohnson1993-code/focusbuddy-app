@@ -1,11 +1,24 @@
-.page { min-height: 100vh; display: flex; flex-direction: column; }
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #0F0906;
+}
 
 .nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 20px 40px;
-  border-bottom: 1px solid rgba(255,200,120,0.08);
+  border-bottom: 1px solid rgba(232,50,26,0.08);
+}
+
+.logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #F0EAD6;
+  letter-spacing: -0.02em;
 }
 
 .navLinks { display: flex; align-items: center; gap: 12px; }
@@ -20,15 +33,15 @@
 .loginLink:hover { color: #f0ead6; }
 
 .signupLink {
-  background: #ff4d1c;
-  color: #110d06;
+  background: #E8321A;
+  color: #0F0906;
   padding: 10px 24px;
   border-radius: 100px;
   font-size: 0.9rem;
   font-weight: 700;
   transition: all 0.2s;
 }
-.signupLink:hover { background: #ff7043; transform: translateY(-1px); }
+.signupLink:hover { background: #F2572E; transform: translateY(-1px); }
 
 .hero {
   flex: 1;
@@ -44,9 +57,9 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255,77,28,0.1);
-  border: 1px solid rgba(255,77,28,0.25);
-  color: #ff4d1c;
+  background: rgba(232,50,26,0.12);
+  border: 1px solid rgba(232,50,26,0.3);
+  color: #E8321A;
   font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -62,11 +75,11 @@
   font-size: clamp(2.8rem, 7vw, 5.5rem);
   line-height: 1.05;
   letter-spacing: -0.03em;
-  color: #f0ead6;
-  max-width: 800px;
+  color: #F0EAD6;
+  max-width: 850px;
   margin-bottom: 24px;
 }
-.headline em { font-style: italic; color: #ff4d1c; }
+.headline em { font-style: italic; color: #F0EAD6; }
 
 .sub {
   font-size: clamp(1rem, 2.5vw, 1.2rem);
@@ -79,20 +92,20 @@
 .ctas { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
 
 .primaryCta {
-  background: #ff4d1c;
-  color: #110d06;
+  background: #E8321A;
+  color: #0F0906;
   padding: 16px 36px;
   border-radius: 100px;
   font-size: 1rem;
   font-weight: 700;
   transition: all 0.2s;
 }
-.primaryCta:hover { background: #ff7043; transform: translateY(-2px); }
+.primaryCta:hover { background: #F2572E; transform: translateY(-2px); }
 
 .secondaryCta {
-  background: rgba(255,200,120,0.06);
-  border: 1px solid rgba(255,200,120,0.15);
-  color: rgba(240,234,214,0.7);
+  background: transparent;
+  border: 1.5px solid rgba(240,234,214,0.2);
+  color: rgba(240,234,214,0.65);
   padding: 16px 36px;
   border-radius: 100px;
   font-size: 1rem;
@@ -100,6 +113,6 @@
   transition: all 0.2s;
 }
 .secondaryCta:hover {
-  border-color: rgba(255,77,28,0.3);
-  color: #f0ead6;
+  border-color: rgba(232,50,26,0.4);
+  color: #F0EAD6;
 }
