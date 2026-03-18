@@ -2078,7 +2078,7 @@ export default function Dashboard() {
                                   <div ref={provided.innerRef} {...provided.draggableProps} className={`${styles.taskCard}${isBillTask ? ` ${styles.billTaskCard}` : ''}`}>
                                     <button
                                       className={`${styles.starBtn} ${isElected ? styles.starBtnActive : ''}`}
-                                      onClick={() => setElectedTaskId(isElected ? null : task.id)}
+                                      onClick={e => { e.stopPropagation(); setElectedTaskId(isElected ? null : task.id) }}
                                       title={isElected ? 'Remove priority' : 'Set as priority focus'}
                                     >{isElected ? '★' : '☆'}</button>
                                     <span {...provided.dragHandleProps} className={styles.dragHandle} title="Drag to reorder">⠿</span>
@@ -2095,10 +2095,10 @@ export default function Dashboard() {
                                       </div>
                                     </div>
                                     <div className={styles.taskActions}>
-                                      <button onClick={() => rescheduleTask(task)} className={styles.taskAction} title="Push to tomorrow">
+                                      <button onClick={e => { e.stopPropagation(); rescheduleTask(task) }} className={styles.taskAction} title="Push to tomorrow">
                                         <CaretRight size={13} />
                                       </button>
-                                      <button onClick={() => archiveTask(task)} className={styles.taskActionDelete} title="Remove">×</button>
+                                      <button onClick={e => { e.stopPropagation(); if (!window.confirm('Delete this task?')) return; archiveTask(task) }} className={styles.taskActionDelete} title="Remove">×</button>
                                     </div>
                                   </div>
                                 )}
@@ -2174,7 +2174,7 @@ export default function Dashboard() {
                     <div key={task.id} className={`${styles.taskCard} ${styles.taskDone}`}>
                       <button onClick={() => uncompleteTask(task)} className={`${styles.taskCheck} ${styles.taskCheckDone}`}>✓</button>
                       <div className={styles.taskInfo}><span className={styles.taskTitleDone}>{task.title}</span></div>
-                      <button onClick={() => archiveTask(task)} className={styles.taskActionDelete} title="Remove">×</button>
+                      <button onClick={e => { e.stopPropagation(); if (!window.confirm('Delete this task?')) return; archiveTask(task) }} className={styles.taskActionDelete} title="Remove">×</button>
                     </div>
                   ))}
                 </div>
