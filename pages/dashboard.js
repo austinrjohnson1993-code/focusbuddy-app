@@ -2313,9 +2313,9 @@ export default function Dashboard() {
                               <button onClick={startFocus} className={styles.focusStartBtn}>Start session </button>
                             </>
                           )}
-                          <div className={styles.focusMusicStub}>
-                            🎵 Music — connect Spotify, Apple Music, or YouTube in Settings
-                          </div>
+                          <button className={styles.focusMusicStub} onClick={() => showToast('Coming in Pro — stay tuned')}>
+                            🎵 Music — coming in Pro
+                          </button>
                         </div>
                       )}
                       {focusPhase === 'active' && (

@@ -272,7 +272,7 @@
 /* ── Modal ── */
 .modalOverlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
-  z-index: 200; display: flex; align-items: flex-end; justify-content: center;
+  z-index: 1000; display: flex; align-items: flex-end; justify-content: center;
 }
 @media (min-width: 600px) { .modalOverlay { align-items: center; padding: 24px; } }
 
@@ -1314,7 +1314,10 @@
   margin-top: 28px; padding: 14px 18px; background: rgba(255,200,120,0.04);
   border: 1px solid rgba(255,200,120,0.08); border-radius: 12px; text-align: center;
   font-size: 0.8rem; color: rgba(240,234,214,0.28); width: 100%;
+  cursor: pointer; font-family: 'Figtree', sans-serif;
+  transition: border-color 0.2s, color 0.2s;
 }
+.focusMusicStub:hover { border-color: rgba(255,200,120,0.18); color: rgba(240,234,214,0.45); }
 
 /* Focus idle/no-tasks inspiring empty state */
 .focusIdleEmpty {
