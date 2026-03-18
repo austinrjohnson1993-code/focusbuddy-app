@@ -39,7 +39,7 @@ export default function Signup() {
   return (
     <>
       <Head>
-        <title>Create Account — FocusBuddy</title>
+        <title>Create Account — Cinis</title>
       </Head>
       <div className={styles.page}>
         <div className={styles.card}>
