@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+→import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
@@ -283,14 +283,14 @@ export default function Onboarding() {
   if (phase === 'context') {
     return (
       <>
-        <Head><title>Getting Started — FocusBuddy</title></Head>
+        <Head><title>Getting Started — Cinis</title></Head>
         <div className={styles.page}>
           <div className={styles.contextContainer}>
             <div className={styles.contextLogo}>
               <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
             </div>
             <h1 className={styles.introTitle}>What brings you here?</h1>
-            <p className={styles.introSub}>This helps FocusBuddy understand how to support you. You can always update this later.</p>
+            <p className={styles.introSub}>This helps Cinis understand how to support you. You can always update this later.</p>
 
             <div className={styles.mhGrid}>
               {MH_OPTIONS.map(opt => {
@@ -324,7 +324,7 @@ export default function Onboarding() {
   if (phase === 'intro') {
     return (
       <>
-        <Head><title>Getting Started — FocusBuddy</title></Head>
+        <Head><title>Getting Started — Cinis</title></Head>
         <div className={styles.page}>
           <div className={styles.introContainer}>
             <div className={styles.introLogo}>
@@ -380,7 +380,7 @@ export default function Onboarding() {
 
     return (
       <>
-        <Head><title>Getting Started — FocusBuddy</title></Head>
+        <Head><title>Getting Started — Cinis</title></Head>
         <div className={styles.page}>
           <div className={styles.progressBar}>
             <div className={styles.progressFill} style={{ width: `${progress}%` }} />
@@ -421,7 +421,7 @@ export default function Onboarding() {
     const progress = (QUESTIONS.length / (QUESTIONS.length + 1)) * 100
     return (
       <>
-        <Head><title>Getting Started — FocusBuddy</title></Head>
+        <Head><title>Getting Started — Cinis</title></Head>
         <div className={styles.page}>
           <div className={styles.progressBar}>
             <div className={styles.progressFill} style={{ width: `${progress}%` }} />
@@ -433,7 +433,7 @@ export default function Onboarding() {
             </div>
             <div className={styles.questionWrap}>
               <h2 className={styles.questionText}>Drag to rank what matters most to you.</h2>
-              <p className={styles.rankSubtext}>Top = highest priority. This helps FocusBuddy sort your tasks.</p>
+              <p className={styles.rankSubtext}>Top = highest priority. This helps Cinis sort your tasks.</p>
               <div className={styles.rankList}>
                 {rankItems.map((item, i) => (
                   <div
@@ -471,7 +471,7 @@ export default function Onboarding() {
   if (phase === 'analyzing') {
     return (
       <>
-        <Head><title>Getting Started — FocusBuddy</title></Head>
+        <Head><title>Getting Started — Cinis</title></Head>
         <div className={styles.page}>
           <div className={styles.analyzeScreen}>
             <p className={styles.analyzeText}>
@@ -494,7 +494,7 @@ export default function Onboarding() {
 
     return (
       <>
-        <Head><title>Getting Started — FocusBuddy</title></Head>
+        <Head><title>Getting Started — Cinis</title></Head>
         <div className={styles.page}>
           <div className={styles.revealContainer}>
             <div className={styles.revealCard}>
@@ -542,7 +542,7 @@ export default function Onboarding() {
   // ── Saving ────────────────────────────────────────────────────────────────
   return (
     <>
-      <Head><title>Getting Started — FocusBuddy</title></Head>
+      <Head><title>Getting Started — Cinis</title></Head>
       <div className={styles.page}>
         <div className={styles.savingContainer}>
           <div className={styles.savingLogo}>
