@@ -484,7 +484,15 @@ export default async function handler(req, res) {
 
   const rateCheck = await checkDailyRateLimit(userId)
   if (!rateCheck.allowed) {
-    return res.status(429).json(rateLimitErrorResponse(rateCheck))
+    return res.status(429).json({
+      error: 'rate_limit',
+      message: rateCheck.isPro
+        ? `You've used all ${rateCheck.limit} daily check-ins. Resets at midnight.`
+        : `You've used your ${rateCheck.limit} free daily check-ins.`,
+      limit: rateCheck.limit,
+      current: rateCheck.current,
+      upgradeRequired: !rateCheck.isPro,
+    })
   }
 
   const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: timezone || 'America/Chicago' })
