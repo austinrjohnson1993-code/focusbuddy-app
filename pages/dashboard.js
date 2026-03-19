@@ -72,12 +72,13 @@ const NAV_ITEMS = [
   { id: 'focus', label: 'Focus', icon: <Target size={22} /> },
   { id: 'calendar', label: 'Calendar', icon: <CalendarBlank size={22} /> },
   { id: 'journal', label: 'Journal', icon: <Notebook size={22} /> },
+  { id: 'habits', label: 'Habits', icon: <ArrowCounterClockwise size={22} /> },
   { id: 'finance', label: 'Finance', icon: <Wallet size={22} /> },
   { id: 'progress', label: 'Progress', icon: <ChartLineUp size={22} /> },
 ]
 
 const NAV_PRIMARY_IDS = ['tasks', 'checkin', 'focus', 'calendar']
-const NAV_MORE_IDS = ['journal', 'finance', 'progress', 'settings']
+const NAV_MORE_IDS = ['journal', 'habits', 'finance', 'progress', 'settings']
 
 // ── Pure helpers ──────────────────────────────────────────────────────────────
 
@@ -954,6 +955,16 @@ export default function Dashboard() {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
     if (data) {
       setProfile(data)
+      // Initialize check-in times from profile
+      if (data.checkin_times) {
+        setNotifMorning(data.checkin_times.includes('morning'))
+        setNotifMidday(data.checkin_times.includes('midday'))
+        setNotifEvening(data.checkin_times.includes('evening'))
+      }
+      // Initialize check-in times (hours)
+      if (data.morning_time) setMorningTime(data.morning_time)
+      if (data.midday_time) setMiddayTime(data.midday_time)
+      if (data.evening_time) setEveningTime(data.evening_time)
       // Apply theme immediately from loaded profile to prevent race condition
       if (data.accent_color) {
         const savedTheme = THEMES.find(t => t.id === data.accent_color) || THEMES.find(t => t.accent === data.accent_color) || THEMES[0]
@@ -1526,6 +1537,28 @@ export default function Dashboard() {
     } catch (err) {
       console.error('[push] disable error:', err)
       showToast('Could not disable notifications')
+    }
+  }
+
+  const saveCheckinPreferences = async () => {
+    if (!user) return
+    try {
+      const checkinTimesList = []
+      if (notifMorning) checkinTimesList.push('morning')
+      if (notifMidday) checkinTimesList.push('midday')
+      if (notifEvening) checkinTimesList.push('evening')
+
+      await supabase.from('profiles').update({
+        checkin_times: checkinTimesList,
+        morning_time: morningTime,
+        midday_time: middayTime,
+        evening_time: eveningTime,
+      }).eq('id', user.id)
+      setProfile(prev => ({ ...prev, checkin_times: checkinTimesList, morning_time: morningTime, midday_time: middayTime, evening_time: eveningTime }))
+      showToast('Check-in preferences saved')
+    } catch (err) {
+      console.error('[checkin] save error:', err)
+      showToast('Could not save check-in preferences')
     }
   }
 
@@ -2834,6 +2867,15 @@ export default function Dashboard() {
                 )}
               </div>
 
+              {/* Journal empty state */}
+              {journalMessages.length === 0 && !journalLoading && (
+                <div className={styles.journalEmptyState}>
+                  <Notebook size={36} className={styles.journalEmptyIcon} />
+                  <p className={styles.journalEmptyText}>Your journal is blank — and that's a fine place to start.</p>
+                  <p className={styles.journalEmptySub}>Write anything. Your coach is listening.</p>
+                </div>
+              )}
+
               {/* Current entry — conversation at top */}
               <div className={styles.journalMessages}>
                 {journalMessages.map((msg, i) => (
@@ -3191,6 +3233,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                   ))}
+                  <button onClick={saveCheckinPreferences} className={styles.addTaskBtn} style={{ width: '100%', marginBottom: '16px', marginTop: '8px' }}>Save check-in preferences</button>
                   <div className={styles.settingsRow}>
                     <div className={styles.settingsRowLeft}>
                       <span className={styles.settingsRowLabel}>Push notifications</span>

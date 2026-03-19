@@ -1453,6 +1453,35 @@
 }
 .learnReferralClose:hover { color: rgba(240,234,214,0.75); }
 
+.journalEmptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 48px 24px 32px;
+  gap: 10px;
+}
+.journalEmptyIcon {
+  opacity: 0.25;
+  color: var(--text-color, #f0ead6);
+  margin-bottom: 4px;
+}
+.journalEmptyText {
+  font-family: 'Figtree', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: rgba(240,234,214,0.65);
+  margin: 0;
+  max-width: 320px;
+  line-height: 1.5;
+}
+.journalEmptySub {
+  font-family: 'Figtree', sans-serif;
+  font-size: 13px;
+  color: rgba(240,234,214,0.35);
+  margin: 0;
+}
+
 .journalMessages {
   flex: 1;
   overflow-y: auto;

@@ -4,9 +4,8 @@ import Head from 'next/head'
 import styles from '../styles/Guide.module.css'
 import { applyAccentColor } from '../lib/accentColor'
 
-// Map theme IDs (stored in localStorage) to their accent hex values
 const THEME_ACCENT_MAP = {
-  'orange-bronze':   '#ff4d1c',
+  'orange-bronze':   '#E8321A',
   'teal-ocean':      '#2dd4bf',
   'purple-cosmos':   '#8b5cf6',
   'blue-arctic':     '#3b82f6',
@@ -20,11 +19,40 @@ const THEME_ACCENT_MAP = {
   'paper':           '#000000',
 }
 
+const CinisMark = ({ size = 40 }) => (
+  <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
+    <polygon points="32,3 55,16 55,42 32,55 9,42 9,16"
+      fill="none" stroke="#FF6644" strokeWidth="1.5" opacity="0.4"/>
+    <polygon points="32,5 53,17 53,41 32,53 11,41 11,17"
+      fill="#FF6644" opacity="0.55"/>
+    <polygon points="32,7 51,18 51,40 32,52 13,40 13,18" fill="#1A0A05"/>
+    <polygon points="32,13 46,21 46,40 32,47 18,40 18,21" fill="#6B1506"/>
+    <polygon points="32,18 42,24 42,40 32,45 22,40 22,24" fill="#B82510"/>
+    <polygon points="32,23 38,27 38,40 32,43 26,40 26,27" fill="#E8321A"/>
+    <path d="M20,40 Q20,32 32,30 Q44,32 44,40 L39,43 L32,46 L25,43 Z"
+      fill="#FF6644" opacity="0.9"/>
+    <path d="M24,40 Q24,35 32,33 Q40,35 40,40 L38,42 L32,44 L26,42 Z"
+      fill="#FFD0C0" opacity="0.75"/>
+    <path d="M27,40 Q27,37 32,36 Q37,37 37,40 L36,41 L32,42 L28,41 Z"
+      fill="#FFF0EB" opacity="0.6"/>
+  </svg>
+)
+
 const SECTIONS = [
+  {
+    title: '✦ Getting started',
+    body: "Cinis is a personal productivity coach that works like a smart friend — not a task manager. It knows your tasks, tracks your patterns, and checks in with you three times a day to keep things moving. The more you engage, the sharper it gets. Start by adding a few tasks, set your coaching persona in Settings, and let Cinis run the first check-in.",
+    tip: "Don't overthink the setup. Add three tasks you need to do today and hit Check-in. That's the whole loop.",
+  },
   {
     title: '🧠 Start with your persona',
     body: "Your persona blend is the most important setting in the app. It controls how Cinis talks to you — from blunt and direct (Drill Sergeant) to warm and strategic (Coach). If the tone feels off, go to Settings → Coaching style and adjust it. Most people land on a blend of 2-3 personas.",
     tip: "Not sure what you want? Try The Coach + The Thinking Partner for a few days. You can always change it.",
+  },
+  {
+    title: '👤 Your coaching profile',
+    body: "During onboarding, Cinis built a baseline profile from your answers — your goals, work style, and what accountability looks like for you. This profile shapes every check-in, every insight, and every task suggestion. It updates automatically as you use the app. If the coaching feels generic, update your persona blend in Settings — it recalibrates everything.",
+    tip: "The profile isn't visible, but it's always active. The more you interact with check-ins honestly, the better it gets.",
   },
   {
     title: '✅ The task deck',
@@ -33,7 +61,7 @@ const SECTIONS = [
   },
   {
     title: '💬 Daily check-ins',
-    body: "Check-in is the core loop. Cinis opens a brief conversation 1-3 times a day depending on your settings. It knows your task list, notices patterns, and can reschedule, complete, or create tasks directly from the conversation. The AI can create, reschedule, and complete tasks directly from the conversation — you don't have to do anything separately. Just reply.",
+    body: "Check-in is the core loop. Cinis opens a brief conversation 1-3 times a day depending on your settings — morning to set your priority, midday to check progress, evening to wrap up. It knows your task list, notices patterns, and can reschedule, complete, or create tasks directly from the conversation. You don't have to do anything separately — just reply.",
     tip: "Tell it anything mid-conversation. 'I need to pick up Sarah's gift at 6pm' — it will add the task.",
   },
   {
@@ -48,7 +76,7 @@ const SECTIONS = [
   },
   {
     title: '📓 Journal',
-    body: "The journal is a private thinking space. Write anything — Cinis reads it, reflects back what it hears, and can pull out tasks you mention. Entries are saved automatically with date and time.",
+    body: "The journal is a private thinking space. Write anything — Cinis reads it, reflects back what it hears, and can pull out tasks you mention. Entries are saved automatically with date and time. It's not therapy, but it's close. Use it when you're overwhelmed, stuck, or just need to think out loud.",
     tip: "Use it when you're overwhelmed. Just dump everything on screen. The AI will help you organize it.",
   },
   {
@@ -62,6 +90,11 @@ const SECTIONS = [
     tip: "One completed task counts as a streak day. The bar is low on purpose.",
   },
   {
+    title: '🎭 Your coach personas',
+    body: "Cinis has 6 coaching styles you can blend:\n\n• The Drill Sergeant — Blunt, no-nonsense, zero tolerance for excuses. Best for people who need a kick.\n• The Coach — Warm, strategic, sees the big picture. Best for people who want to think things through.\n• The Thinking Partner — Asks questions instead of giving answers. Best for deep thinkers who hate being told what to do.\n• The Hype Person — Celebrates everything. Best for people who need energy and momentum.\n• The Strategist — Systems-focused, logic-driven, optimizes everything. Best for analytical types.\n• The Empath — Emotionally attuned, meets you where you are. Best for days when motivation isn't the issue — processing is.",
+    tip: "Your first persona is your dominant voice. The second and third add nuance. Experiment — you'll know when it clicks.",
+  },
+  {
     title: '⚙️ Settings',
     body: "Change your display name, switch themes, update your coaching persona, enable push notifications, and connect external services. The theme color applies everywhere in the app including the logo and background gradient. Set up your chore cadence under Settings to automatically populate recurring household tasks into your task deck and calendar.",
     tip: "Enable push notifications for check-in reminders to actually land on your phone or desktop.",
@@ -72,7 +105,6 @@ export default function Guide() {
   const router = useRouter()
   const [openIndex, setOpenIndex] = useState(0)
 
-  // Restore user's saved theme accent on mount so guide matches the app
   useEffect(() => {
     try {
       const saved = localStorage.getItem('fb_accent_color')
@@ -91,8 +123,11 @@ export default function Guide() {
       <div className={styles.guidePage}>
         <button className={styles.backBtn} onClick={() => router.back()}>← Back</button>
 
-        <h1 className={styles.guideHeading}>How to get the most out of Cinis</h1>
-        <p className={styles.guideSub}>A quick guide to every feature and how to use it well.</p>
+        <div className={styles.guideHero}>
+          <CinisMark size={48} />
+          <h1 className={styles.guideHeading}>How to get the most out of Cinis</h1>
+          <p className={styles.guideSub}>A quick guide to every feature and how to use it well.</p>
+        </div>
 
         {SECTIONS.map((section, i) => {
           const isOpen = openIndex === i
@@ -104,7 +139,7 @@ export default function Guide() {
               </div>
               {isOpen && (
                 <div className={styles.guideCardBody}>
-                  <p>{section.body}</p>
+                  <p style={{ whiteSpace: 'pre-line' }}>{section.body}</p>
                   {section.tip && (
                     <div className={styles.guideCardTip}>💡 {section.tip}</div>
                   )}

@@ -107,7 +107,7 @@
 
 .submitBtn {
   width: 100%;
-  background: #ff4d1c;
+  background: #E8321A;
   color: #110d06;
   border: none;
   border-radius: 100px;
@@ -118,7 +118,7 @@
 }
 
 .submitBtn:hover:not(:disabled) {
-  background: #ff7043;
+  background: #E8321A;
   transform: translateY(-1px);
 }
 
@@ -180,7 +180,7 @@
 }
 
 .signupLink a {
-  color: #ff4d1c;
+  color: #E8321A;
   font-weight: 600;
 }
 

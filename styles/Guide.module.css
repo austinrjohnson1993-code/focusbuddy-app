@@ -1,14 +1,28 @@
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 .guidePage {
   max-width: 680px;
   margin: 0 auto;
   padding: 32px 24px;
+  animation: fadeSlideIn 300ms ease-out;
+}
+
+.guideHero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 32px;
 }
 
 .guideHeading {
   font-family: 'Playfair Display', serif;
   font-size: 32px;
   font-weight: 900;
-  margin-bottom: 8px;
+  margin: 0;
   letter-spacing: -0.02em;
   color: var(--cream);
 }
@@ -16,7 +30,7 @@
 .guideSub {
   opacity: 0.6;
   font-size: 15px;
-  margin-bottom: 32px;
+  margin: 0;
 }
 
 .guideCard {
