@@ -54,20 +54,15 @@ function saveChatHistory(key, messages) {
 
 const CinisMark = ({ size = 24 }) => (
   <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
-    <polygon points="32,3 55,16 55,42 32,55 9,42 9,16"
-      fill="none" stroke="#FF6644" strokeWidth="1.5" opacity="0.4"/>
-    <polygon points="32,5 53,17 53,41 32,53 11,41 11,17"
-      fill="#FF6644" opacity="0.55"/>
-    <polygon points="32,7 51,18 51,40 32,52 13,40 13,18" fill="#1A0A05"/>
-    <polygon points="32,13 46,21 46,40 32,47 18,40 18,21" fill="#6B1506"/>
-    <polygon points="32,18 42,24 42,40 32,45 22,40 22,24" fill="#B82510"/>
-    <polygon points="32,23 38,27 38,40 32,43 26,40 26,27" fill="#E8321A"/>
-    <path d="M20,40 Q20,32 32,30 Q44,32 44,40 L39,43 L32,46 L25,43 Z"
-      fill="#FF6644" opacity="0.9"/>
-    <path d="M24,40 Q24,35 32,33 Q40,35 40,40 L38,42 L32,44 L26,42 Z"
-      fill="#FFD0C0" opacity="0.75"/>
-    <path d="M27,40 Q27,37 32,36 Q37,37 37,40 L36,41 L32,42 L28,41 Z"
-      fill="#FFF0EB" opacity="0.6"/>
+    <polygon points="32,2 56,15 56,43 32,56 8,43 8,15" fill="none" stroke="#FF6644" strokeWidth="1.1" opacity="0.45"/>
+    <polygon points="32,4 54,16 54,42 32,54 10,42 10,16" fill="#FF6644"/>
+    <polygon points="32,7 51,18 51,40 32,52 13,40 13,18" fill="#120704"/>
+    <polygon points="32,14 46,22 46,40 32,48 18,40 18,22" fill="#5A1005"/>
+    <polygon points="32,20 42,26 42,40 32,45 22,40 22,26" fill="#A82010"/>
+    <polygon points="32,26 38,29 38,40 32,43 26,40 26,29" fill="#E8321A"/>
+    <polygon points="32,29 45,40 40,43 32,47 24,43 19,40" fill="#FF6644" opacity="0.92"/>
+    <polygon points="32,33 41,40 38,42 32,45 26,42 23,40" fill="#FFD0C0" opacity="0.76"/>
+    <polygon points="32,36 37,40 36,41 32,43 28,41 27,40" fill="#FFF0EB" opacity="0.60"/>
   </svg>
 )
 
