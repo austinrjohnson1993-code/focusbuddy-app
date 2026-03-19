@@ -108,37 +108,40 @@ export default async function handler(req, res) {
 
   // ── monthly ───────────────────────────────────────────────────────────────
   if (type === 'monthly') {
-    // Pull exactly 30 days of snapshots (rolling window, not calendar month-to-date)
+    // 30-day rolling window — query tasks directly (same source as weekly, wider window)
     const now = new Date()
-    const monthName = now.toLocaleString('en-US', { month: 'long', year: 'numeric' })
-    const currentMonth = now.toLocaleString('en-US', { month: 'long' }) // e.g. "March"
-    const currentYear = now.getFullYear()
+    const currentMonth = now.toLocaleString('en-US', { month: 'long' })
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0]
 
-    const [{ data: snapshots, error: snapErr }, { data: profile }, { count: allTimeCount }] = await Promise.all([
+    const [{ data: monthlyTasks, error: monthlyErr }, { data: profile }] = await Promise.all([
       supabaseAdmin
-        .from('progress_snapshots')
-        .select('snapshot_date, tasks_completed')
+        .from('tasks')
+        .select('id, title, completed_at')
         .eq('user_id', userId)
-        .gte('snapshot_date', thirtyDaysAgoStr),
+        .eq('completed', true)
+        .gte('completed_at', thirtyDaysAgo.toISOString()),
       supabaseAdmin.from('profiles').select('persona_blend').eq('id', userId).single(),
-      supabaseAdmin.from('tasks').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('completed', true)
     ])
 
-    if (snapErr) return res.status(500).json({ error: 'Failed to fetch snapshots' })
+    if (monthlyErr) return res.status(500).json({ error: 'Failed to fetch tasks' })
 
-    if ((allTimeCount ?? 0) === 0) {
+    if (!monthlyTasks || monthlyTasks.length === 0) {
       return res.status(200).json({ type: 'monthly', insight: NEW_USER_INSIGHT, totalTasks: 0, bestDay: null })
     }
 
-    const totalTasks = (snapshots || []).reduce((sum, s) => sum + (s.tasks_completed || 0), 0)
-    const best = (snapshots || []).slice().sort((a, b) => b.tasks_completed - a.tasks_completed)[0]
-    const bestDay = best ? { date: best.snapshot_date, count: best.tasks_completed } : null
+    const totalTasks = monthlyTasks.length
+
+    // Find best day by grouping completions by date
+    const dayCounts = {}
+    monthlyTasks.forEach(t => {
+      const d = new Date(t.completed_at).toISOString().split('T')[0]
+      dayCounts[d] = (dayCounts[d] || 0) + 1
+    })
+    const bestEntry = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]
+    const bestDay = bestEntry ? { date: bestEntry[0], count: bestEntry[1] } : null
 
     const persona = profile?.persona_blend?.join(', ') || 'coach'
-    // T2-D: explicitly different from weekly — 30-day scope, trend/pattern, month name required, no "this week"
     const prompt = `Respond with a SINGLE sentence only. No headers, no bullet points, no markdown, no line breaks. One sentence maximum. Do not label by persona. In one persona-voiced sentence, give an encouraging monthly summary for this month (${currentMonth}). This is a 30-day rolling window summary, NOT a weekly one. Identify a meaningful trend or pattern. Persona: ${persona}. Total tasks completed this month: ${totalTasks}. Best day: ${bestDay?.date ?? 'none'} with ${bestDay?.count ?? 0} tasks. Be specific.`
     const raw = await callHaiku(prompt)
     const insight = sanitizeInsight(raw) ?? `You completed ${totalTasks} tasks in ${currentMonth}.`
