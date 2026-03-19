@@ -103,7 +103,7 @@ export default async function handler(req, res) {
         user_id: userId,
         name: name.trim(),
         frequency: frequency || 'daily',
-        color: color || '#E8321A',
+        color: color || '#FF6644',
         description: description || null,
         habit_type: habit_type || 'build',
       })

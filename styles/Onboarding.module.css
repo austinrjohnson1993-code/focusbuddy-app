@@ -19,14 +19,14 @@
 
 .progressFill {
   height: 100%;
-  background: #E8321A;
+  background: #FF6644;
   transition: width 300ms ease;
 }
 
 /* ── Shared button ── */
 
 .startBtn {
-  background: #E8321A;
+  background: #FF6644;
   color: #f0ead6;
   border: none;
   border-radius: 8px;
@@ -289,8 +289,8 @@
 
 .optionCardSelected {
   background: #331208 !important;
-  border-left: 3px solid #E8321A !important;
-  border-color: #E8321A !important;
+  border-left: 3px solid #FF6644 !important;
+  border-color: #FF6644 !important;
   transform: none !important;
 }
 

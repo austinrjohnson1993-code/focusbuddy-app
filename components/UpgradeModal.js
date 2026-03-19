@@ -139,7 +139,7 @@ const yearlyLink = {
 }
 
 const yearlyLinkBtn = {
-  color: '#E8321A',
+  color: '#FF6644',
   cursor: 'pointer',
   textDecoration: 'underline',
 }

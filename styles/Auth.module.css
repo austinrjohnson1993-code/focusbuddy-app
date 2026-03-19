@@ -128,7 +128,7 @@
 }
 
 .forgotLink a {
-  color: #E8321A;
+  color: #FF6644;
   text-decoration: none;
   opacity: 0.8;
 }
@@ -152,13 +152,13 @@
 .input::placeholder { color: rgba(240,234,214,0.35); }
 
 .input:focus {
-  border-color: #E8321A;
+  border-color: #FF6644;
   box-shadow: 0 0 0 3px rgba(232,50,26,0.12);
 }
 
 .submitBtn {
   width: 100%;
-  background: #E8321A;
+  background: #FF6644;
   color: #110d06;
   border: none;
   border-radius: 100px;
@@ -169,7 +169,7 @@
 }
 
 .submitBtn:hover:not(:disabled) {
-  background: #E8321A;
+  background: #FF6644;
   transform: translateY(-1px);
 }
 
@@ -231,7 +231,7 @@
 }
 
 .signupLink a {
-  color: #E8321A;
+  color: #FF6644;
   font-weight: 600;
 }
 
@@ -263,7 +263,7 @@
 
 .authFooterLink {
   font-size: 0.85rem;
-  color: #E8321A;
+  color: #FF6644;
   text-decoration: none;
   opacity: 0.85;
   transition: opacity 0.15s;

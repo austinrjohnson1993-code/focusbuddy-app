@@ -31,7 +31,7 @@
 }
 
 .addBtn {
-  background: var(--accent, #E8321A);
+  background: var(--accent, #FF6644);
   color: #F0EAD6;
   border: none;
   border-radius: 8px;
@@ -68,7 +68,7 @@
 
 .emptyAddBtn {
   margin-top: 16px;
-  background: var(--accent, #E8321A);
+  background: var(--accent, #FF6644);
   color: #F0EAD6;
   border: none;
   border-radius: 8px;
@@ -86,7 +86,7 @@
   justify-content: space-between;
   background: #2A1810;
   border: 1px solid rgba(255,200,120,0.07);
-  border-left: 3px solid var(--accent, #E8321A);
+  border-left: 3px solid var(--accent, #FF6644);
   border-radius: 12px;
   padding: 14px 16px;
 }
@@ -124,8 +124,8 @@
 }
 
 .completionCircle.completed {
-  background: var(--accent, #E8321A);
-  border-color: var(--accent, #E8321A);
+  background: var(--accent, #FF6644);
+  border-color: var(--accent, #FF6644);
 }
 
 /* Modal */
@@ -178,7 +178,7 @@
   box-sizing: border-box;
 }
 
-.input:focus, .select:focus { outline: none; border-color: var(--accent, #E8321A); }
+.input:focus, .select:focus { outline: none; border-color: var(--accent, #FF6644); }
 .select option { background: #1a1108; }
 
 .colorPicker { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -210,7 +210,7 @@
 
 .saveBtn {
   flex: 2;
-  background: var(--accent, #E8321A);
+  background: var(--accent, #FF6644);
   border: none;
   border-radius: 8px;
   color: #F0EAD6;

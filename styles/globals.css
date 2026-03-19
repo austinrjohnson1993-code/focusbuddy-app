@@ -18,8 +18,8 @@
   --radius: 16px;
   --radius-sm: 8px;
   /* Theme system — overridden at runtime via JS */
-  --accent: #ff4d1c;
-  --accent-rgb: 255,77,28;
+  --accent: #FF6644;
+  --accent-rgb: 255,102,68;
   --accent-gradient: radial-gradient(ellipse at top left, rgba(101,60,10,0.35) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(80,45,8,0.3) 0%, transparent 60%);
   --logo-color: #ff4d1c;
 }

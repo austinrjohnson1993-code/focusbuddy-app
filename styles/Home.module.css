@@ -64,7 +64,7 @@
 
 .navCta {
   padding: 10px 28px;
-  background: #E8321A;
+  background: #FF6644;
   color: #0F0906;
   font-size: 0.95rem;
   font-weight: 700;
@@ -101,7 +101,7 @@
   display: inline-block;
   background: rgba(232, 50, 26, 0.12);
   border: 1px solid rgba(232, 50, 26, 0.3);
-  color: #E8321A;
+  color: #FF6644;
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -123,7 +123,7 @@
 
 .accentText {
   font-style: italic;
-  color: #E8321A;
+  color: #FF6644;
 }
 
 .subhead {
@@ -146,7 +146,7 @@
 
 .ctaPrimary {
   padding: 16px 40px;
-  background: #E8321A;
+  background: #FF6644;
   color: #0F0906;
   font-size: 1rem;
   font-weight: 700;
@@ -154,7 +154,7 @@
   border-radius: 100px;
   transition: all 0.3s ease;
   display: inline-block;
-  border: 2px solid #E8321A;
+  border: 2px solid #FF6644;
 }
 
 .ctaPrimary:hover {
@@ -178,7 +178,7 @@
 }
 
 .ctaSecondary:hover {
-  border-color: #E8321A;
+  border-color: #FF6644;
   color: #F0EAD6;
   box-shadow: 0 8px 24px rgba(232, 50, 26, 0.2);
 }
@@ -219,7 +219,7 @@
 
 .featureCard {
   background: #2A1810;
-  border-left: 3px solid #E8321A;
+  border-left: 3px solid #FF6644;
   padding: 32px;
   border-radius: 8px;
   transition: all 0.3s ease;
@@ -277,7 +277,7 @@
 
 .closingCta {
   padding: 18px 48px;
-  background: #E8321A;
+  background: #FF6644;
   color: #0F0906;
   font-size: 1.05rem;
   font-weight: 700;
@@ -285,7 +285,7 @@
   border-radius: 100px;
   transition: all 0.3s ease;
   display: inline-block;
-  border: 2px solid #E8321A;
+  border: 2px solid #FF6644;
 }
 
 .closingCta:hover {

@@ -4,7 +4,7 @@ import { useRouter } from 'next/router'
 import Head from 'next/head'
 import { UsersThree, PaperPlaneRight, CaretLeft } from '@phosphor-icons/react'
 
-const ACCENT = '#E8321A'
+const ACCENT = '#FF6644'
 
 const s = {
   page: { minHeight: '100vh', background: '#110d06', color: '#f0ead6', fontFamily: "'Figtree', sans-serif" },

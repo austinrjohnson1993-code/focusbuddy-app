@@ -99,7 +99,7 @@ export default function Signup() {
           {signupState === 'existing' && (
             <div className={styles.error} style={{ background: 'rgba(231,76,60,0.08)', border: '1px solid rgba(231,76,60,0.25)' }}>
               An account with this email exists.{' '}
-              <a href="/login" style={{ color: '#E8321A', fontWeight: 600 }}>Sign in instead</a>
+              <a href="/login" style={{ color: '#FF6644', fontWeight: 600 }}>Sign in instead</a>
             </div>
           )}
 

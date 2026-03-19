@@ -110,7 +110,7 @@ export default function ResetPassword() {
             <div className={styles.success} style={{ background: 'rgba(231,76,60,0.08)', border: '1px solid rgba(231,76,60,0.2)' }}>
               <div className={styles.successIcon} style={{ background: 'rgba(231,76,60,0.15)', color: '#e74c3c' }}>!</div>
               <p style={{ color: 'rgba(240,234,214,0.8)' }}>This link has expired. Request a new one.</p>
-              <p className={styles.successSub}><a href="/forgot-password" style={{ color: '#E8321A' }}>Go to forgot password →</a></p>
+              <p className={styles.successSub}><a href="/forgot-password" style={{ color: '#FF6644' }}>Go to forgot password →</a></p>
             </div>
           ) : done ? (
             <div className={styles.success}>

@@ -13,7 +13,7 @@ import { CheckSquare, ChatCircle, Target, CalendarBlank, Notebook, Wallet, Chart
 import UpgradeModal from '../components/UpgradeModal'
 
 const THEMES = [
-  { id: 'orange-bronze', name: 'Classic', accent: '#E8321A', gradient: 'radial-gradient(ellipse at top left, rgba(101,60,10,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(80,45,8,0.35) 0%, transparent 60%)', logo: '#E8321A' },
+  { id: 'orange-bronze', name: 'Classic', accent: '#FF6644', gradient: 'radial-gradient(ellipse at top left, rgba(101,60,10,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(80,45,8,0.35) 0%, transparent 60%)', logo: '#FF6644' },
   { id: 'teal-ocean', name: 'Ocean', accent: '#2dd4bf', gradient: 'radial-gradient(ellipse at top left, rgba(15,80,90,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(10,60,70,0.35) 0%, transparent 60%)', logo: '#2dd4bf' },
   { id: 'purple-cosmos', name: 'Cosmos', accent: '#8b5cf6', gradient: 'radial-gradient(ellipse at top left, rgba(60,20,120,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(40,10,90,0.35) 0%, transparent 60%)', logo: '#8b5cf6' },
   { id: 'blue-arctic', name: 'Arctic', accent: '#3b82f6', gradient: 'radial-gradient(ellipse at top left, rgba(15,40,100,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(10,30,80,0.35) 0%, transparent 60%)', logo: '#3b82f6' },
@@ -54,13 +54,13 @@ function saveChatHistory(key, messages) {
 
 const CinisMark = ({ size = 24 }) => (
   <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
-    <polygon points="32,2 56,15 56,43 32,56 8,43 8,15" fill="none" stroke="#FF6644" strokeWidth="1.1" opacity="0.45"/>
-    <polygon points="32,4 54,16 54,42 32,54 10,42 10,16" fill="#FF6644"/>
+    <polygon points="32,2 56,15 56,43 32,56 8,43 8,15" fill="none" stroke="#E8321A" strokeWidth="1.1" opacity="0.45"/>
+    <polygon points="32,4 54,16 54,42 32,54 10,42 10,16" fill="#E8321A"/>
     <polygon points="32,7 51,18 51,40 32,52 13,40 13,18" fill="#120704"/>
     <polygon points="32,14 46,22 46,40 32,48 18,40 18,22" fill="#5A1005"/>
     <polygon points="32,20 42,26 42,40 32,45 22,40 22,26" fill="#A82010"/>
     <polygon points="32,26 38,29 38,40 32,43 26,40 26,29" fill="#E8321A"/>
-    <polygon points="32,29 45,40 40,43 32,47 24,43 19,40" fill="#FF6644" opacity="0.92"/>
+    <polygon points="32,29 45,40 40,43 32,47 24,43 19,40" fill="#E8321A" opacity="0.92"/>
     <polygon points="32,33 41,40 38,42 32,45 26,42 23,40" fill="#FFD0C0" opacity="0.76"/>
     <polygon points="32,36 37,40 36,41 32,43 28,41 27,40" fill="#FFF0EB" opacity="0.60"/>
   </svg>
@@ -642,9 +642,9 @@ export default function Dashboard() {
   const [showHabitModal, setShowHabitModal] = useState(false)
   const [newHabitName, setNewHabitName] = useState('')
   const [newHabitFreq, setNewHabitFreq] = useState('daily')
-  const [newHabitColor, setNewHabitColor] = useState('#E8321A')
+  const [newHabitColor, setNewHabitColor] = useState('#FF6644')
   const [newHabitType, setNewHabitType] = useState('build')
-  const habitColorOptions = ['#E8321A', '#FF6644', '#A82010', '#5A1005', '#F0EAD6', '#2A1810']
+  const habitColorOptions = ['#FF6644', '#E8321A', '#A82010', '#5A1005', '#F0EAD6', '#2A1810']
 
   // Live tick for countdown displays in task list
   const [tickNow, setTickNow] = useState(() => new Date())
@@ -1124,7 +1124,7 @@ export default function Dashboard() {
       setHabitsList(prev => [habit, ...prev])
       setNewHabitName('')
       setNewHabitFreq('daily')
-      setNewHabitColor('#E8321A')
+      setNewHabitColor('#FF6644')
       setNewHabitType('build')
       setShowHabitModal(false)
     }
@@ -3202,7 +3202,7 @@ export default function Dashboard() {
                         {(dayTasks.length > 0 || dayBills.length > 0) && (
                           <div className={styles.calDots}>
                             {dayTasks.slice(0, 2).map((_, di) => (
-                              <span key={`t${di}`} className={styles.calDot} style={{ background: '#E8321A' }} />
+                              <span key={`t${di}`} className={styles.calDot} style={{ background: '#FF6644' }} />
                             ))}
                             {dayBills.slice(0, 1).map((_, bi) => (
                               <span key={`b${bi}`} className={styles.calDot} style={{ background: 'rgba(240,234,214,0.3)' }} />
@@ -5277,7 +5277,7 @@ export default function Dashboard() {
             width: '52px',
             height: '52px',
             borderRadius: '50%',
-            background: '#E8321A',
+            background: '#FF6644',
             border: 'none',
             cursor: 'pointer',
             display: 'flex',
