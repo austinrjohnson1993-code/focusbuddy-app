@@ -17,12 +17,12 @@ const CinisMark = ({ size = 32 }) => (
   </svg>
 )
 
+const MONTHLY_PRICE_ID = 'price_1TCRi82OSKmsLrz4fKxjcqyt'
+const YEARLY_PRICE_ID  = 'price_1TCmBd2OSKmsLrz4A9AJ7qC9'
+
 export default function Upgrade() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-
-  const monthlyPriceId = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID || 'price_monthly'
-  const yearlyPriceId = process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID || 'price_yearly'
 
   const handleCheckout = async (priceId) => {
     setLoading(true)
@@ -114,7 +114,7 @@ export default function Upgrade() {
               <tr style={styles.priceRow}>
                 <td style={styles.featureName}>Price</td>
                 <td style={styles.value}>Free</td>
-                <td style={styles.value}>$9.99/mo or $99/yr</td>
+                <td style={styles.value}>$14/mo or $99/yr</td>
               </tr>
             </tbody>
           </table>
@@ -126,19 +126,19 @@ export default function Upgrade() {
 
           <div style={styles.buttonGrid}>
             <button
-              onClick={() => handleCheckout(monthlyPriceId)}
+              onClick={() => handleCheckout(MONTHLY_PRICE_ID)}
               disabled={loading}
               style={styles.ctaButtonPrimary}
             >
-              Start monthly — $9.99/mo
+              Start monthly — $14/mo
             </button>
             <button
-              onClick={() => handleCheckout(yearlyPriceId)}
+              onClick={() => handleCheckout(YEARLY_PRICE_ID)}
               disabled={loading}
               style={styles.ctaButtonSecondary}
             >
               Go yearly — $99/yr
-              <span style={styles.saveBadge}>save 17%</span>
+              <span style={styles.saveBadge}>save 15%</span>
             </button>
           </div>
 

@@ -1,4 +1,8 @@
 import React from 'react'
+import { supabase } from '../lib/supabase'
+
+const MONTHLY_PRICE_ID = 'price_1TCRi82OSKmsLrz4fKxjcqyt'
+const YEARLY_PRICE_ID  = 'price_1TCmBd2OSKmsLrz4A9AJ7qC9'
 
 const COPY = {
   limit: {
@@ -19,18 +23,23 @@ export default function UpgradeModal({ trigger, onClose }) {
   if (!trigger) return null
   const { headline, body } = COPY[trigger] || COPY.limit
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = async (priceId) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ priceId }),
       })
       const data = await res.json()
       if (data.url) {
         window.location.href = data.url
       }
     } catch {
-      // no-op — stub endpoint
+      // no-op
     }
   }
 
@@ -40,9 +49,16 @@ export default function UpgradeModal({ trigger, onClose }) {
         <div style={accentBar} />
         <h2 style={headlineStyle}>{headline}</h2>
         <p style={bodyStyle}>{body}</p>
-        <button style={ctaBtn} onClick={handleUpgrade}>
+        <button style={ctaBtn} onClick={() => handleUpgrade(MONTHLY_PRICE_ID)}>
           Upgrade to Pro — $14/mo
         </button>
+        <p style={yearlyLink}>
+          or{' '}
+          <span style={yearlyLinkBtn} onClick={() => handleUpgrade(YEARLY_PRICE_ID)}>
+            $99/year
+          </span>
+          {' '}(save 15%)
+        </p>
         <div style={buttonRow}>
           <button style={laterBtn} onClick={onClose}>
             Maybe later
@@ -112,6 +128,20 @@ const ctaBtn = {
   fontWeight: 700,
   cursor: 'pointer',
   marginTop: '8px',
+}
+
+const yearlyLink = {
+  textAlign: 'center',
+  fontSize: '13px',
+  color: 'rgba(240,234,214,0.45)',
+  margin: 0,
+  fontFamily: "'Figtree', sans-serif",
+}
+
+const yearlyLinkBtn = {
+  color: '#E8321A',
+  cursor: 'pointer',
+  textDecoration: 'underline',
 }
 
 const buttonRow = {
