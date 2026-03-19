@@ -43,9 +43,14 @@ export default function UpgradeModal({ trigger, onClose }) {
         <button style={ctaBtn} onClick={handleUpgrade}>
           Upgrade to Pro — $14/mo
         </button>
-        <button style={laterBtn} onClick={onClose}>
-          Maybe later
-        </button>
+        <div style={buttonRow}>
+          <button style={laterBtn} onClick={onClose}>
+            Maybe later
+          </button>
+          <a href="/upgrade" style={learnMoreBtn}>
+            Learn more
+          </a>
+        </div>
       </div>
     </div>
   )
@@ -109,6 +114,13 @@ const ctaBtn = {
   marginTop: '8px',
 }
 
+const buttonRow = {
+  display: 'flex',
+  gap: '12px',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+}
+
 const laterBtn = {
   background: 'none',
   border: 'none',
@@ -118,4 +130,17 @@ const laterBtn = {
   cursor: 'pointer',
   padding: '4px',
   textAlign: 'center',
+  flex: 1,
+}
+
+const learnMoreBtn = {
+  background: 'none',
+  border: 'none',
+  color: 'rgba(240,234,214,0.45)',
+  fontFamily: "'Figtree', sans-serif",
+  fontSize: '13px',
+  cursor: 'pointer',
+  padding: '4px',
+  textDecoration: 'none',
+  transition: 'color 0.15s',
 }

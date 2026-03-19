@@ -3540,7 +3540,7 @@ export default function Dashboard() {
                             if (data.url) window.location.href = data.url
                           } catch {}
                         } else {
-                          window.location.href = '/pricing'
+                          window.location.href = '/upgrade'
                         }
                       }}
                       style={{ color: profile?.subscription_status === 'pro' ? 'inherit' : '#FF6644', fontWeight: profile?.subscription_status === 'pro' ? 400 : 600 }}

@@ -44,9 +44,12 @@ export default async function handler(req, res) {
   if (authError || !user) return res.status(401).json({ error: 'Unauthorized' })
 
   try {
+    const { priceId } = req.body || {}
+    const finalPriceId = priceId || process.env.STRIPE_PRO_PRICE_ID
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
-      line_items: [{ price: process.env.STRIPE_PRO_PRICE_ID, quantity: 1 }],
+      line_items: [{ price: finalPriceId, quantity: 1 }],
       success_url: 'https://cinis.app/dashboard?upgraded=true',
       cancel_url: 'https://cinis.app/dashboard',
       metadata: { userId: user.id },
