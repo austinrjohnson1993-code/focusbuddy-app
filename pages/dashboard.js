@@ -3819,7 +3819,7 @@ export default function Dashboard() {
               {/* 7. Subscription */}
               <div className={styles.settingsSection} style={{ paddingTop: '24px' }}>
                 <p className={styles.settingsSectionLabel}>Subscription</p>
-                <div className={styles.settingsCard}>
+                <div className={`${styles.settingsCard} ${styles.subscriptionCard}`}>
                   <div className={styles.settingsRow}>
                     <div className={styles.settingsRowLeft}>
                       <span className={styles.settingsRowLabel}>{profile?.subscription_status === 'pro' ? 'Pro plan' : 'Free plan'}</span>
@@ -3830,7 +3830,7 @@ export default function Dashboard() {
                       </span>
                     </div>
                     <button
-                      className={styles.connectionBtn}
+                      className={`${styles.connectionBtn} ${styles.subscriptionBtn}`}
                       onClick={async () => {
                         if (profile?.subscription_status === 'pro') {
                           try {
@@ -3843,9 +3843,9 @@ export default function Dashboard() {
                           window.location.href = '/upgrade'
                         }
                       }}
-                      style={{ color: profile?.subscription_status === 'pro' ? 'inherit' : '#FF6644', fontWeight: profile?.subscription_status === 'pro' ? 400 : 600 }}
+                      style={{ width: '100%' }}
                     >
-                      {profile?.subscription_status === 'pro' ? 'Manage subscription →' : 'Upgrade to Pro →'}
+                      {profile?.subscription_status === 'pro' ? '✓ Manage subscription →' : '⬆ Upgrade to Pro →'}
                     </button>
                   </div>
                 </div>

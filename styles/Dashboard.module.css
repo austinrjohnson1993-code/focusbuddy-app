@@ -82,11 +82,11 @@
 }
 .sidebarEmail { font-size: 0.72rem; color: rgba(240,234,214,0.25); word-break: break-all; }
 .signOutBtn {
-  background: transparent; border: 1px solid rgba(255,200,120,0.12); border-radius: 100px;
-  padding: 7px 16px; color: rgba(240,234,214,0.4); font-size: 0.82rem;
+  background: transparent; border: 1px solid rgba(240,234,214,0.25); border-radius: 10px;
+  padding: 12px 16px; color: rgba(240,234,214,0.5); font-size: 0.88rem; font-weight: 500;
   font-family: 'Figtree', sans-serif; cursor: pointer; transition: all 0.2s;
 }
-.signOutBtn:hover { border-color: rgba(255,77,28,0.3); color: var(--accent); }
+.signOutBtn:hover { border-color: rgba(240,234,214,0.35); color: rgba(240,234,214,0.7); background: rgba(240,234,214,0.05); }
 
 /* ── Fade-in animation ── */
 @keyframes fadeSlideIn {
@@ -551,7 +551,8 @@
   transition: background 0.15s;
   position: relative;
 }
-.calCell:hover { background: rgba(255,200,120,0.06); }
+.calCell:hover { background: rgba(255,77,28,0.05); }
+.calCellSelected { background: #2A1810 !important; outline: 1px solid rgba(232,50,26,0.35); outline-offset: -1px; }
 .calCellEmpty {
   aspect-ratio: 1;
   min-height: 54px;
@@ -567,8 +568,8 @@
   transition: all 0.15s;
 }
 .calCellToday .calCellNum {
-  background: var(--accent);
-  color: #110d06;
+  background: #E8321A;
+  color: #f0ead6;
   font-weight: 800;
 }
 
@@ -670,9 +671,11 @@
   gap: 12px;
   min-height: 44px;
   padding: 0 0 2px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
   position: relative;
 }
+.calHourSlotEven { background: #0F0906; }
+.calHourSlotOdd { background: #120704; }
 .calNowLine {
   position: absolute;
   top: 0; left: 46px; right: 0;
@@ -1799,20 +1802,20 @@
    PROGRESS
    ════════════════════════════════════════════ */
 
-.progressStats { display: flex; gap: 12px; margin-bottom: 32px; }
+.progressStats { display: flex; gap: 12px; margin-bottom: 20px; }
 .progressStat {
-  flex: 1; background: linear-gradient(135deg, rgba(255,200,120,0.04) 0%, rgba(255,77,28,0.02) 100%); border: 1px solid rgba(255,200,120,0.1);
-  border-radius: 14px; padding: 18px 16px;
+  flex: 1; background: #2A1810; border: none;
+  border-radius: 12px; padding: 18px 16px;
   display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,200,120,0.06); transition: all 0.2s ease;
-  border-top: 1px solid rgba(255,200,120,0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35); transition: all 0.2s ease;
+  border-top: 3px solid #E8321A;
 }
 .progressStatNum {
-  font-family: 'Playfair Display', serif; font-weight: 900; font-size: 2rem;
-  color: var(--text-color, #f0ead6); letter-spacing: -0.02em;
+  font-family: 'Playfair Display', serif; font-weight: 900; font-size: 2.25rem;
+  color: #F0EAD6; letter-spacing: -0.02em;
 }
 .progressStatLabel {
-  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em;
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
   text-transform: uppercase; color: rgba(240,234,214,0.35);
 }
 
@@ -2006,10 +2009,14 @@
 .settingsView { max-width: 560px; margin: 0 auto; padding: 52px 32px 120px; animation: fadeSlideIn 300ms ease-out; }
 .settingsSection { margin-bottom: 36px; }
 .settingsSectionLabel {
-  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-  color: rgba(240,234,214,0.35); margin-bottom: 14px; padding-left: 2px;
+  font-size: 0.69rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: #E8321A; margin-bottom: 14px; padding-left: 2px; margin-top: 32px;
 }
+.settingsSection:first-child .settingsSectionLabel { margin-top: 0; }
 .settingsCard { background: linear-gradient(135deg, rgba(255,200,120,0.04) 0%, rgba(255,77,28,0.02) 100%); border: 1px solid rgba(255,200,120,0.1); border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,200,120,0.06); transition: all 0.2s ease; }
+.subscriptionCard { background: #2A1810 !important; border: 1px solid #E8321A !important; box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important; }
+.subscriptionCard .settingsRow { flex-direction: column; align-items: stretch; gap: 12px; }
+.subscriptionCard .settingsRowRight { width: 100%; }
 .settingsRow {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
   padding: 16px 18px; border-bottom: 1px solid rgba(255,200,120,0.05);
@@ -2031,16 +2038,16 @@
 
 /* Notification toggle */
 .notifToggle {
-  width: 42px; height: 24px; border-radius: 100px; background: rgba(255,200,120,0.1);
-  border: 1px solid rgba(255,200,120,0.12); cursor: pointer; position: relative;
+  width: 42px; height: 24px; border-radius: 100px; background: #2A1810;
+  border: none; cursor: pointer; position: relative;
   transition: background 0.2s; flex-shrink: 0;
 }
 .notifToggle::after {
   content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
-  border-radius: 50%; background: rgba(240,234,214,0.3); transition: transform 0.2s, background 0.2s;
+  border-radius: 50%; background: #5A1005; transition: transform 0.2s, background 0.2s;
 }
-.notifToggleOn { background: rgba(255,77,28,0.2) !important; border-color: rgba(255,77,28,0.35) !important; }
-.notifToggleOn::after { transform: translateX(18px); background: var(--accent); }
+.notifToggleOn { background: #E8321A !important; }
+.notifToggleOn::after { transform: translateX(18px); background: #F0EAD6; }
 .notifDeniedMsg { font-size: 12px; color: rgba(240,234,214,0.45); line-height: 1.5; margin-top: 6px; }
 .notifGrantedLabel { font-size: 12px; color: #4caf50; font-weight: 600; }
 .notifEnabledBtn { font-size: 12px; color: #4caf50; font-weight: 600; background: rgba(76,175,80,0.12); border: 1px solid rgba(76,175,80,0.3); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
@@ -2060,6 +2067,12 @@
   font-family: 'Figtree', sans-serif; cursor: pointer; transition: all 0.2s; white-space: nowrap;
 }
 .connectionBtn:hover { border-color: rgba(255,77,28,0.3); color: var(--accent); }
+.subscriptionBtn {
+  border-radius: 10px !important; padding: 12px 16px !important; font-size: 0.88rem !important;
+  font-weight: 500 !important; border: 1px solid #E8321A !important; color: #F0EAD6 !important;
+  background: #E8321A !important; white-space: normal !important;
+}
+.subscriptionBtn:hover { background: #D92A14 !important; border-color: #D92A14 !important; }
 
 /* Coming soon button (FIX 1) */
 .comingSoonBtn {
@@ -2228,18 +2241,18 @@
    ════════════════════════════════════════════ */
 
 .progressBands {
-  display: flex; gap: 4px; background: rgba(255,200,120,0.04);
-  border: 1px solid rgba(255,200,120,0.08); border-radius: 12px;
+  display: flex; gap: 4px; background: #2A1810;
+  border: none; border-radius: 12px;
   padding: 4px; margin-bottom: 28px;
 }
 .progressBandBtn {
-  flex: 1; background: rgba(255,200,120,0.05); border: 1px solid rgba(255,200,120,0.1); border-radius: 9px;
+  flex: 1; background: transparent; border: none; border-radius: 9px;
   padding: 9px 8px; font-size: 0.82rem; font-weight: 600;
-  font-family: 'Figtree', sans-serif; color: rgba(240,234,214,0.5);
+  font-family: 'Figtree', sans-serif; color: rgba(240,234,214,0.45);
   cursor: pointer; transition: all 0.15s; white-space: nowrap;
 }
-.progressBandBtn:hover { color: rgba(240,234,214,0.65); }
-.progressBandBtnActive { background: rgba(255,77,28,0.15) !important; border: 1px solid rgba(255,77,28,0.3) !important; color: var(--accent) !important; box-shadow: 0 0 12px rgba(255,77,28,0.15) !important; }
+.progressBandBtn:hover { color: rgba(240,234,214,0.7); }
+.progressBandBtnActive { background: #E8321A !important; border: none !important; color: #F0EAD6 !important; box-shadow: 0 2px 8px rgba(232,50,26,0.35) !important; transition: all 0.15s !important; }
 
 /* ════════════════════════════════════════════
    ALARMS
