@@ -73,7 +73,7 @@ const NAV_ITEMS = [
   { id: 'calendar', label: 'Calendar', icon: <CalendarBlank size={22} /> },
   { id: 'journal', label: 'Journal', icon: <Notebook size={22} /> },
   { id: 'habits', label: 'Habits', icon: <ArrowCounterClockwise size={22} /> },
-  { id: 'partners', label: 'Partners', icon: <UsersThree size={22} />, href: '/accountability' },
+  { id: 'partners', label: 'Partners', icon: <UsersThree size={22} /> },
   { id: 'finance', label: 'Finance', icon: <Wallet size={22} /> },
   { id: 'progress', label: 'Progress', icon: <ChartLineUp size={22} /> },
 ]
@@ -2404,7 +2404,7 @@ export default function Dashboard() {
                       <strong style={{ color: '#f0ead6' }}>{partnerNudge.combinedTasksThisWeek}</strong> tasks together this week.
                     </div>
                     <button
-                      onClick={() => router.push('/accountability')}
+                      onClick={() => switchTab('partners')}
                       style={{ flexShrink: 0, background: 'none', border: '1px solid rgba(255,102,68,0.25)', borderRadius: '100px', padding: '5px 13px', color: 'rgba(240,234,214,0.55)', fontSize: '12px', cursor: 'pointer', fontFamily: "'Figtree', sans-serif", whiteSpace: 'nowrap' }}
                     >
                       View
