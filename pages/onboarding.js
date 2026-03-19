@@ -180,8 +180,9 @@ const RANK_ITEMS_DEFAULT = ['Deep focus work', 'Quick wins', 'External commitmen
 export default function Onboarding() {
   const router = useRouter()
   const [user, setUser] = useState(null)
-  const [phase, setPhase] = useState('context') // context | intro | questions | rankq | analyzing | reveal | saving
+  const [phase, setPhase] = useState('context') // context | intro-tutorial | intro | questions | rankq | analyzing | reveal | saving
   const [mentalHealthContext, setMentalHealthContext] = useState(null)
+  const [introTutorialStep, setIntroTutorialStep] = useState(0)
   const [name, setName] = useState('')
   const [checkinTimes, setCheckinTimes] = useState(['morning', 'evening'])
   const [currentQ, setCurrentQ] = useState(0)
@@ -244,6 +245,7 @@ export default function Onboarding() {
   }
 
   const handleConfirm = async () => {
+    if (!personaVoice) return // Ensure voice preference is selected
     setPhase('saving')
     const upsertData = {
       id: user.id,
@@ -287,7 +289,7 @@ export default function Onboarding() {
         <div className={styles.page}>
           <div className={styles.contextContainer}>
             <div className={styles.contextLogo}>
-              <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
+              <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '28px', fontWeight: 300, letterSpacing: '0.26em', color: '#F0EAD6' }}>Cinis</span>
             </div>
             <h1 className={styles.introTitle}>What brings you here?</h1>
             <p className={styles.introSub}>This helps Cinis understand how to support you. You can always update this later.</p>
@@ -310,10 +312,54 @@ export default function Onboarding() {
             </div>
 
             {mentalHealthContext && (
-              <button onClick={() => setPhase('intro')} className={styles.startBtn} style={{ marginTop: '28px' }}>
+              <button onClick={() => setPhase('intro-tutorial')} className={styles.startBtn} style={{ marginTop: '28px' }}>
                 Continue →
               </button>
             )}
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  // ── Intro Tutorial ─────────────────────────────────────────────────────────
+  if (phase === 'intro-tutorial') {
+    const tutorialScreens = [
+      {
+        title: 'Welcome to Cinis',
+        body: 'Before we build your coaching profile, we need to understand how you work. This takes about 5 minutes.',
+        cta: 'Continue',
+      },
+      {
+        title: 'Your Answers Shape Everything',
+        body: 'Your responses shape everything — your coach\'s voice, your check-in style, and how Cinis shows up for you. Be thoughtful, be honest.',
+        cta: 'Got it',
+      },
+      {
+        title: 'No Right Answers',
+        body: 'There are no right answers here. The more specific and honest you are, the better your coach gets. Ready?',
+        cta: 'Let\'s go',
+      },
+    ]
+    const screen = tutorialScreens[introTutorialStep]
+    const isLast = introTutorialStep === tutorialScreens.length - 1
+
+    return (
+      <>
+        <Head><title>Getting Started — Cinis</title></Head>
+        <div className={styles.page}>
+          <div className={styles.introContainer}>
+            <h1 className={styles.introTitle}>{screen.title}</h1>
+            <p className={styles.introSub} style={{ fontSize: '16px', lineHeight: '1.6', maxWidth: '500px' }}>{screen.body}</p>
+            <button
+              onClick={() => {
+                if (isLast) setPhase('intro')
+                else setIntroTutorialStep(introTutorialStep + 1)
+              }}
+              className={styles.startBtn}
+            >
+              {screen.cta} →
+            </button>
           </div>
         </div>
       </>
@@ -328,7 +374,7 @@ export default function Onboarding() {
         <div className={styles.page}>
           <div className={styles.introContainer}>
             <div className={styles.introLogo}>
-              <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
+              <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '28px', fontWeight: 300, letterSpacing: '0.26em', color: '#F0EAD6' }}>Cinis</span>
             </div>
             <h1 className={styles.introTitle}>Let's set you up.</h1>
             <p className={styles.introSub}>12 quick questions. No wrong answers. Takes about 2 minutes.</p>
