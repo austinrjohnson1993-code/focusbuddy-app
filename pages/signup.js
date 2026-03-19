@@ -141,6 +141,12 @@ export default function Signup() {
           <p className={styles.signupLink}>
             Already have an account? <a href="/login">Sign in</a>
           </p>
+
+          <p className={styles.legalFooter}>
+            <a href="/privacy">Privacy Policy</a>
+            {' · '}
+            <a href="/terms">Terms of Service</a>
+          </p>
         </div>
       </div>
     </>

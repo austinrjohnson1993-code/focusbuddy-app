@@ -237,6 +237,21 @@
 
 .signupLink a:hover { text-decoration: underline; }
 
+.legalFooter {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 0.78rem;
+  color: rgba(240,234,214,0.28);
+}
+
+.legalFooter a {
+  color: rgba(240,234,214,0.28);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.legalFooter a:hover { color: rgba(240,234,214,0.55); }
+
 @media (max-width: 480px) {
   .card { padding: 32px 24px; }
 }
