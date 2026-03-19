@@ -17,8 +17,8 @@ const CinisMark = ({ size = 32 }) => (
   </svg>
 )
 
-const MONTHLY_PRICE_ID = 'price_1TCRi82OSKmsLrz4fKxjcqyt'
-const YEARLY_PRICE_ID  = 'price_1TCmBd2OSKmsLrz4A9AJ7qC9'
+const MONTHLY_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID || 'price_1TCRi82OSKmsLrz4fKxjcqyt'
+const YEARLY_PRICE_ID  = process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID  || 'price_1TCmBd2OSKmsLrz4A9AJ7qC9'
 
 export default function Upgrade() {
   const router = useRouter()
