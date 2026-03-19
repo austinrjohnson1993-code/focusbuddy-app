@@ -634,6 +634,17 @@ export default function Dashboard() {
   const [middayTime, setMiddayTime] = useState('12:00')
   const [eveningTime, setEveningTime] = useState('21:00')
 
+  // Nutrition tracking
+  const [nutritionStaples, setNutritionStaples] = useState([])
+  const [nutritionToday, setNutritionToday] = useState([])
+  const [nutritionLoaded, setNutritionLoaded] = useState(false)
+  const [newStapleName, setNewStapleName] = useState('')
+  const [addingStaple, setAddingStaple] = useState(false)
+  const [newNutritName, setNewNutritName] = useState('')
+  const [newNutritCategory, setNewNutritCategory] = useState('meal')
+  const [newNutritNotes, setNewNutritNotes] = useState('')
+  const [addingNutrit, setAddingNutrit] = useState(false)
+
   // Bill voice input
   const [billListening, setBillListening] = useState(false)
   const [billVoiceTranscript, setBillVoiceTranscript] = useState('')
@@ -833,6 +844,12 @@ export default function Dashboard() {
   useEffect(() => {
     if (activeTab === 'finance' && user && !billsLoaded) {
       fetchBills(user.id)
+    }
+  }, [activeTab, user])
+
+  useEffect(() => {
+    if (activeTab === 'settings' && user && !nutritionLoaded) {
+      fetchNutrition(user.id)
     }
   }, [activeTab, user])
 
@@ -1043,6 +1060,16 @@ export default function Dashboard() {
     setAlarmsLoaded(true)
     const { data } = await supabase.from('alarms').select('*').eq('user_id', userId).eq('triggered', false).order('alarm_time', { ascending: true })
     setAlarms(data || [])
+  }
+
+  const fetchNutrition = async (userId) => {
+    setNutritionLoaded(true)
+    const res = await fetch(`/api/nutrition?userId=${userId}`)
+    if (res.ok) {
+      const data = await res.json()
+      setNutritionStaples(data.staples || [])
+      setNutritionToday(data.entries || [])
+    }
   }
 
   const addAlarm = async (e) => {
@@ -3252,6 +3279,165 @@ export default function Dashboard() {
                       </button>
                     )}
                   </div>
+                </div>
+              </div>
+
+              {/* Nutrition */}
+              <div className={styles.settingsSection}>
+                <p className={styles.settingsSectionLabel}>Nutrition</p>
+                <div className={styles.settingsCard}>
+
+                  {/* Daily staples */}
+                  <div style={{ marginBottom: '16px' }}>
+                    <span className={styles.settingsRowLabel} style={{ display: 'block', marginBottom: '8px' }}>Daily staples</span>
+                    <span className={styles.settingsRowSub} style={{ display: 'block', marginBottom: '10px' }}>Foods &amp; supplements you consume regularly. Used to personalise AI coaching.</span>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                      <input
+                        type="text"
+                        placeholder="e.g. creatine, oatmeal, fish oil"
+                        value={newStapleName}
+                        onChange={e => setNewStapleName(e.target.value)}
+                        onKeyDown={async e => {
+                          if (e.key !== 'Enter' || !newStapleName.trim() || addingStaple) return
+                          setAddingStaple(true)
+                          const res = await fetch('/api/nutrition', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userId: user.id, type: 'staple', name: newStapleName }),
+                          })
+                          if (res.ok) {
+                            const data = await res.json()
+                            setNutritionStaples(data.staples)
+                            setNewStapleName('')
+                          }
+                          setAddingStaple(false)
+                        }}
+                        style={{ flex: 1, padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(255,200,120,0.15)', background: 'rgba(255,200,120,0.05)', color: 'var(--text, #f0ead6)', fontFamily: 'Figtree, sans-serif', fontSize: '0.88rem' }}
+                      />
+                      <button
+                        disabled={addingStaple || !newStapleName.trim()}
+                        onClick={async () => {
+                          if (!newStapleName.trim() || addingStaple) return
+                          setAddingStaple(true)
+                          const res = await fetch('/api/nutrition', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userId: user.id, type: 'staple', name: newStapleName }),
+                          })
+                          if (res.ok) {
+                            const data = await res.json()
+                            setNutritionStaples(data.staples)
+                            setNewStapleName('')
+                          }
+                          setAddingStaple(false)
+                        }}
+                        className={styles.connectionBtn}
+                        style={{ flexShrink: 0 }}
+                      >
+                        {addingStaple ? '···' : 'Add'}
+                      </button>
+                    </div>
+                    {nutritionStaples.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {nutritionStaples.map(s => (
+                          <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '20px', background: 'rgba(255,200,120,0.08)', border: '1px solid rgba(255,200,120,0.15)', fontSize: '0.8rem', color: 'var(--text, #f0ead6)' }}>
+                            {s}
+                            <button
+                              onClick={async () => {
+                                const res = await fetch(`/api/nutrition?userId=${user.id}&type=staple&name=${encodeURIComponent(s)}`, { method: 'DELETE' })
+                                if (res.ok) {
+                                  const data = await res.json()
+                                  setNutritionStaples(data.staples)
+                                }
+                              }}
+                              style={{ background: 'none', border: 'none', color: 'rgba(240,234,214,0.4)', cursor: 'pointer', padding: 0, fontSize: '0.9rem', lineHeight: 1 }}
+                            >×</button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {nutritionStaples.length === 0 && (
+                      <p style={{ fontSize: '0.8rem', color: 'rgba(240,234,214,0.3)', margin: 0 }}>No staples added yet</p>
+                    )}
+                  </div>
+
+                  <div style={{ height: '1px', background: 'rgba(255,200,120,0.07)', marginBottom: '16px' }} />
+
+                  {/* Log today */}
+                  <div>
+                    <span className={styles.settingsRowLabel} style={{ display: 'block', marginBottom: '8px' }}>Log today</span>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                      <input
+                        type="text"
+                        placeholder="Name"
+                        value={newNutritName}
+                        onChange={e => setNewNutritName(e.target.value)}
+                        style={{ flex: 2, minWidth: '100px', padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(255,200,120,0.15)', background: 'rgba(255,200,120,0.05)', color: 'var(--text, #f0ead6)', fontFamily: 'Figtree, sans-serif', fontSize: '0.88rem' }}
+                      />
+                      <select
+                        value={newNutritCategory}
+                        onChange={e => setNewNutritCategory(e.target.value)}
+                        style={{ flex: 1, minWidth: '90px', padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(255,200,120,0.15)', background: 'rgba(26,17,8,1)', color: 'var(--text, #f0ead6)', fontFamily: 'Figtree, sans-serif', fontSize: '0.88rem' }}
+                      >
+                        <option value="meal">Meal</option>
+                        <option value="supplement">Supplement</option>
+                        <option value="protein">Protein</option>
+                        <option value="hydration">Hydration</option>
+                      </select>
+                      <button
+                        disabled={addingNutrit || !newNutritName.trim()}
+                        onClick={async () => {
+                          if (!newNutritName.trim() || addingNutrit) return
+                          setAddingNutrit(true)
+                          const res = await fetch('/api/nutrition', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userId: user.id, type: 'entry', name: newNutritName, category: newNutritCategory, notes: newNutritNotes }),
+                          })
+                          if (res.ok) {
+                            const data = await res.json()
+                            setNutritionToday(prev => [...prev, data.entry])
+                            setNewNutritName('')
+                            setNewNutritNotes('')
+                          }
+                          setAddingNutrit(false)
+                        }}
+                        className={styles.connectionBtn}
+                        style={{ flexShrink: 0 }}
+                      >
+                        {addingNutrit ? '···' : 'Log'}
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Notes (optional)"
+                      value={newNutritNotes}
+                      onChange={e => setNewNutritNotes(e.target.value)}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(255,200,120,0.15)', background: 'rgba(255,200,120,0.05)', color: 'var(--text, #f0ead6)', fontFamily: 'Figtree, sans-serif', fontSize: '0.85rem', marginBottom: '10px' }}
+                    />
+                    {nutritionToday.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {nutritionToday.map(entry => (
+                          <div key={entry.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', borderRadius: '8px', background: 'rgba(255,200,120,0.05)', border: '1px solid rgba(255,200,120,0.1)' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              <span style={{ fontSize: '0.88rem', color: 'var(--text, #f0ead6)', fontWeight: 600 }}>{entry.name}</span>
+                              <span style={{ fontSize: '0.72rem', color: 'rgba(240,234,214,0.4)', textTransform: 'capitalize' }}>{entry.category}{entry.notes ? ` · ${entry.notes}` : ''}</span>
+                            </div>
+                            <button
+                              onClick={async () => {
+                                const res = await fetch(`/api/nutrition?userId=${user.id}&type=entry&id=${entry.id}`, { method: 'DELETE' })
+                                if (res.ok) setNutritionToday(prev => prev.filter(e => e.id !== entry.id))
+                              }}
+                              style={{ background: 'none', border: 'none', color: 'rgba(240,234,214,0.35)', cursor: 'pointer', fontSize: '1rem', padding: '0 4px' }}
+                            >×</button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={{ fontSize: '0.8rem', color: 'rgba(240,234,214,0.3)', margin: 0 }}>Nothing logged today</p>
+                    )}
+                  </div>
+
                 </div>
               </div>
 
