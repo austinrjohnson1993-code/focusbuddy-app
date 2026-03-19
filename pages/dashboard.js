@@ -3888,15 +3888,52 @@ export default function Dashboard() {
 
               {/* ── INSIGHTS ── */}
               {financeSub === 'insights' && (
-                <div className={styles.insightsPlaceholder}>
-                  <span style={{ fontSize: '2.5rem' }}>🤖</span>
-                  <p className={styles.greetingText} style={{ fontSize: '1.15rem' }}>Your financial picture</p>
-                  <p className={styles.headerSub} style={{ maxWidth: '360px', textAlign: 'center' }}>
-                    Insights are generated from your bills and budget data. Add bills and set your budget to unlock personalized coaching here.
-                  </p>
-                  <button className={styles.addTaskBtn} onClick={() => setFinanceSub(bills.length === 0 ? 'bills' : 'budget')}>
-                    {bills.length === 0 ? 'Add a bill' : 'View budget'}
-                  </button>
+                <div style={{ paddingTop: '8px' }}>
+                  <p className={styles.settingsSectionLabel} style={{ marginBottom: '16px' }}>Your financial picture</p>
+
+                  {financeInsightsLoading && (
+                    <div className={styles.insightsPlaceholder}>
+                      <Robot size={28} style={{ opacity: 0.4 }} />
+                      <p className={styles.headerSub}>Your coach is reviewing your finances...</p>
+                    </div>
+                  )}
+
+                  {!financeInsightsLoading && financeInsightsEmpty && (
+                    <div className={styles.insightsPlaceholder}>
+                      <span style={{ fontSize: '2.5rem' }}>🤖</span>
+                      <p className={styles.headerSub} style={{ maxWidth: '320px', textAlign: 'center' }}>
+                        Add bills and set your budget to unlock personalized insights.
+                      </p>
+                      <button className={styles.addTaskBtn} onClick={() => setFinanceSub(bills.length === 0 ? 'bills' : 'budget')}>
+                        {bills.length === 0 ? 'Add a bill' : 'Set your budget'}
+                      </button>
+                    </div>
+                  )}
+
+                  {!financeInsightsLoading && financeInsights.length > 0 && (
+                    <div className={styles.insightCards}>
+                      {financeInsights.map((insight, i) => {
+                        const icons = [
+                          <TrendUp size={20} key="trend" />,
+                          <WarningCircle size={20} key="warn" />,
+                          <CheckCircle size={20} key="check" />,
+                        ]
+                        return (
+                          <div key={i} className={styles.insightCard}>
+                            <div className={styles.insightCardIcon}>{icons[i] || icons[0]}</div>
+                            <p className={styles.insightCardText}>{insight}</p>
+                          </div>
+                        )
+                      })}
+                      <button
+                        className={styles.connectionBtn}
+                        style={{ marginTop: '8px', width: '100%' }}
+                        onClick={() => { setFinanceInsightsLoaded(false); fetchFinanceInsights() }}
+                      >
+                        Refresh insights
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
