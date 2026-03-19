@@ -463,7 +463,7 @@ export default async function handler(req, res) {
     rateCheck = await checkDailyRateLimit(userId)
   } catch (err) {
     console.error('[checkin] rate limit check error:', err.message)
-    return res.status(500).json({ error: 'Something went wrong. Try again.' })
+    return res.status(500).json({ message: 'Something went wrong — try sending that again.' })
   }
   if (!rateCheck.allowed) {
     return res.status(429).json({
@@ -540,7 +540,7 @@ export default async function handler(req, res) {
       })
     } catch (err) {
       console.error('[checkin] continuation error:', err.message)
-      return res.status(500).json({ error: 'Failed to get response' })
+      return res.status(500).json({ message: 'Something went wrong — try sending that again.' })
     }
   }
 
@@ -620,11 +620,11 @@ export default async function handler(req, res) {
     })
   } catch (err) {
     console.error('[checkin] opening error:', err.message)
-    return res.status(500).json({ error: 'Failed to generate check-in' })
+    return res.status(500).json({ message: 'Something went wrong — try sending that again.' })
   }
 
   } catch (err) {
     console.error('[checkin] unhandled error:', err)
-    return res.status(500).json({ error: err.message })
+    return res.status(500).json({ message: 'Something went wrong — try sending that again.' })
   }
 }
