@@ -57,7 +57,7 @@ export default function ForgotPassword() {
             <div className={styles.success}>
               <div className={styles.successIcon}>✓</div>
               <p>Check your email for a reset link.</p>
-              <p className={styles.successSub}>Click the link to set a new password.</p>
+              <p className={styles.successSub}>Link expires in 60 minutes.</p>
             </div>
           ) : (
             <>
@@ -78,7 +78,7 @@ export default function ForgotPassword() {
             </>
           )}
 
-          <p className={styles.signupLink}>
+          <p className={styles.signupLink} style={{ marginTop: '20px' }}>
             <a href="/login">← Back to sign in</a>
           </p>
         </div>

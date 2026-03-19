@@ -18,6 +18,23 @@ const CinisMark = ({ size = 32 }) => (
   </svg>
 )
 
+function getPasswordStrength(pw) {
+  if (pw.length < 8) return null
+  const hasUpper = /[A-Z]/.test(pw)
+  const hasNumber = /[0-9]/.test(pw)
+  const hasSpecial = /[^A-Za-z0-9]/.test(pw)
+  const score = (hasUpper ? 1 : 0) + (hasNumber ? 1 : 0) + (hasSpecial ? 1 : 0)
+  if (pw.length >= 12 && score >= 2) return 'strong'
+  if (score >= 1) return 'fair'
+  return 'weak'
+}
+
+const strengthConfig = {
+  weak:   { label: 'Weak',   color: '#e74c3c', width: '33%' },
+  fair:   { label: 'Fair',   color: '#f39c12', width: '66%' },
+  strong: { label: 'Strong', color: '#3ecf8e', width: '100%' },
+}
+
 export default function ResetPassword() {
   const router = useRouter()
   const [password, setPassword] = useState('')
@@ -26,12 +43,13 @@ export default function ResetPassword() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [inRecovery, setInRecovery] = useState(false)
+  const [done, setDone] = useState(false)
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      // PASSWORD_RECOVERY event fires when user lands here from the reset email link
       if (event === 'PASSWORD_RECOVERY') {
-        setInRecovery(true)
+        // session is now active — form is already shown
       }
     })
     return () => subscription?.unsubscribe()
@@ -54,9 +72,13 @@ export default function ResetPassword() {
       setError(error.message)
       setLoading(false)
     } else {
-      router.push('/dashboard')
+      setDone(true)
+      setTimeout(() => router.push('/dashboard'), 1500)
     }
   }
+
+  const strength = getPasswordStrength(password)
+  const strengthCfg = strength ? strengthConfig[strength] : null
 
   return (
     <>
@@ -72,72 +94,91 @@ export default function ResetPassword() {
           <h1 className={styles.heading}>Set a new password.</h1>
           <p className={styles.sub}>Choose a strong password for your account.</p>
 
-          {error && <div className={styles.error}>{error}</div>}
+          {done ? (
+            <div className={styles.success}>
+              <div className={styles.successIcon}>✓</div>
+              <p>Password set! Signing you in…</p>
+            </div>
+          ) : (
+            <>
+              {error && <div className={styles.error}>{error}</div>}
 
-          <form onSubmit={handleReset} className={styles.form}>
-            <div className={styles.passwordWrap}>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                placeholder="New password (min 8 characters)"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                minLength={8}
-                className={styles.input}
-              />
-              <button
-                type="button"
-                className={styles.showHideBtn}
-                onClick={() => setShowPassword(v => !v)}
-                tabIndex={-1}
-              >
-                {showPassword ? (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
-                    <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
-                    <line x1="1" y1="1" x2="23" y2="23"/>
-                  </svg>
-                ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                  </svg>
-                )}
-              </button>
-            </div>
-            <div className={styles.passwordWrap}>
-              <input
-                type={showConfirm ? 'text' : 'password'}
-                placeholder="Confirm new password"
-                value={confirm}
-                onChange={e => setConfirm(e.target.value)}
-                required
-                className={styles.input}
-              />
-              <button
-                type="button"
-                className={styles.showHideBtn}
-                onClick={() => setShowConfirm(v => !v)}
-                tabIndex={-1}
-              >
-                {showConfirm ? (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
-                    <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
-                    <line x1="1" y1="1" x2="23" y2="23"/>
-                  </svg>
-                ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                  </svg>
-                )}
-              </button>
-            </div>
-            <button type="submit" disabled={loading} className={styles.submitBtn}>
-              {loading ? 'Updating…' : 'Set new password'}
-            </button>
-          </form>
+              <form onSubmit={handleReset} className={styles.form}>
+                <div>
+                  <div className={styles.passwordWrap}>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="New password (min 8 characters)"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      required
+                      minLength={8}
+                      className={styles.input}
+                    />
+                    <button
+                      type="button"
+                      className={styles.showHideBtn}
+                      onClick={() => setShowPassword(v => !v)}
+                      tabIndex={-1}
+                    >
+                      {showPassword ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+                          <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+                          <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  {strengthCfg && (
+                    <div className={styles.strengthWrap}>
+                      <div className={styles.strengthBar}>
+                        <div className={styles.strengthFill} style={{ width: strengthCfg.width, background: strengthCfg.color }} />
+                      </div>
+                      <span className={styles.strengthLabel} style={{ color: strengthCfg.color }}>{strengthCfg.label}</span>
+                    </div>
+                  )}
+                </div>
+                <div className={styles.passwordWrap}>
+                  <input
+                    type={showConfirm ? 'text' : 'password'}
+                    placeholder="Confirm new password"
+                    value={confirm}
+                    onChange={e => setConfirm(e.target.value)}
+                    required
+                    className={styles.input}
+                  />
+                  <button
+                    type="button"
+                    className={styles.showHideBtn}
+                    onClick={() => setShowConfirm(v => !v)}
+                    tabIndex={-1}
+                  >
+                    {showConfirm ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+                        <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                <button type="submit" disabled={loading} className={styles.submitBtn}>
+                  {loading ? 'Saving…' : 'Set password'}
+                </button>
+              </form>
+            </>
+          )}
         </div>
       </div>
     </>

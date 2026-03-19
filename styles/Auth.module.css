@@ -252,6 +252,58 @@
 
 .legalFooter a:hover { color: rgba(240,234,214,0.55); }
 
+/* Forgot / Sign up row */
+.authFooterRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+  gap: 8px;
+}
+
+.authFooterLink {
+  font-size: 0.85rem;
+  color: #E8321A;
+  text-decoration: none;
+  opacity: 0.85;
+  transition: opacity 0.15s;
+}
+
+.authFooterLink:hover { opacity: 1; }
+
+/* Password strength indicator */
+.strengthWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 0 2px;
+}
+
+.strengthBar {
+  flex: 1;
+  height: 3px;
+  background: rgba(255,200,120,0.1);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.strengthFill {
+  height: 100%;
+  border-radius: 100px;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.strengthLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  min-width: 40px;
+  text-align: right;
+}
+
 @media (max-width: 480px) {
   .card { padding: 32px 24px; }
 }
