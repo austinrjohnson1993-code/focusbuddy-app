@@ -92,9 +92,9 @@ export default async function handler(req, res) {
     return res.status(200).json({ habits: habitsWithStatus })
   }
 
-  // POST { userId, name, frequency, color, description } — create habit
+  // POST { userId, name, frequency, color, description, habit_type } — create habit
   if (req.method === 'POST') {
-    const { userId, name, frequency, color, description } = req.body
+    const { userId, name, frequency, color, description, habit_type } = req.body
     if (!userId || !name) return res.status(400).json({ error: 'userId and name required' })
 
     const { data, error } = await supabaseAdmin
@@ -105,6 +105,7 @@ export default async function handler(req, res) {
         frequency: frequency || 'daily',
         color: color || '#E8321A',
         description: description || null,
+        habit_type: habit_type || 'build',
       })
       .select()
       .single()
@@ -114,7 +115,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Failed to create habit' })
     }
 
-    return res.status(200).json({ habit: { ...data, completedToday: false } })
+    return res.status(200).json({ habit: { ...data, completedToday: false, streak: 0 } })
   }
 
   // PATCH { userId, habitId, action: 'toggle' } — toggle today's completion

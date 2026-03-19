@@ -14,6 +14,7 @@ export default function Habits() {
   const [newHabitName, setNewHabitName] = useState('')
   const [newHabitFreq, setNewHabitFreq] = useState('daily')
   const [newHabitColor, setNewHabitColor] = useState('#E8321A')
+  const [newHabitType, setNewHabitType] = useState('build')
   const [toastMsg, setToastMsg] = useState('')
 
   const colorOptions = ['#E8321A', '#FF6644', '#A82010', '#5A1005', '#F0EAD6', '#2A1810']
@@ -58,6 +59,7 @@ export default function Habits() {
         name: newHabitName.trim(),
         frequency: newHabitFreq,
         color: newHabitColor,
+        habit_type: newHabitType,
       }),
     })
 
@@ -67,6 +69,7 @@ export default function Habits() {
       setNewHabitName('')
       setNewHabitFreq('daily')
       setNewHabitColor('#E8321A')
+      setNewHabitType('build')
       setShowAddModal(false)
       showToast('Habit added!')
     } else {
@@ -148,13 +151,18 @@ export default function Habits() {
                     <div style={{ fontSize: '16px', fontWeight: 600, color: '#F0EAD6', marginBottom: '4px' }}>
                       {habit.name}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <span style={{ fontSize: '12px', color: 'rgba(240,234,214,0.5)', textTransform: 'capitalize' }}>
                         {habit.frequency}
                       </span>
+                      {habit.habit_type === 'break' && (
+                        <span style={{ fontSize: '11px', color: 'rgba(240,234,214,0.4)', fontWeight: 500 }}>
+                          Breaking
+                        </span>
+                      )}
                       {habit.streak > 0 && (
                         <span style={{ fontSize: '12px', color: '#FF6644' }}>
-                          🔥 {habit.streak} day streak
+                          🔥 {habit.habit_type === 'break' ? `${habit.streak} days clean` : `${habit.streak} day streak`}
                         </span>
                       )}
                     </div>
@@ -163,6 +171,7 @@ export default function Habits() {
                   {/* Completion circle */}
                   <button
                     onClick={() => toggleCompletion(habit.id, habit.completedToday)}
+                    title={habit.habit_type === 'break' ? 'Resisted today?' : 'Complete'}
                     style={{
                       width: '40px',
                       height: '40px',
@@ -177,7 +186,7 @@ export default function Habits() {
                     }}
                   >
                     {habit.completedToday && (
-                      <span style={{ fontSize: '18px' }}>✓</span>
+                      <span style={{ fontSize: '18px' }}>{habit.habit_type === 'break' ? '💪' : '✓'}</span>
                     )}
                   </button>
                 </div>
@@ -206,6 +215,41 @@ export default function Habits() {
               </div>
 
               <form onSubmit={handleAddHabit} style={{ padding: '20px' }}>
+                {/* Habit type toggle */}
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Type</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {[
+                      { val: 'build', label: 'Build a habit' },
+                      { val: 'break', label: 'Break a habit' },
+                    ].map(({ val, label }) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setNewHabitType(val)}
+                        style={{
+                          flex: 1,
+                          padding: '10px',
+                          borderRadius: '6px',
+                          border: newHabitType === val ? (val === 'build' ? '2px solid #FF6644' : '2px solid #FF6644') : '1px solid rgba(240,234,214,0.2)',
+                          background: newHabitType === val
+                            ? (val === 'build' ? 'rgba(255,102,68,0.1)' : 'rgba(255,102,68,0.05)')
+                            : 'transparent',
+                          color: newHabitType === val
+                            ? '#F0EAD6'
+                            : 'rgba(240,234,214,0.5)',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          fontWeight: newHabitType === val ? 600 : 400,
+                          transition: 'all 200ms ease',
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Name input */}
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>Habit name</label>
