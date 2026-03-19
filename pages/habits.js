@@ -1,73 +1,98 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
-import { Flame } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase'
-import styles from '../styles/Habits.module.css'
-
-const BRAND_COLORS = ['#E8321A', '#F07D3A', '#2D6BE4', '#22A66E', '#9B59B6', '#E8B31A']
+import styles from '../styles/Dashboard.module.css'
+import { ArrowLeft, Flame } from 'lucide-react'
 
 export default function Habits() {
   const router = useRouter()
   const [user, setUser] = useState(null)
   const [habits, setHabits] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [showModal, setShowModal] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [newHabitName, setNewHabitName] = useState('')
+  const [newHabitFreq, setNewHabitFreq] = useState('daily')
+  const [newHabitColor, setNewHabitColor] = useState('#E8321A')
+  const [toastMsg, setToastMsg] = useState('')
 
-  // New habit form state
-  const [newName, setNewName] = useState('')
-  const [newFrequency, setNewFrequency] = useState('daily')
-  const [newColor, setNewColor] = useState('#E8321A')
+  const colorOptions = ['#E8321A', '#FF6644', '#A82010', '#5A1005', '#F0EAD6', '#2A1810']
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { router.push('/login'); return }
-      setUser(session.user)
-      fetchHabits(session.user.id)
-    })
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.push('/login')
+        return
+      }
+      setUser(user)
+      fetchHabits(user.id)
+    }
+    checkAuth()
   }, [])
 
-  async function fetchHabits(userId) {
+  const fetchHabits = async (userId) => {
     setLoading(true)
     const res = await fetch(`/api/habits?userId=${userId}`)
     if (res.ok) {
-      const data = await res.json()
-      setHabits(data.habits || [])
+      const { habits } = await res.json()
+      setHabits(habits || [])
     }
     setLoading(false)
   }
 
-  async function createHabit(e) {
+  const showToast = (msg) => {
+    setToastMsg(msg)
+    setTimeout(() => setToastMsg(''), 3000)
+  }
+
+  const handleAddHabit = async (e) => {
     e.preventDefault()
-    if (!newName.trim() || !user) return
-    setSaving(true)
+    if (!newHabitName.trim() || !user) return
+
     const res = await fetch('/api/habits', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: user.id, name: newName, frequency: newFrequency, color: newColor }),
+      body: JSON.stringify({
+        userId: user.id,
+        name: newHabitName.trim(),
+        frequency: newHabitFreq,
+        color: newHabitColor,
+      }),
     })
+
     if (res.ok) {
-      const data = await res.json()
-      setHabits(prev => [...prev, data.habit])
-      setShowModal(false)
-      setNewName('')
-      setNewFrequency('daily')
-      setNewColor('#E8321A')
+      const { habit } = await res.json()
+      setHabits(prev => [habit, ...prev])
+      setNewHabitName('')
+      setNewHabitFreq('daily')
+      setNewHabitColor('#E8321A')
+      setShowAddModal(false)
+      showToast('Habit added!')
+    } else {
+      showToast('Failed to add habit')
     }
-    setSaving(false)
   }
 
-  async function toggleCompletion(habitId) {
+  const toggleCompletion = async (habitId, currentState) => {
     if (!user) return
+
     const res = await fetch('/api/habits', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: user.id, habitId }),
+      body: JSON.stringify({
+        userId: user.id,
+        habitId: habitId,
+      }),
     })
+
     if (res.ok) {
-      const data = await res.json()
-      setHabits(prev => prev.map(h => h.id === habitId ? { ...h, completedToday: data.completedToday } : h))
+      const { completedToday } = await res.json()
+      setHabits(prev =>
+        prev.map(h =>
+          h.id === habitId ? { ...h, completedToday } : h
+        )
+      )
     }
   }
 
@@ -77,89 +102,198 @@ export default function Habits() {
         <title>Habits — Cinis</title>
       </Head>
       <div className={styles.page}>
-        <header className={styles.header}>
-          <button className={styles.backBtn} onClick={() => router.push('/dashboard')}>← Dashboard</button>
-          <h1 className={styles.title}>Habits</h1>
-          <button className={styles.addBtn} onClick={() => setShowModal(true)}>+ Add habit</button>
-        </header>
+        <div className={styles.view}>
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', paddingBottom: '12px', borderBottom: '1px solid rgba(240,234,214,0.1)' }}>
+            <button onClick={() => router.push('/dashboard')} style={{ background: 'none', border: 'none', color: '#F0EAD6', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}>
+              <ArrowLeft size={20} />
+            </button>
+            <h1 className={styles.greetingText}>Habits</h1>
+          </div>
 
-        <main className={styles.main}>
-          {loading ? (
-            <p className={styles.loading}>Loading...</p>
-          ) : habits.length === 0 ? (
+          {/* Add button */}
+          <button onClick={() => setShowAddModal(true)} className={styles.addTaskBtn} style={{ marginBottom: '24px' }}>
+            + Add habit
+          </button>
+
+          {/* Empty state */}
+          {habits.length === 0 && !loading && (
             <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}><Flame size={40} weight="fill" color="#E8321A" /></div>
+              <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🔥</div>
               <p className={styles.emptyText}>No habits yet.</p>
-              <p className={styles.emptySub}>Add your first one to start building momentum.</p>
-              <button className={styles.emptyAddBtn} onClick={() => setShowModal(true)}>Add your first habit</button>
+              <p className={styles.emptySubtext}>Start small. One habit changes everything.</p>
+              <button onClick={() => setShowAddModal(true)} className={styles.emptyAddBtn}>
+                Add your first habit
+              </button>
             </div>
-          ) : (
-            <div className={styles.habitList}>
+          )}
+
+          {/* Habits list */}
+          {habits.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {habits.map(habit => (
-                <div key={habit.id} className={styles.habitCard} style={{ borderLeftColor: habit.color }}>
-                  <div className={styles.habitInfo}>
-                    <span className={styles.habitName}>{habit.name}</span>
-                    <span className={styles.habitFreq}>{habit.frequency}</span>
+                <div
+                  key={habit.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '16px',
+                    background: 'rgba(255,102,68,0.05)',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(255,102,68,0.15)',
+                  }}
+                >
+                  {/* Left content */}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '16px', fontWeight: 600, color: '#F0EAD6', marginBottom: '4px' }}>
+                      {habit.name}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '12px', color: 'rgba(240,234,214,0.5)', textTransform: 'capitalize' }}>
+                        {habit.frequency}
+                      </span>
+                      {habit.streak > 0 && (
+                        <span style={{ fontSize: '12px', color: '#FF6644' }}>
+                          🔥 {habit.streak} day streak
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className={styles.habitRight}>
-                    <span className={styles.streakBadge}>🔥 0</span>
-                    <button
-                      className={`${styles.completionCircle} ${habit.completedToday ? styles.completed : ''}`}
-                      onClick={() => toggleCompletion(habit.id)}
-                      title={habit.completedToday ? 'Mark incomplete' : 'Mark complete'}
-                    >
-                      {habit.completedToday ? '✓' : ''}
-                    </button>
-                  </div>
+
+                  {/* Completion circle */}
+                  <button
+                    onClick={() => toggleCompletion(habit.id, habit.completedToday)}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      border: habit.completedToday ? 'none' : `2px solid rgba(240,234,214,0.3)`,
+                      background: habit.completedToday ? '#E8321A' : 'transparent',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 200ms ease',
+                    }}
+                  >
+                    {habit.completedToday && (
+                      <span style={{ fontSize: '18px' }}>✓</span>
+                    )}
+                  </button>
                 </div>
               ))}
             </div>
           )}
-        </main>
+        </div>
 
-        {showModal && (
-          <div className={styles.modalOverlay} onClick={() => setShowModal(false)}>
-            <div className={styles.modal} onClick={e => e.stopPropagation()}>
-              <h2 className={styles.modalTitle}>New Habit</h2>
-              <form onSubmit={createHabit} className={styles.form}>
-                <label className={styles.label}>Name</label>
-                <input
-                  className={styles.input}
-                  type="text"
-                  placeholder="e.g. Morning walk"
-                  value={newName}
-                  onChange={e => setNewName(e.target.value)}
-                  autoFocus
-                  required
-                />
+        {/* Add habit modal */}
+        {showAddModal && (
+          <div
+            className={styles.modalOverlay}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowAddModal(false)
+            }}
+          >
+            <div className={styles.modal}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>Add habit</h2>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  style={{ background: 'none', border: 'none', color: '#F0EAD6', fontSize: '24px', cursor: 'pointer' }}
+                >
+                  ×
+                </button>
+              </div>
 
-                <label className={styles.label}>Frequency</label>
-                <select className={styles.select} value={newFrequency} onChange={e => setNewFrequency(e.target.value)}>
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                </select>
-
-                <label className={styles.label}>Color</label>
-                <div className={styles.colorPicker}>
-                  {BRAND_COLORS.map(c => (
-                    <button
-                      key={c}
-                      type="button"
-                      className={`${styles.colorSwatch} ${newColor === c ? styles.colorSwatchActive : ''}`}
-                      style={{ backgroundColor: c }}
-                      onClick={() => setNewColor(c)}
-                    />
-                  ))}
+              <form onSubmit={handleAddHabit} style={{ padding: '20px' }}>
+                {/* Name input */}
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Habit name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Meditate"
+                    value={newHabitName}
+                    onChange={(e) => setNewHabitName(e.target.value)}
+                    required
+                    className={styles.fieldInput}
+                    autoFocus
+                  />
                 </div>
 
-                <div className={styles.modalActions}>
-                  <button type="button" className={styles.cancelBtn} onClick={() => setShowModal(false)}>Cancel</button>
-                  <button type="submit" className={styles.saveBtn} disabled={saving || !newName.trim()}>
-                    {saving ? 'Saving...' : 'Add Habit'}
-                  </button>
+                {/* Frequency toggle */}
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Frequency</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {['daily', 'weekly'].map(freq => (
+                      <button
+                        key={freq}
+                        type="button"
+                        onClick={() => setNewHabitFreq(freq)}
+                        style={{
+                          flex: 1,
+                          padding: '10px',
+                          borderRadius: '6px',
+                          border: newHabitFreq === freq ? '2px solid #FF6644' : '1px solid rgba(240,234,214,0.2)',
+                          background: newHabitFreq === freq ? 'rgba(255,102,68,0.1)' : 'transparent',
+                          color: '#F0EAD6',
+                          cursor: 'pointer',
+                          textTransform: 'capitalize',
+                          fontWeight: newHabitFreq === freq ? 600 : 400,
+                        }}
+                      >
+                        {freq}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Color swatches */}
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Color</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
+                    {colorOptions.map(color => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setNewHabitColor(color)}
+                        style={{
+                          width: '100%',
+                          aspectRatio: '1',
+                          borderRadius: '6px',
+                          background: color,
+                          border: newHabitColor === color ? '3px solid #F0EAD6' : 'none',
+                          cursor: 'pointer',
+                          transition: 'all 200ms ease',
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Save button */}
+                <button type="submit" className={styles.addTaskBtn} style={{ width: '100%', marginTop: '16px' }}>
+                  Save habit
+                </button>
               </form>
             </div>
+          </div>
+        )}
+
+        {/* Toast */}
+        {toastMsg && (
+          <div style={{
+            position: 'fixed',
+            bottom: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(0,0,0,0.8)',
+            color: '#F0EAD6',
+            padding: '12px 20px',
+            borderRadius: '6px',
+            fontSize: '14px',
+            zIndex: 9999,
+          }}>
+            {toastMsg}
           </div>
         )}
       </div>
