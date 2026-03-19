@@ -37,6 +37,8 @@ export default function Signup() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState(null)
+  // 'idle' | 'existing' | 'confirm'
+  const [signupState, setSignupState] = useState('idle')
 
   const handleGoogleSignUp = async () => {
     setGoogleLoading(true)
@@ -63,9 +65,17 @@ export default function Signup() {
       return
     }
     setLoading(true)
-    const { error } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) {
-      setError(error.message)
+      if (error.code === 'user_already_exists' || error.message?.toLowerCase().includes('already registered')) {
+        setSignupState('existing')
+      } else {
+        setError(error.message)
+      }
+      setLoading(false)
+    } else if (!data.session) {
+      // email confirmation required
+      setSignupState('confirm')
       setLoading(false)
     } else {
       router.push('/onboarding')
@@ -86,8 +96,23 @@ export default function Signup() {
           <h1 className={styles.heading}>Create your account.</h1>
           <p className={styles.sub}>Free to start. No credit card required.</p>
 
-          {error && <div className={styles.error}>{error}</div>}
+          {signupState === 'existing' && (
+            <div className={styles.error} style={{ background: 'rgba(231,76,60,0.08)', border: '1px solid rgba(231,76,60,0.25)' }}>
+              An account with this email exists.{' '}
+              <a href="/login" style={{ color: '#E8321A', fontWeight: 600 }}>Sign in instead</a>
+            </div>
+          )}
 
+          {signupState === 'confirm' && (
+            <div className={styles.success}>
+              <div className={styles.successIcon}>✓</div>
+              <p>Check your email to confirm your account.</p>
+            </div>
+          )}
+
+          {signupState === 'idle' && error && <div className={styles.error}>{error}</div>}
+
+          {signupState === 'idle' && (<>
           <button
             type="button"
             className={styles.googleBtn}
@@ -172,6 +197,7 @@ export default function Signup() {
               {loading ? 'Creating account…' : 'Create account'}
             </button>
           </form>
+          </>)}
 
           <p className={styles.signupLink}>
             Already have an account? <a href="/login">Sign in</a>

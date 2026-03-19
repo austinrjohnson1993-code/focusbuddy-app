@@ -44,7 +44,7 @@ export default function Login() {
       options: { redirectTo: 'https://cinis.app/dashboard' }
     })
     if (error) {
-      setError(error.message)
+      setError('Google sign-in failed. Try again or use email below.')
       setGoogleLoading(false)
     }
   }
@@ -137,6 +137,10 @@ export default function Login() {
             <a href="/forgot-password" className={styles.authFooterLink}>Forgot password?</a>
             <a href="/signup" className={styles.authFooterLink}>New here? Sign up free</a>
           </div>
+
+          <p style={{ fontSize: '12px', opacity: 0.5, textAlign: 'center', margin: '8px 0 0', color: '#f0ead6', lineHeight: 1.5 }}>
+            First time signing in with a password? Use &apos;Forgot password&apos; to set one up.
+          </p>
 
           <p className={styles.legalFooter}>
             <a href="/privacy">Privacy Policy</a>

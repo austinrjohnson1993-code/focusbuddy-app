@@ -44,15 +44,25 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [done, setDone] = useState(false)
+  // null = checking, true = recovery session active, false = no valid token
+  const [recoveryReady, setRecoveryReady] = useState(null)
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setRecoveryReady(prev => prev === null ? false : prev)
+    }, 2500)
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      // PASSWORD_RECOVERY event fires when user lands here from the reset email link
       if (event === 'PASSWORD_RECOVERY') {
-        // session is now active — form is already shown
+        clearTimeout(timer)
+        setRecoveryReady(true)
       }
     })
-    return () => subscription?.unsubscribe()
+
+    return () => {
+      clearTimeout(timer)
+      subscription?.unsubscribe()
+    }
   }, [])
 
   const handleReset = async (e) => {
@@ -94,10 +104,19 @@ export default function ResetPassword() {
           <h1 className={styles.heading}>Set a new password.</h1>
           <p className={styles.sub}>Choose a strong password for your account.</p>
 
-          {done ? (
+          {recoveryReady === null ? (
+            <p style={{ color: 'rgba(240,234,214,0.5)', fontSize: '14px', textAlign: 'center', margin: '24px 0' }}>Verifying your reset link…</p>
+          ) : recoveryReady === false ? (
+            <div className={styles.success} style={{ background: 'rgba(231,76,60,0.08)', border: '1px solid rgba(231,76,60,0.2)' }}>
+              <div className={styles.successIcon} style={{ background: 'rgba(231,76,60,0.15)', color: '#e74c3c' }}>!</div>
+              <p style={{ color: 'rgba(240,234,214,0.8)' }}>This link has expired. Request a new one.</p>
+              <p className={styles.successSub}><a href="/forgot-password" style={{ color: '#E8321A' }}>Go to forgot password →</a></p>
+            </div>
+          ) : done ? (
             <div className={styles.success}>
               <div className={styles.successIcon}>✓</div>
-              <p>Password set! Signing you in…</p>
+              <p>Password updated!</p>
+              <p className={styles.successSub}>Signing you in…</p>
             </div>
           ) : (
             <>
