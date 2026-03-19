@@ -458,7 +458,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Message too long. Please keep messages under 2000 characters.' })
   }
 
-  const rateCheck = await checkDailyRateLimit(userId)
+  let rateCheck
+  try {
+    rateCheck = await checkDailyRateLimit(userId)
+  } catch (err) {
+    console.error('[checkin] rate limit check error:', err.message)
+    return res.status(500).json({ error: 'Something went wrong. Try again.' })
+  }
   if (!rateCheck.allowed) {
     return res.status(429).json({
       error: 'rate_limit',
@@ -605,8 +611,8 @@ export default async function handler(req, res) {
       toolUses.map(tu => executeTool(tu.name, tu.input, supabaseAdmin, userId))
     )
     // Fire-and-forget memory compression for opening messages with prior context
-    if (isPro && conversationHistory && conversationHistory.length >= 3) {
-      compressAndSaveMemory(userId, conversationHistory, profile.rolling_memory_summary).catch(() => {})
+    if (isPro && messages && messages.length >= 3) {
+      compressAndSaveMemory(userId, messages, profile.rolling_memory_summary).catch(() => {})
     }
     return res.status(200).json({
       message: text,

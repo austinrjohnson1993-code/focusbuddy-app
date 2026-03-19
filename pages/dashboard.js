@@ -525,6 +525,9 @@ export default function Dashboard() {
   const [stuckTask, setStuckTask] = useState(null)
   const [routinesExpanded, setRoutinesExpanded] = useState(false)
   const [electedTaskId, setElectedTaskId] = useState(null) // user-starred priority task (UI only)
+  const [pushPickerTaskId, setPushPickerTaskId] = useState(null)
+  const [pushHour, setPushHour] = useState('9')
+  const [pushPeriod, setPushPeriod] = useState('AM')
   const [inlineAddActive, setInlineAddActive] = useState(false)
   const [inlineAddValue, setInlineAddValue] = useState('')
   const [inlineAddConfirmed, setInlineAddConfirmed] = useState(false)
@@ -1430,15 +1433,21 @@ export default function Dashboard() {
     setTasks(prev => prev.map(t => t.id === task.id ? updated : t))
   }
 
-  const rescheduleTask = async (task) => {
+  const rescheduleTask = async (task, hourStr = '9', period = 'AM') => {
+    const hour = parseInt(hourStr, 10)
+    let hours24 = hour
+    if (period === 'PM' && hour !== 12) hours24 = hour + 12
+    if (period === 'AM' && hour === 12) hours24 = 0
     const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1); tomorrow.setHours(9, 0, 0, 0)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrow.setHours(hours24, 0, 0, 0)
     const updated = {
       ...task, scheduled_for: tomorrow.toISOString(),
       due_time: task.due_time ? tomorrow.toISOString() : null,
       rollover_count: (task.rollover_count || 0) + 1
     }
     setTasks(prev => prev.map(t => t.id === task.id ? updated : t))
+    setPushPickerTaskId(null)
     await supabase.from('tasks').update({
       scheduled_for: updated.scheduled_for, due_time: updated.due_time, rollover_count: updated.rollover_count
     }).eq('id', task.id)
@@ -1513,6 +1522,10 @@ export default function Dashboard() {
           return next
         })
       } else {
+        const errMsg = data.error ? 'Something went wrong. Try again.' : null
+        if (errMsg) {
+          setCheckinMessages(prev => [...prev, { role: 'assistant', content: errMsg }])
+        }
         saveChatHistory(historyKey, updated)
       }
       fetchTasks(user.id)
@@ -2541,8 +2554,7 @@ export default function Dashboard() {
                     <Droppable droppableId="upnext-tasks">
                       {(provided) => (
                         <div className={styles.taskGroup} ref={provided.innerRef} {...provided.droppableProps}>
-                          <div className={styles.taskGroupLabel}>Up next</div>
-                          {dedupedPendingTasks.map((task, index) => {
+                          {dedupedPendingTasks.filter(t => t.id !== electedTaskId).map((task, index) => {
                             const dueFmt = task.due_time ? formatDueTime(task.due_time) : null
                             const dateLabel = getTaskDateLabel(task)
                             const countdown = getCountdownDisplay(task.due_time, tickNow)
@@ -2576,11 +2588,25 @@ export default function Dashboard() {
                                       </div>
                                     </div>
                                     <div className={styles.taskActions}>
-                                      <button onClick={e => { e.stopPropagation(); rescheduleTask(task) }} className={styles.taskAction} title="Push to tomorrow">
+                                      <button onClick={e => { e.stopPropagation(); setPushPickerTaskId(pushPickerTaskId === task.id ? null : task.id); setPushHour('9'); setPushPeriod('AM') }} className={styles.taskAction} title="Push to tomorrow">
                                         <CaretRight size={13} />
                                       </button>
                                       <button onClick={e => { e.stopPropagation(); if (!window.confirm('Delete this task?')) return; archiveTask(task) }} className={styles.taskActionDelete} title="Remove">×</button>
                                     </div>
+                                    {pushPickerTaskId === task.id && (
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0 4px', flexWrap: 'wrap' }} onClick={e => e.stopPropagation()}>
+                                        <span style={{ fontSize: '12px', color: 'rgba(240,234,214,0.55)' }}>Tomorrow at</span>
+                                        <select value={pushHour} onChange={e => setPushHour(e.target.value)} style={{ background: '#2A1810', color: '#f0ead6', border: '1px solid rgba(255,200,120,0.2)', borderRadius: '6px', padding: '3px 6px', fontSize: '13px', cursor: 'pointer' }}>
+                                          {['1','2','3','4','5','6','7','8','9','10','11','12'].map(h => <option key={h} value={h}>{h}</option>)}
+                                        </select>
+                                        <select value={pushPeriod} onChange={e => setPushPeriod(e.target.value)} style={{ background: '#2A1810', color: '#f0ead6', border: '1px solid rgba(255,200,120,0.2)', borderRadius: '6px', padding: '3px 6px', fontSize: '13px', cursor: 'pointer' }}>
+                                          <option value="AM">AM</option>
+                                          <option value="PM">PM</option>
+                                        </select>
+                                        <button onClick={() => rescheduleTask(task, pushHour, pushPeriod)} style={{ background: '#E8321A', color: '#fff', border: 'none', borderRadius: '6px', padding: '3px 10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>Push</button>
+                                        <button onClick={() => setPushPickerTaskId(null)} style={{ background: 'none', border: 'none', color: 'rgba(240,234,214,0.4)', fontSize: '12px', cursor: 'pointer' }}>Cancel</button>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </Draggable>
