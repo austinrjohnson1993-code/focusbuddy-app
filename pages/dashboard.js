@@ -1899,7 +1899,7 @@ export default function Dashboard() {
           <div className={styles.sidebarLogo}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <CinisMark size={24} />
-              <span style={{ fontFamily: 'Figtree, sans-serif', fontWeight: 700, fontSize: '18px', color: '#F0EAD6', letterSpacing: '-0.03em' }}>Cinis</span>
+              <span style={{ fontFamily: "'Cormorant Garamond', 'Cormorant', serif", fontWeight: 300, fontSize: '18px', color: '#F0EAD6', letterSpacing: '0.26em' }}>Cinis</span>
             </div>
           </div>
           <nav className={styles.sidebarNav}>

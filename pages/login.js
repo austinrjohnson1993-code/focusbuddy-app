@@ -56,7 +56,7 @@ export default function Login() {
         <div className={styles.card}>
           <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px', textDecoration: 'none' }}>
             <CinisMark size={36} />
-            <span style={{ fontFamily: 'Figtree, sans-serif', fontWeight: 700, fontSize: '22px', color: '#F0EAD6', letterSpacing: '-0.03em' }}>Cinis</span>
+            <span style={{ fontFamily: "'Cormorant Garamond', 'Cormorant', serif", fontWeight: 300, fontSize: '22px', color: '#F0EAD6', letterSpacing: '0.26em' }}>Cinis</span>
           </a>
 
           <h1 className={styles.heading}>Welcome back.</h1>

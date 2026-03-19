@@ -59,11 +59,11 @@
 }
 .sidebarLogo { font-size: 1.2rem; padding: 0 8px; margin-bottom: 36px; }
 .wordmark {
-  font-family: 'Playfair Display', serif;
-  font-weight: 700;
+  font-family: 'Cormorant Garamond', 'Cormorant', serif;
+  font-weight: 300;
   font-size: 1.3rem;
   color: #f0ead6;
-  letter-spacing: -0.03em;
+  letter-spacing: 0.26em;
 }
 .sidebarNav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
 .sidebarNavItem {
