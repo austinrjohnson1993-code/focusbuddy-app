@@ -1,0 +1,7 @@
+{
+  "T1": "You are the senior architect on Cinis, an AI productivity coaching app for people with ADHD.\n\nStack: Next.js 14.1.0 (Pages Router), Supabase (auth + DB), Vercel (hosting), Anthropic API, Stripe.\nWorking directory: ~/Documents/cinis-app\n\nTask: Read pages/dashboard.js lines 1-50 and report the top-level imports and any useState calls found.\n\nReport done.",
+
+  "T2": "You are working on the Cinis app at ~/Documents/cinis-app.\n\nTask: Read lib/supabase.js in full and describe what it exports and how the client is initialized.\n\nReport done.",
+
+  "T3": "You are working on the Cinis app at ~/Documents/cinis-app.\n\nTask: Run `npm run build` and report whether it succeeds or fails. If it fails, list the first error only.\n\nReport done."
+}
