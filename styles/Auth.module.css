@@ -1,5 +1,6 @@
 .page {
   min-height: 100vh;
+  background: #211A14;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -9,12 +10,42 @@
 .card {
   width: 100%;
   max-width: 440px;
-  background: #221608;
+  background: #1C1209;
   border: 1px solid rgba(255,200,120,0.09);
   border-radius: 20px;
   padding: 48px 40px;
 }
 
+/* ── Cinis brand mark ── */
+.logoWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  margin-bottom: 20px;
+}
+
+.mark {
+  flex-shrink: 0;
+}
+
+.wordmark {
+  font-family: 'Sora', sans-serif;
+  font-weight: 600;
+  font-size: 1.25rem;
+  letter-spacing: 0.16em;
+  color: #F0EAD6;
+}
+
+.tagline {
+  font-family: 'Figtree', sans-serif;
+  font-size: 0.88rem;
+  color: rgba(240,234,214,0.4);
+  margin-bottom: 32px;
+  letter-spacing: 0.01em;
+}
+
+/* ── Legacy logo class (kept for safety) ── */
 .logo {
   display: block;
   font-size: 1.6rem;
@@ -23,17 +54,17 @@
 }
 
 .heading {
-  font-family: 'Playfair Display', serif;
-  font-weight: 900;
-  font-size: 2rem;
-  color: #f0ead6;
+  font-family: 'Figtree', sans-serif;
+  font-weight: 700;
+  font-size: 1.75rem;
+  color: #F0EAD6;
   letter-spacing: -0.02em;
   margin-bottom: 8px;
 }
 
 .sub {
   font-size: 0.95rem;
-  color: rgba(240,234,214,0.55);
+  color: rgba(240,234,214,0.5);
   margin-bottom: 32px;
 }
 
@@ -43,13 +74,15 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: #f0ead6;
-  color: #1a1208;
+  background: #F0EAD6;
+  color: #211A14;
   border: none;
   border-radius: 100px;
   padding: 14px 24px;
   font-size: 0.95rem;
   font-weight: 600;
+  font-family: 'Figtree', sans-serif;
+  cursor: pointer;
   transition: all 0.2s;
   margin-bottom: 24px;
 }
@@ -76,8 +109,9 @@
 
 .divider span {
   font-size: 0.8rem;
-  color: rgba(240,234,214,0.4);
+  color: rgba(240,234,214,0.35);
   white-space: nowrap;
+  font-family: 'Figtree', sans-serif;
 }
 
 .form {
@@ -88,58 +122,63 @@
 
 .input {
   width: 100%;
-  background: rgba(255,200,120,0.05);
+  background: rgba(255,200,120,0.04);
   border: 1px solid rgba(255,200,120,0.12);
   border-radius: 100px;
   padding: 14px 20px;
-  color: #f0ead6;
+  color: #F0EAD6;
   font-size: 0.95rem;
+  font-family: 'Figtree', sans-serif;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
 }
 
-.input::placeholder { color: rgba(240,234,214,0.35); }
+.input::placeholder { color: rgba(240,234,214,0.3); }
 
 .input:focus {
-  border-color: rgba(255,77,28,0.5);
-  box-shadow: 0 0 0 3px rgba(255,77,28,0.12);
+  border-color: rgba(255,102,68,0.5);
+  box-shadow: 0 0 0 3px rgba(255,102,68,0.12);
 }
 
 .submitBtn {
   width: 100%;
-  background: #ff4d1c;
-  color: #110d06;
+  background: #FF6644;
+  color: #211A14;
   border: none;
   border-radius: 100px;
   padding: 14px 24px;
   font-size: 0.95rem;
   font-weight: 700;
+  font-family: 'Figtree', sans-serif;
+  cursor: pointer;
   transition: all 0.2s;
 }
 
 .submitBtn:hover:not(:disabled) {
-  background: #ff7043;
+  background: #ff7c55;
   transform: translateY(-1px);
 }
 
 .submitBtn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .error {
-  background: rgba(231,76,60,0.1);
-  border: 1px solid rgba(231,76,60,0.3);
-  color: #e74c3c;
+  background: rgba(232,50,26,0.08);
+  border: 1px solid rgba(232,50,26,0.28);
+  color: #E8321A;
   border-radius: 10px;
   padding: 12px 16px;
   font-size: 0.88rem;
+  font-family: 'Figtree', sans-serif;
   margin-bottom: 12px;
 }
 
 .success {
-  background: rgba(62,207,142,0.08);
-  border: 1px solid rgba(62,207,142,0.25);
+  background: rgba(255,102,68,0.06);
+  border: 1px solid rgba(255,102,68,0.2);
   border-radius: 16px;
   padding: 28px 24px;
   text-align: center;
@@ -148,13 +187,13 @@
 .successIcon {
   width: 48px;
   height: 48px;
-  background: rgba(62,207,142,0.15);
+  background: rgba(255,102,68,0.12);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.2rem;
-  color: #3ecf8e;
+  color: #FF6644;
   margin: 0 auto 16px;
 }
 
@@ -162,26 +201,29 @@
   font-size: 0.95rem;
   color: rgba(240,234,214,0.8);
   line-height: 1.6;
+  font-family: 'Figtree', sans-serif;
 }
 
-.success strong { color: #f0ead6; }
+.success strong { color: #F0EAD6; }
 
 .successSub {
   margin-top: 8px;
   font-size: 0.85rem !important;
-  color: rgba(240,234,214,0.5) !important;
+  color: rgba(240,234,214,0.45) !important;
 }
 
 .signupLink {
   text-align: center;
   margin-top: 20px;
   font-size: 0.88rem;
-  color: rgba(240,234,214,0.45);
+  color: rgba(240,234,214,0.4);
+  font-family: 'Figtree', sans-serif;
 }
 
 .signupLink a {
-  color: #ff4d1c;
+  color: #FF6644;
   font-weight: 600;
+  text-decoration: none;
 }
 
 .signupLink a:hover { text-decoration: underline; }

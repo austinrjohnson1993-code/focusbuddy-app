@@ -5,20 +5,24 @@ import styles from '../styles/Auth.module.css'
 
 export default function Signup() {
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState(null)
 
   const handleSignup = async (e) => {
     e.preventDefault()
+    if (password !== confirm) {
+      setError('Passwords do not match.')
+      return
+    }
     setLoading(true)
     setError(null)
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await supabase.auth.signUp({
       email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/onboarding`,
-        shouldCreateUser: true
-      }
+      password,
+      options: { emailRedirectTo: `${window.location.origin}/onboarding` }
     })
     if (error) {
       setError(error.message)
@@ -39,22 +43,30 @@ export default function Signup() {
   return (
     <>
       <Head>
-        <title>Create Account — FocusBuddy</title>
+        <title>Create Account — Cinis</title>
       </Head>
       <div className={styles.page}>
         <div className={styles.card}>
-          <a href="/" className={styles.logo}>
-            <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
+
+          <a href="/" className={styles.logoWrap}>
+            <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true" className={styles.mark}>
+              <rect width="30" height="30" rx="8" fill="#FF6644"/>
+              <path d="M15 7s-6 5-6 9.5a6 6 0 0012 0C21 12 15 7 15 7z" fill="#211A14"/>
+              <circle cx="15" cy="18" r="2.2" fill="#FF6644"/>
+            </svg>
+            <span className={styles.wordmark}>CINIS</span>
           </a>
 
-          <h1 className={styles.heading}>Let's get started.</h1>
+          <p className={styles.tagline}>Where start meets finished.</p>
+
+          <h1 className={styles.heading}>Let&apos;s get started.</h1>
           <p className={styles.sub}>Create your free account. No credit card required.</p>
 
           {sent ? (
             <div className={styles.success}>
               <div className={styles.successIcon}>✓</div>
-              <p>Check your email. We sent a magic link to <strong>{email}</strong>.</p>
-              <p className={styles.successSub}>Click the link to activate your account instantly.</p>
+              <p>Check your email. We sent a confirmation link to <strong>{email}</strong>.</p>
+              <p className={styles.successSub}>Click the link to activate your account.</p>
             </div>
           ) : (
             <>
@@ -81,8 +93,25 @@ export default function Signup() {
                   required
                   className={styles.input}
                 />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  className={styles.input}
+                />
+                <input
+                  type="password"
+                  placeholder="Confirm password"
+                  value={confirm}
+                  onChange={e => setConfirm(e.target.value)}
+                  required
+                  className={styles.input}
+                />
                 <button type="submit" disabled={loading} className={styles.submitBtn}>
-                  {loading ? 'Creating account...' : 'Create free account'}
+                  {loading ? 'Creating account…' : 'Create free account'}
                 </button>
               </form>
 
