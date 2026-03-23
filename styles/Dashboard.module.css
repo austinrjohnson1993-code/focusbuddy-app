@@ -2635,3 +2635,314 @@
   border-color: #e74c3c;
   color: #e74c3c;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   S17 — Tasks Tab Components
+   Brand: Coal #211A14 | Hot Pool #FF6644 | Ember #E8321A | Ash #F0EAD6 | Char #3E3228
+══════════════════════════════════════════════════════════════════ */
+
+/* 1 — Morning Greeting Card */
+.s17GreetCard {
+  position: relative;
+  background: #3E3228;
+  border: 1px solid rgba(255,200,120,0.12);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  animation: s17SlideDown 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes s17SlideDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.s17GreetDismiss {
+  position: absolute; top: 12px; right: 14px;
+  background: none; border: none; color: rgba(240,234,214,0.3);
+  font-size: 18px; cursor: pointer; line-height: 1; padding: 2px 4px;
+  transition: color 0.15s;
+}
+.s17GreetDismiss:hover { color: rgba(240,234,214,0.7); }
+.s17GreetHeadline {
+  font-family: 'Figtree', sans-serif;
+  font-size: 20px; font-weight: 700;
+  color: #F0EAD6; margin-bottom: 6px; padding-right: 24px;
+}
+.s17GreetLine {
+  font-family: 'Figtree', sans-serif;
+  font-size: 14px; color: rgba(240,234,214,0.6); line-height: 1.5;
+}
+
+/* 2 — Overdue Card */
+.s17OverdueCard {
+  background: rgba(232,50,26,0.07);
+  border: 1px solid rgba(232,50,26,0.35);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+.s17OverdueDoNow {
+  background: #E8321A; border: none; border-radius: 100px;
+  padding: 8px 18px; color: #fff; font-size: 13px; font-weight: 700;
+  font-family: 'Figtree', sans-serif; cursor: pointer; transition: all 0.15s;
+}
+.s17OverdueDoNow:hover { background: #c82a15; }
+.s17OverdueReschedule {
+  background: rgba(232,50,26,0.1); border: 1px solid rgba(232,50,26,0.25);
+  border-radius: 100px; padding: 8px 18px; color: #E8321A;
+  font-size: 13px; font-weight: 600; font-family: 'Figtree', sans-serif;
+  cursor: pointer; transition: all 0.15s;
+}
+.s17OverdueReschedule:hover { background: rgba(232,50,26,0.18); }
+
+/* 3 — Priority Card */
+.s17PriorityCard {
+  background: rgba(255,102,68,0.05);
+  border-left: 3px solid #FF6644;
+  border-top: 1px solid rgba(255,102,68,0.15);
+  border-right: 1px solid rgba(255,102,68,0.15);
+  border-bottom: 1px solid rgba(255,102,68,0.15);
+  border-radius: 0 14px 14px 0;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+.s17StartTimerBtn {
+  margin-top: 12px; background: #FF6644; border: none; border-radius: 100px;
+  padding: 9px 20px; color: #211A14; font-size: 13px; font-weight: 700;
+  font-family: 'Figtree', sans-serif; cursor: pointer; transition: all 0.15s;
+  display: inline-block;
+}
+.s17StartTimerBtn:hover { background: #ff7c55; transform: translateY(-1px); }
+
+/* 4 — Momentum Bar */
+.s17MomentumWrap {
+  padding: 0 0 16px;
+}
+.s17MomentumTrack {
+  height: 6px; background: #3E3228;
+  border-radius: 3px; overflow: hidden;
+}
+.s17MomentumFill {
+  height: 100%; background: #FF6644;
+  border-radius: 3px;
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 5 — Section headers */
+.s17SectionHeader {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; background: none; border: none; padding: 8px 4px;
+  cursor: pointer; color: rgba(240,234,214,0.5);
+  font-family: 'Figtree', sans-serif;
+  transition: color 0.15s;
+}
+.s17SectionHeader:hover { color: rgba(240,234,214,0.75); }
+.s17SectionLabel {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.s17SectionBadge {
+  font-size: 11px; font-weight: 700; padding: 2px 8px;
+  border-radius: 100px; font-family: 'Sora', sans-serif;
+}
+
+/* 6 — Task Cards */
+.s17TaskCard {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(62,50,40,0.35);
+  border: 1px solid rgba(255,200,120,0.08);
+  border-radius: 12px; padding: 12px 14px;
+  transition: opacity 0.3s ease, transform 0.3s ease, border-color 0.15s;
+  position: relative;
+}
+.s17TaskCard:hover { border-color: rgba(255,102,68,0.2); }
+.s17TaskTitle {
+  font-family: 'Figtree', sans-serif;
+  font-size: 14px; font-weight: 500; color: #F0EAD6; line-height: 1.3;
+}
+.s17TaskTitleDone {
+  font-family: 'Figtree', sans-serif;
+  font-size: 14px; color: rgba(240,234,214,0.35);
+  text-decoration: line-through; line-height: 1.3;
+}
+.s17TypeBadge {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; border-radius: 4px;
+  padding: 2px 6px; font-family: 'Sora', sans-serif;
+}
+
+/* Check circle */
+.s17CheckCircle {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid rgba(255,102,68,0.3);
+  background: transparent; flex-shrink: 0; cursor: pointer;
+  transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+}
+.s17CheckCircle:hover { border-color: #FF6644; background: rgba(255,102,68,0.1); }
+.s17CheckCircleFilling {
+  background: #FF6644 !important; border-color: #FF6644 !important;
+  animation: s17CheckPop 0.3s ease forwards;
+}
+@keyframes s17CheckPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(1); background: #FF6644; }
+}
+.s17CheckCircleDone {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: #FF6644; border: 2px solid #FF6644;
+  color: #211A14; font-size: 11px; font-weight: 900;
+  flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.15s;
+}
+.s17CheckCircleDone:hover { opacity: 0.7; }
+
+/* Star button */
+.s17StarBtn {
+  background: none; border: none; font-size: 16px;
+  cursor: pointer; flex-shrink: 0; padding: 2px;
+  transition: color 0.15s, transform 0.15s; line-height: 1;
+}
+.s17StarBtn:hover { transform: scale(1.2); }
+.s17StarBtnActive { color: #FF6644 !important; }
+
+/* Drag grip */
+.s17DragGrip {
+  color: rgba(240,234,214,0.12); font-size: 16px; cursor: grab;
+  flex-shrink: 0; user-select: none; transition: color 0.15s;
+}
+.s17DragGrip:hover { color: rgba(240,234,214,0.4); }
+
+/* 6 — XP Float animation */
+.xpFloat {
+  position: absolute; top: -8px; right: 40px;
+  color: #FF6644; font-size: 13px; font-weight: 700;
+  font-family: 'Sora', sans-serif; pointer-events: none;
+  animation: xpRise 2.2s ease forwards;
+  z-index: 10;
+}
+@keyframes xpRise {
+  0%   { opacity: 0; transform: translateY(0); }
+  15%  { opacity: 1; transform: translateY(-4px); }
+  70%  { opacity: 1; transform: translateY(-20px); }
+  100% { opacity: 0; transform: translateY(-30px); }
+}
+
+/* 8 — Add task FAB */
+.s17AddFab {
+  position: fixed; bottom: 24px; right: 24px;
+  background: #FF6644; border: none; border-radius: 100px;
+  padding: 14px 24px; color: #211A14; font-size: 15px; font-weight: 700;
+  font-family: 'Figtree', sans-serif; cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  box-shadow: 0 4px 20px rgba(255,102,68,0.45), 0 2px 8px rgba(0,0,0,0.4);
+  transition: all 0.2s; z-index: 150;
+}
+.s17AddFab:hover { background: #ff7c55; transform: translateY(-2px); box-shadow: 0 6px 28px rgba(255,102,68,0.55); }
+@media (max-width: 768px) { .s17AddFab { bottom: 80px; } }
+
+/* Add task overlay */
+.s17OverlayBg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(10px);
+  z-index: 200; display: flex; align-items: flex-end; justify-content: center;
+}
+@media (min-width: 600px) { .s17OverlayBg { align-items: center; padding: 24px; } }
+
+.s17OverlaySheet {
+  background: #1a1108;
+  border: 1px solid rgba(255,200,120,0.12);
+  border-radius: 24px 24px 0 0;
+  width: 100%; max-width: 540px;
+  padding: 28px 24px 40px;
+  max-height: 94vh; overflow-y: auto;
+}
+@media (min-width: 600px) { .s17OverlaySheet { border-radius: 24px; padding: 32px; } }
+
+/* Mode tabs */
+.s17ModeTabs {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: rgba(255,200,120,0.04);
+  border: 1px solid rgba(255,200,120,0.1);
+  border-radius: 10px; padding: 4px;
+}
+.s17ModeTab {
+  flex: 1; background: none; border: none; border-radius: 7px;
+  padding: 8px 12px; font-size: 13px; font-weight: 600;
+  font-family: 'Figtree', sans-serif; color: rgba(240,234,214,0.4);
+  cursor: pointer; transition: all 0.15s;
+}
+.s17ModeTabActive {
+  background: #FF6644 !important; color: #211A14 !important;
+}
+
+/* Mini calendar */
+.s17CalendarWrap {
+  margin-top: 10px;
+  background: rgba(255,200,120,0.03);
+  border: 1px solid rgba(255,200,120,0.1);
+  border-radius: 12px; padding: 12px;
+}
+.s17CalHeader {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.s17CalNav {
+  background: none; border: 1px solid rgba(255,200,120,0.1); border-radius: 6px;
+  width: 28px; height: 28px; color: rgba(240,234,214,0.45); cursor: pointer;
+  font-size: 16px; display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.s17CalNav:hover { border-color: rgba(255,102,68,0.3); color: #FF6644; }
+.s17CalGrid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+}
+.s17CalDay {
+  aspect-ratio: 1; border: none; background: none; border-radius: 6px;
+  font-size: 12px; color: rgba(240,234,214,0.6); cursor: pointer;
+  font-family: 'Sora', sans-serif; transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.s17CalDay:hover { background: rgba(255,102,68,0.15); color: #FF6644; }
+.s17CalDaySelected { background: #FF6644 !important; color: #211A14 !important; font-weight: 700; }
+.s17CalDayToday { border: 1px solid rgba(255,102,68,0.4); color: #FF6644; }
+
+/* Custom time picker */
+.s17TimePicker {
+  display: flex; align-items: flex-start; gap: 4px;
+  background: rgba(255,200,120,0.03);
+  border: 1px solid rgba(255,200,120,0.1);
+  border-radius: 12px; padding: 10px; overflow-x: auto;
+}
+.s17TimeCol {
+  display: flex; flex-wrap: wrap; gap: 2px; max-width: 96px;
+}
+.s17TimeCell {
+  background: none; border: 1px solid rgba(255,200,120,0.08); border-radius: 6px;
+  padding: 6px 8px; font-size: 12px; font-family: 'Sora', sans-serif;
+  color: rgba(240,234,214,0.5); cursor: pointer; min-width: 40px;
+  text-align: center; transition: all 0.15s;
+}
+.s17TimeCell:hover { border-color: rgba(255,102,68,0.3); color: #FF6644; }
+.s17TimeCellActive { background: rgba(255,102,68,0.15) !important; border-color: #FF6644 !important; color: #FF6644 !important; font-weight: 700; }
+
+/* Submit button */
+.s17SubmitBtn {
+  width: 100%; background: #FF6644; border: none; border-radius: 100px;
+  padding: 14px; color: #211A14; font-size: 15px; font-weight: 700;
+  font-family: 'Figtree', sans-serif; cursor: pointer; transition: all 0.2s;
+  margin-top: 4px;
+}
+.s17SubmitBtn:hover:not(:disabled) { background: #ff7c55; }
+.s17SubmitBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Voice FAB in voice mode */
+.s17VoiceFab {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: rgba(255,102,68,0.12);
+  border: 2px solid rgba(255,102,68,0.3);
+  color: #FF6644; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.s17VoiceFab:hover { background: rgba(255,102,68,0.2); border-color: #FF6644; }

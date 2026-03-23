@@ -37,6 +37,9 @@ export default async function handler(req, res) {
       completed: false,
       archived: false,
       rollover_count: 0,
+      starred: false,
+      task_type: 'regular',
+      estimated_minutes: 30,
     },
     {
       user_id: userId,
@@ -47,6 +50,9 @@ export default async function handler(req, res) {
       completed: false,
       archived: false,
       rollover_count: 0,
+      starred: false,
+      task_type: 'regular',
+      estimated_minutes: 20,
     },
     {
       user_id: userId,
@@ -57,6 +63,9 @@ export default async function handler(req, res) {
       completed: false,
       archived: false,
       rollover_count: 0,
+      starred: true,
+      task_type: 'regular',
+      estimated_minutes: 15,
     },
     {
       user_id: userId,
@@ -67,6 +76,9 @@ export default async function handler(req, res) {
       completed: false,
       archived: false,
       rollover_count: 0,
+      starred: false,
+      task_type: 'regular',
+      estimated_minutes: 30,
     },
     {
       user_id: userId,
@@ -77,6 +89,9 @@ export default async function handler(req, res) {
       completed: false,
       archived: false,
       rollover_count: 0,
+      starred: false,
+      task_type: 'regular',
+      estimated_minutes: 20,
     },
   ]
 

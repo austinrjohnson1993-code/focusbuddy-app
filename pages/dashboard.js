@@ -9,7 +9,7 @@ import { saveTaskOrder } from '../lib/taskOrder'
 import { isDueSoon as billIsDueSoon, formatBillAmount, getBillCategory, getNextDueDate } from '../lib/billUtils'
 import { CHORE_PRESETS, getChoresByPreset } from '../lib/chores'
 import { requestNotificationPermission, disablePushNotifications } from '../lib/pushNotifications'
-import { CheckSquare, ChatCircle, Target, CalendarBlank, Notebook, Wallet, ChartLineUp, Plus, Trash, Archive, Star, Gear, MagnifyingGlass, X, CaretLeft, CaretRight, CaretDown, Receipt, Scales, Books, Robot, List, Timer, ChartBar, Lightning, ArrowCounterClockwise, CheckCircle, Microphone } from '@phosphor-icons/react'
+import { CheckSquare, ChatCircle, Target, CalendarBlank, Notebook, Wallet, ChartLineUp, Plus, Trash, Archive, Star, Gear, MagnifyingGlass, X, CaretLeft, CaretRight, CaretDown, Receipt, Scales, Books, Robot, List, Timer, ChartBar, Lightning, ArrowCounterClockwise, CheckCircle, Microphone, UsersThree } from '@phosphor-icons/react'
 
 const THEMES = [
   { id: 'orange-bronze', name: 'Classic', accent: '#ff4d1c', gradient: 'radial-gradient(ellipse at top left, rgba(101,60,10,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(80,45,8,0.35) 0%, transparent 60%)', logo: '#ff4d1c' },
@@ -56,13 +56,14 @@ const NAV_ITEMS = [
   { id: 'checkin', label: 'Check-in', icon: <ChatCircle size={22} /> },
   { id: 'focus', label: 'Focus', icon: <Target size={22} /> },
   { id: 'calendar', label: 'Calendar', icon: <CalendarBlank size={22} /> },
-  { id: 'journal', label: 'Journal', icon: <Notebook size={22} /> },
+  { id: 'habits', label: 'Habits', icon: <ArrowCounterClockwise size={22} /> },
+  { id: 'tagteam', label: 'Tag Team', icon: <UsersThree size={22} /> },
   { id: 'finance', label: 'Finance', icon: <Wallet size={22} /> },
   { id: 'progress', label: 'Progress', icon: <ChartLineUp size={22} /> },
 ]
 
 const NAV_PRIMARY_IDS = ['tasks', 'checkin', 'focus', 'calendar']
-const NAV_MORE_IDS = ['journal', 'finance', 'progress', 'settings']
+const NAV_MORE_IDS = ['habits', 'tagteam', 'finance', 'progress', 'settings']
 
 // ── Pure helpers ──────────────────────────────────────────────────────────────
 
@@ -421,6 +422,31 @@ class TabErrorBoundary extends React.Component {
   }
 }
 
+// ── S17 helper ────────────────────────────────────────────────────────────────
+
+function generateGreetingLine(tasks) {
+  const todayD = new Date(); todayD.setHours(0,0,0,0)
+  const yStr = (() => { const d = new Date(); d.setDate(d.getDate()-1); return localDateStr(d) })()
+  const yesterdayDone = tasks.filter(t => t.completed && t.completed_at && localDateStr(new Date(t.completed_at)) === yStr).length
+  const overdue = tasks.filter(t => {
+    if (t.completed || t.archived || !t.scheduled_for) return false
+    const sf = new Date(t.scheduled_for); sf.setHours(0,0,0,0)
+    return sf < todayD
+  })
+  if (overdue.length > 0) {
+    const oldest = overdue.reduce((p,c) => new Date(p.scheduled_for) < new Date(c.scheduled_for) ? p : c)
+    const days = Math.floor((todayD - new Date(oldest.scheduled_for).setHours(0,0,0,0)) / 86400000)
+    if (days >= 2) return `"${oldest.title}" has been waiting ${days} days. Today's a good time.`
+    return `"${oldest.title}" was on yesterday's list. Still there.`
+  }
+  const starred = tasks.find(t => t.starred && !t.completed && !t.archived)
+  if (starred) return `"${starred.title}" is your priority. You've got this.`
+  if (yesterdayDone > 0) return `${yesterdayDone} thing${yesterdayDone !== 1 ? 's' : ''} done yesterday. Let's keep going.`
+  const pending = tasks.filter(t => !t.completed && !t.archived)
+  if (pending.length === 0) return "You're all caught up. Seriously — that's rare."
+  return `${pending.length} thing${pending.length !== 1 ? 's' : ''} on your plate today.`
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
@@ -466,6 +492,7 @@ export default function Dashboard() {
   const [parsing, setParsing] = useState(false)
   const recognitionRef = useRef(null)
   const titleInputRef = useRef(null)
+  const dragSrcRef = useRef(null)
 
   // Calendar
   const [calView, setCalView] = useState('month')
@@ -598,6 +625,20 @@ export default function Dashboard() {
 
   // Journal history (up to 20 past entries)
   const [journalHistory, setJournalHistory] = useState([])
+
+  // S17 Tasks tab
+  const [greetingDismissed, setGreetingDismissed] = useState(false)
+  const [sectionCollapsed, setSectionCollapsed] = useState({ overdue: false, today: false, tomorrow: false, thisWeek: false, later: false, completedToday: true })
+  const [xpFloat, setXpFloat] = useState(null) // { taskId, amount }
+  const [taskDragOver, setTaskDragOver] = useState(null)
+  const [newTaskType, setNewTaskType] = useState('task')
+  const [newTaskDates, setNewTaskDates] = useState([])
+  const [calPickerMonth, setCalPickerMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1) })
+  const [taskTimeHour, setTaskTimeHour] = useState(9)
+  const [taskTimeMinute, setTaskTimeMinute] = useState(0)
+  const [taskTimeEnabled, setTaskTimeEnabled] = useState(false)
+  const [taskEstimated, setTaskEstimated] = useState('')
+  const [addingTaskOverlay, setAddingTaskOverlay] = useState(false)
 
   // Live tick for countdown displays in task list
   const [tickNow, setTickNow] = useState(() => new Date())
@@ -857,6 +898,18 @@ export default function Dashboard() {
     }
   }, [profile])
 
+  // S17: Load greeting dismissed + section collapse state from localStorage
+  useEffect(() => {
+    if (typeof localStorage === 'undefined') return
+    if (localStorage.getItem(`greeting_dismissed_${todayStr()}`)) setGreetingDismissed(true)
+    const collapsed = {}
+    ;['overdue','today','tomorrow','thisWeek','later','completedToday'].forEach(s => {
+      const v = localStorage.getItem(`task_section_collapsed_${s}`)
+      if (v !== null) collapsed[s] = v === 'true'
+    })
+    if (Object.keys(collapsed).length > 0) setSectionCollapsed(prev => ({ ...prev, ...collapsed }))
+  }, [])
+
   // ── Seed / reset QC helpers (only active when ?debug=true is in URL) ──────
 
   useEffect(() => {
@@ -1092,7 +1145,8 @@ export default function Dashboard() {
       user_id: user.id, title: newTitle.trim(), completed: false, archived: false,
       due_time, consequence_level: newConsequence, notes: newNotes.trim() || null,
       recurrence: newRecurrence, rollover_count: 0, priority_score: 0,
-      created_at: new Date().toISOString(), scheduled_for: new Date().toISOString()
+      created_at: new Date().toISOString(), scheduled_for: new Date().toISOString(),
+      starred: false, task_type: 'regular', estimated_minutes: null
     }
     const { data } = await supabase.from('tasks').insert(task).select().single()
     if (data) setTasks(prev => [data, ...prev])
@@ -1104,7 +1158,8 @@ export default function Dashboard() {
     const task = {
       user_id: user.id, title, completed: false, archived: false, due_time: null,
       consequence_level: 'self', notes: null, recurrence: 'none', rollover_count: 0,
-      priority_score: 0, created_at: new Date().toISOString(), scheduled_for: new Date().toISOString()
+      priority_score: 0, created_at: new Date().toISOString(), scheduled_for: new Date().toISOString(),
+      starred: false, task_type: 'regular', estimated_minutes: null
     }
     const { data } = await supabase.from('tasks').insert(task).select().single()
     if (data) setTasks(prev => [data, ...prev])
@@ -1598,7 +1653,8 @@ export default function Dashboard() {
         due_time, consequence_level: t.consequence_level || 'self',
         notes: t.notes || null, recurrence: t.recurrence || 'none',
         rollover_count: 0, priority_score: 0,
-        created_at: new Date().toISOString(), scheduled_for: t.due_date ? new Date(`${t.due_date}T09:00`).toISOString() : new Date().toISOString()
+        created_at: new Date().toISOString(), scheduled_for: t.due_date ? new Date(`${t.due_date}T09:00`).toISOString() : new Date().toISOString(),
+        starred: false, task_type: 'regular', estimated_minutes: null
       }
     })
     const { data } = await supabase.from('tasks').insert(inserts).select()
@@ -1714,6 +1770,150 @@ export default function Dashboard() {
     console.log('[dnd] reordered:', reordered.map(t => t.title))
   }
 
+  // ── S17 handlers ──────────────────────────────────────────────────────────
+
+  const completeTaskWithXP = async (task) => {
+    setCompleting(task.id)
+    // FIX 5: show XP float immediately on click — don't wait for API
+    setXpFloat({ taskId: task.id, amount: 10 })
+    let xpFloatTimer = setTimeout(() => setXpFloat(null), 2200)
+    try {
+      await new Promise(r => setTimeout(r, 320))
+      const completedAt = new Date().toISOString()
+      await supabase.from('tasks').update({ completed: true, completed_at: completedAt }).eq('id', task.id)
+      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: true, completed_at: completedAt } : t))
+    } finally {
+      // FIX 1: always clear completing regardless of supabase errors
+      setCompleting(null)
+    }
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) return
+      const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` }
+      const xpRes = await loggedFetch('/api/tasks/xp', { method: 'POST', headers, body: JSON.stringify({ taskId: task.id }) })
+      const xpData = await xpRes.json()
+      if (xpData.xpAwarded) {
+        // Update float with actual amount if different from optimistic 10
+        clearTimeout(xpFloatTimer)
+        setXpFloat({ taskId: task.id, amount: xpData.xpAwarded })
+        setTimeout(() => setXpFloat(null), 2200)
+      }
+      if (xpData.totalXp != null) setProfile(prev => prev ? { ...prev, total_xp: xpData.totalXp } : prev)
+      const sRes = await loggedFetch('/api/tasks/streak', { headers: { Authorization: `Bearer ${session.access_token}` } })
+      const sData = await sRes.json()
+      if (sData.currentStreak != null) setProfile(prev => prev ? { ...prev, current_streak: sData.currentStreak } : prev)
+    } catch (err) { console.error('[completeTaskWithXP]', err) }
+  }
+
+  const toggleStarDB = async (task) => {
+    const newStarred = !task.starred
+    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, starred: newStarred } : t))
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) return
+      await loggedFetch(`/api/tasks/${task.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ starred: newStarred })
+      })
+    } catch { setTasks(prev => prev.map(t => t.id === task.id ? { ...t, starred: task.starred } : t)) }
+  }
+
+  const toggleSection = (section) => {
+    setSectionCollapsed(prev => {
+      const newVal = !prev[section]
+      try { localStorage.setItem(`task_section_collapsed_${section}`, String(newVal)) } catch {}
+      return { ...prev, [section]: newVal }
+    })
+  }
+
+  const handleTaskDragStart = (e, task, sectionTasks, sectionId) => {
+    dragSrcRef.current = { id: task.id, sectionId, index: sectionTasks.findIndex(t => t.id === task.id) }
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(task.id))
+  }
+
+  const handleTaskDragOver = (e, taskId) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setTaskDragOver(taskId)
+  }
+
+  const handleTaskDrop = async (e, targetTask, sectionTasks) => {
+    e.preventDefault()
+    setTaskDragOver(null)
+    const src = dragSrcRef.current
+    if (!src || src.id === targetTask.id) return
+    const updated = [...sectionTasks]
+    const srcIdx = updated.findIndex(t => t.id === src.id)
+    const dstIdx = updated.findIndex(t => t.id === targetTask.id)
+    if (srcIdx === -1 || dstIdx === -1) return
+    const [moved] = updated.splice(srcIdx, 1)
+    updated.splice(dstIdx, 0, moved)
+    const sectionIds = new Set(sectionTasks.map(t => t.id))
+    setTasks(prev => {
+      const nonSection = prev.filter(t => !sectionIds.has(t.id))
+      return [...updated, ...nonSection]
+    })
+    dragSrcRef.current = null
+    await saveTaskOrder(supabase, updated)
+  }
+
+  const addTaskFromOverlay = async (e) => {
+    e?.preventDefault()
+    if (!user || !newTitle.trim()) {
+      showToast('Enter a task name')
+      setTitleInputError(true)
+      setTimeout(() => setTitleInputError(false), 1200)
+      return
+    }
+    setAddingTaskOverlay(true)
+    const datesToCreate = newTaskDates.length > 0 ? newTaskDates : [todayStr()]
+    const makeTime = (dateStr) => {
+      if (taskTimeEnabled) {
+        const h = String(taskTimeHour).padStart(2, '0')
+        const m = String(taskTimeMinute).padStart(2, '0')
+        return new Date(`${dateStr}T${h}:${m}`).toISOString()
+      }
+      return new Date(`${dateStr}T23:59`).toISOString()
+    }
+    const taskBase = {
+      user_id: user.id, title: newTitle.trim(), completed: false, archived: false,
+      consequence_level: newConsequence, notes: newNotes.trim() || null,
+      recurrence: newRecurrence, rollover_count: 0, priority_score: 0,
+      starred: false, task_type: newTaskType,
+      estimated_minutes: taskEstimated ? parseInt(taskEstimated) : null,
+    }
+    if (datesToCreate.length > 1) {
+      const inserts = datesToCreate.map(d => ({
+        ...taskBase, due_time: makeTime(d),
+        scheduled_for: new Date(`${d}T09:00`).toISOString(),
+        created_at: new Date().toISOString(),
+      }))
+      const { data } = await supabase.from('tasks').insert(inserts).select()
+      if (data) setTasks(prev => [...data, ...prev])
+      showToast(`${inserts.length} tasks added`)
+    } else {
+      const d = datesToCreate[0]
+      const task = {
+        ...taskBase,
+        due_time: newTaskDates.length > 0 ? makeTime(d) : null,
+        scheduled_for: new Date(`${d}T09:00`).toISOString(),
+        created_at: new Date().toISOString(),
+      }
+      const { data } = await supabase.from('tasks').insert(task).select().single()
+      if (data) setTasks(prev => [data, ...prev])
+    }
+    resetForm()
+    setNewTaskType('task'); setNewTaskDates([]); setTaskTimeEnabled(false)
+    setTaskTimeHour(9); setTaskTimeMinute(0); setTaskEstimated('')
+    setAddingTaskOverlay(false); setShowAddModal(false)
+  }
+
+  const toggleCalDate = (dateStr) => {
+    setNewTaskDates(prev => prev.includes(dateStr) ? prev.filter(d => d !== dateStr) : [...prev, dateStr])
+  }
+
   // ── Calendar helpers ──────────────────────────────────────────────────────
 
   function calTasksForDay(dStr) {
@@ -1743,6 +1943,54 @@ export default function Dashboard() {
     return sf.getFullYear() === now.getFullYear() && sf.getMonth() === now.getMonth() && sf.getDate() === now.getDate()
   })()))
   const completedTasks = tasks.filter(t => t.completed && !isChoreTask(t))
+
+  // S17: section buckets
+  const s17Today = new Date(); s17Today.setHours(0,0,0,0)
+  const s17Tomorrow = new Date(s17Today); s17Tomorrow.setDate(s17Today.getDate()+1)
+  const s17WeekEnd = new Date(s17Today); s17WeekEnd.setDate(s17Today.getDate()+7)
+  const s17TodayStr = localDateStr(s17Today)
+  const s17TomStr = localDateStr(s17Tomorrow)
+  const s17Pending = tasks.filter(t => !t.completed && !t.archived)
+  const s17Overdue = sortByPriority(s17Pending.filter(t => {
+    if (!t.scheduled_for) return false
+    const sf = new Date(t.scheduled_for); sf.setHours(0,0,0,0)
+    return sf < s17Today
+  }))
+  const s17TodayTasks = sortBySchedule(s17Pending.filter(t => {
+    const base = taskBaseDate(t)
+    return base && localDateStr(base) === s17TodayStr
+  }))
+  const s17TomorrowTasks = sortBySchedule(s17Pending.filter(t => {
+    const base = taskBaseDate(t)
+    return base && localDateStr(base) === s17TomStr
+  }))
+  const s17WeekTasks = sortBySchedule(s17Pending.filter(t => {
+    const base = taskBaseDate(t)
+    if (!base) return false
+    const d = new Date(base.getFullYear(), base.getMonth(), base.getDate())
+    return d > s17Tomorrow && d <= s17WeekEnd
+  }))
+  const s17LaterTasks = sortBySchedule(s17Pending.filter(t => {
+    const base = taskBaseDate(t)
+    if (!base) return true
+    const d = new Date(base.getFullYear(), base.getMonth(), base.getDate())
+    return d > s17WeekEnd
+  }))
+  const s17CompletedToday = tasks.filter(t => t.completed && t.completed_at && localDateStr(new Date(t.completed_at)) === s17TodayStr)
+  // Priority: first starred task with earliest due_time
+  const s17StarredTask = (() => {
+    const starred = tasks.filter(t => t.starred && !t.completed && !t.archived)
+    if (!starred.length) return null
+    return starred.reduce((best, t) => {
+      if (!best.due_time && t.due_time) return t
+      if (best.due_time && t.due_time && new Date(t.due_time) < new Date(best.due_time)) return t
+      return best
+    })
+  })()
+  // Momentum
+  const s17TodayAll = [...s17TodayTasks, ...s17Overdue.filter(t => localDateStr(taskBaseDate(t) || s17Today) === s17TodayStr)]
+  const s17CompletedCount = s17CompletedToday.length
+  const s17TotalToday = s17CompletedCount + s17TodayTasks.length
   const rawName = profile?.full_name || ''
   const firstName = rawName.includes('@') ? 'there' : (rawName.split(' ')[0] || 'there')
   const electedTask = electedTaskId ? (allPendingTasks.find(t => t.id === electedTaskId) || null) : null
@@ -1900,288 +2148,249 @@ export default function Dashboard() {
           {/* ── TASKS ── */}
           {activeTab === 'tasks' && (
           <TabErrorBoundary tabName="Tasks">
-            <div className={styles.view}>
-              <div className={styles.viewHeader}>
-                <div>
-                  <h1 className={styles.greetingText}>
-                    {greeting}, <span className={styles.name}>{rawName.includes('@') ? 'there' : (rawName || 'there')}</span>
-                  </h1>
-                  <p className={styles.headerSub}>
-                    {allPendingTasks.length === 0
-                      ? "You're all caught up. Seriously — well done."
-                      : `${allPendingTasks.length} thing${allPendingTasks.length !== 1 ? 's' : ''} on your list.`}
-                  </p>
-                </div>
-                <button onClick={() => setShowAddModal(true)} className={styles.addTaskBtn}>
-                  <span>+</span> Add task
-                </button>
-              </div>
+          {(() => {
+            const HP = '#FF6644'
+            const EMBER = '#E8321A'
+            const ASH = '#F0EAD6'
+            const CHAR = '#3E3228'
+            const greetLine = generateGreetingLine(tasks)
 
-              {/* ── Next Move Button ── */}
-              {allPendingTasks.length > 0 && (
-                <div className={styles.nextMoveWrap}>
+            const renderSection = (sectionId, label, sectionTasks, opts = {}) => {
+              if (sectionTasks.length === 0) return null
+              const collapsed = sectionCollapsed[sectionId]
+              const isOverdue = opts.isOverdue
+              const isDone = opts.isDone
+              return (
+                <div key={sectionId} style={{ marginBottom: 4 }}>
                   <button
-                    className={styles.nextMoveBtn}
-                    onClick={fetchNextMove}
-                    disabled={nextMoveLoading}
+                    className={styles.s17SectionHeader}
+                    onClick={() => toggleSection(sectionId)}
+                    style={{ color: isOverdue ? EMBER : undefined }}
                   >
-                    {nextMoveLoading
-                      ? <><span className={styles.nextMoveSpinner} /> thinking…</>
-                      : <>What&rsquo;s my next move? &rarr;</>
-                    }
+                    <span className={styles.s17SectionLabel}>{label}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className={styles.s17SectionBadge}
+                        style={{ background: isOverdue ? `${EMBER}22` : `${HP}18`, color: isOverdue ? EMBER : HP }}>
+                        {sectionTasks.length}
+                      </span>
+                      <span style={{ color: 'rgba(240,234,214,0.3)', fontSize: 16, transform: collapsed ? 'rotate(0deg)' : 'rotate(90deg)', display: 'inline-block', transition: 'transform 0.2s' }}>›</span>
+                    </div>
                   </button>
-                  {nextMoveResult && (
-                    <div className={styles.nextMoveCard}>
-                      <button
-                        className={styles.nextMoveDismiss}
-                        onClick={() => setNextMoveResult(null)}
-                        aria-label="Dismiss"
-                      >✕</button>
-                      <p className={styles.nextMoveText}>
-                        {nextMoveResult.taskName ? (
-                          (() => {
-                            const parts = nextMoveResult.raw.split(/\*\*(.+?)\*\*/)
-                            return parts.map((part, i) => {
-                              if (i % 2 === 1) {
-                                // This is the bolded task name
-                                const matchedTask = tasks.find(t => t.title.toLowerCase().includes(part.toLowerCase()))
-                                return (
-                                  <strong
-                                    key={i}
-                                    className={styles.nextMoveTaskName}
-                                    onClick={() => {
-                                      if (matchedTask) {
-                                        setElectedTaskId(matchedTask.id)
-                                        setNextMoveResult(null)
-                                      }
-                                    }}
-                                    style={matchedTask ? { cursor: 'pointer' } : {}}
-                                  >
-                                    {part}
-                                  </strong>
-                                )
-                              }
-                              return <span key={i}>{part}</span>
-                            })
-                          })()
-                        ) : (
-                          nextMoveResult.raw
-                        )}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className={styles.focusCardWrap}>
-                {electedTask ? (
-                  <>
-                    <div className={styles.focusLabel}>
-                      <span className={styles.focusDot} />
-                      {electedTask.due_time ? 'Time sensitive task' : 'Priority focus'}
-                    </div>
-                    <div className={`${styles.focusCard} ${completing === electedTask.id ? styles.focusCardCompleting : ''}`}>
-                      {electedTask.rollover_count > 0 && (
-                        <div className={styles.rolloverBadge}>
-                          ↷ Rolled over {electedTask.rollover_count}×
-                          {electedTask.rollover_count >= 2 && (
-                            <button className={styles.breakItDown} onClick={() => {
-                              setNewTitle(`First step: ${electedTask.title}`)
-                              setNewDueDate(electedTask.scheduled_for ? new Date(electedTask.scheduled_for).toISOString().split('T')[0] : '')
-                              setShowAddModal(true)
-                            }}>· Break it down →</button>
-                          )}
-                        </div>
-                      )}
-                      <div className={styles.focusCardBody}>
-                        <button onClick={() => completeTask(electedTask)} className={styles.focusCheck} aria-label="Complete task" />
-                        <div className={styles.focusTaskInfo} onClick={() => setDetailTask(electedTask)} style={{ cursor: 'pointer' }}>
-                          <span className={styles.focusTaskTitle}>{electedTask.title}</span>
-                          {topTaskCountdown && (
-                            <span style={{ fontSize: '13px', color: 'var(--accent)', opacity: 0.9, fontWeight: 600 }}>
-                              {topTaskCountdown}
-                            </span>
-                          )}
-                          {!topTaskCountdown && (() => {
-                            const fmt = electedTask.due_time ? formatDueTime(electedTask.due_time) : null
-                            const dateLabel = getTaskDateLabel(electedTask)
-                            const dateDisplay = dateLabel
-                              ? (fmt ? `${dateLabel} · ${fmt.label}` : dateLabel)
-                              : (fmt ? fmt.label : null)
-                            if (!dateDisplay) return null
-                            return (
-                              <span className={`${styles.focusDueTime} ${fmt?.urgent ? styles.focusDueUrgent : ''}`}>
-                                {fmt?.urgent && <span className={styles.urgentDot} />}
-                                {dateDisplay}
-                              </span>
-                            )
-                          })()}
-                          {electedTask.notes && <span className={styles.focusNotes}>{electedTask.notes}</span>}
-                          <div className={styles.focusBadgeRow}>
-                            {electedTask.consequence_level === 'external' && <span className={styles.externalBadge}>External commitment</span>}
-                            {electedTask.recurrence && electedTask.recurrence !== 'none' && (
-                              <span className={styles.recurrenceBadge}>{electedTask.recurrence === 'daily' ? '↻ Daily' : '↻ Weekly'}</span>
+                  {!collapsed && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
+                      {sectionTasks.map(task => {
+                        const isCompleting = completing === task.id
+                        const isDragOver = taskDragOver === task.id
+                        const hasXP = xpFloat?.taskId === task.id
+                        const countdown = getCountdownDisplay(task.due_time, tickNow)
+                        const typeBadge = task.task_type && task.task_type !== 'task' && task.task_type !== 'regular' ? task.task_type : null
+                        return (
+                          <div
+                            key={task.id}
+                            className={styles.s17TaskCard}
+                            style={{
+                              opacity: isCompleting ? 0 : 1,
+                              transform: isCompleting ? 'translateX(80px)' : 'none',
+                              transition: 'opacity 0.3s ease, transform 0.3s ease',
+                              pointerEvents: isCompleting ? 'none' : undefined,
+                              borderTop: isDragOver ? `2px solid ${HP}` : undefined,
+                              background: isDone ? 'transparent' : undefined,
+                            }}
+                            draggable={!isDone}
+                            onDragStart={e => !isDone && handleTaskDragStart(e, task, sectionTasks, sectionId)}
+                            onDragOver={e => !isDone && handleTaskDragOver(e, task.id)}
+                            onDrop={e => !isDone && handleTaskDrop(e, task, sectionTasks)}
+                            onDragLeave={() => setTaskDragOver(null)}
+                            onDragEnd={() => { setTaskDragOver(null); dragSrcRef.current = null }}
+                          >
+                            {hasXP && (
+                              <div className={styles.xpFloat}>+{xpFloat.amount} XP</div>
+                            )}
+                            {isDone ? (
+                              <button
+                                className={styles.s17CheckCircleDone}
+                                onClick={() => uncompleteTask(task)}
+                                aria-label="Undo complete"
+                              >✓</button>
+                            ) : (
+                              <button
+                                className={`${styles.s17CheckCircle} ${isCompleting ? styles.s17CheckCircleFilling : ''}`}
+                                onClick={() => completeTaskWithXP(task)}
+                                aria-label="Complete task"
+                              />
+                            )}
+                            <div
+                              style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3, cursor: 'pointer' }}
+                              onClick={() => setDetailTask(task)}
+                            >
+                              <span className={isDone ? styles.s17TaskTitleDone : styles.s17TaskTitle}>{task.title}</span>
+                              {!isDone && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                  {typeBadge && (
+                                    <span className={styles.s17TypeBadge}
+                                      style={{ background: typeBadge === 'appointment' ? '#1a3a4a' : typeBadge === 'bill' ? '#2a1a0a' : `${CHAR}cc`, color: typeBadge === 'appointment' ? '#66d4f0' : typeBadge === 'bill' ? '#FFB800' : ASH }}>
+                                      {typeBadge}
+                                    </span>
+                                  )}
+                                  {countdown ? (
+                                    <span style={{ fontSize: 11, color: HP, fontFamily: "'Sora', sans-serif", fontWeight: 600 }}>{countdown}</span>
+                                  ) : task.due_time && (
+                                    <span style={{ fontSize: 11, color: 'rgba(240,234,214,0.4)', fontFamily: "'Sora', sans-serif" }}>
+                                      {new Date(task.due_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                                    </span>
+                                  )}
+                                  {task.rollover_count > 0 && (
+                                    <span style={{ fontSize: 10, color: 'rgba(240,234,214,0.28)', fontFamily: "'Sora', sans-serif" }}>↷ {task.rollover_count}×</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            {!isDone && (
+                              <button
+                                className={`${styles.s17StarBtn} ${task.starred ? styles.s17StarBtnActive : ''}`}
+                                onClick={e => { e.stopPropagation(); toggleStarDB(task) }}
+                                aria-label={task.starred ? 'Unstar' : 'Star'}
+                                style={{ color: task.starred ? HP : 'rgba(240,234,214,0.2)' }}
+                              >{task.starred ? '★' : '☆'}</button>
+                            )}
+                            {isDone && (
+                              <button onClick={e => { e.stopPropagation(); if (!window.confirm('Delete?')) return; archiveTask(task) }} className={styles.taskActionDelete} title="Remove">×</button>
+                            )}
+                            {!isDone && (
+                              <span className={styles.s17DragGrip} title="Drag to reorder">⠿</span>
                             )}
                           </div>
-                        </div>
-                      </div>
-                      <div className={styles.focusCardActions}>
-                        <button onClick={() => switchTab('focus')} className={styles.focusAction} style={{ color: 'var(--accent)', fontWeight: 700 }}>
-                          Start timer →
-                        </button>
-                        <button onClick={() => rescheduleTask(electedTask)} className={styles.focusAction}>
-                          <CaretRight size={12} style={{marginRight:'5px'}} />
-                          Push to tomorrow
-                        </button>
-                        <button onClick={() => archiveTask(electedTask)} className={styles.focusActionDelete}>×</button>
-                      </div>
+                        )
+                      })}
                     </div>
-                    {allPendingTasks.length > 1 && <div className={styles.stackCard2} />}
-                    {allPendingTasks.length > 2 && <div className={styles.stackCard3} />}
-                  </>
-                ) : (
-                  <div className={styles.priorityEmptyCard}>
-                    <span className={styles.priorityEmptyIcon}>☆</span>
-                    <p className={styles.priorityEmptyText}>No priority selected</p>
-                    <p className={styles.priorityEmptySub}>Star a task below to set your focus</p>
+                  )}
+                </div>
+              )
+            }
+
+            return (
+              <div style={{ padding: '12px 14px', paddingBottom: 80, maxWidth: 680, margin: '0 auto', overflowY: 'auto', minHeight: '100%' }}>
+
+                {/* 1 — Morning Greeting Card */}
+                {!greetingDismissed && (
+                  <div className={styles.s17GreetCard}>
+                    <button
+                      className={styles.s17GreetDismiss}
+                      onClick={() => {
+                        setGreetingDismissed(true)
+                        try { localStorage.setItem(`greeting_dismissed_${todayStr()}`, '1') } catch {}
+                      }}
+                      aria-label="Dismiss"
+                    >×</button>
+                    <div className={styles.s17GreetHeadline}>{greeting}, {firstName}</div>
+                    <div className={styles.s17GreetLine}>{greetLine}</div>
                   </div>
                 )}
-              </div>
 
-              {allPendingTasks.length > 0 && (
-                <>
-                  {!dragHintDismissed && (
-                    <div className={styles.dragHintBanner}>
-                      <span>⠿ Drag to set your priority order — top task becomes your focus</span>
-                      <button onClick={dismissDragHint} className={styles.dragHintClose}>×</button>
-                    </div>
-                  )}
-                  <DragDropContext onDragEnd={handleDragEnd}>
-                    <Droppable droppableId="upnext-tasks">
-                      {(provided) => (
-                        <div className={styles.taskGroup} ref={provided.innerRef} {...provided.droppableProps}>
-                          <div className={styles.taskGroupLabel}>Up next</div>
-                          {allPendingTasks.map((task, index) => {
-                            const dueFmt = task.due_time ? formatDueTime(task.due_time) : null
-                            const dateLabel = getTaskDateLabel(task)
-                            const countdown = getCountdownDisplay(task.due_time, tickNow)
-                            const dateDisplay = countdown
-                              ? null
-                              : (dateLabel
-                                  ? (dueFmt ? `${dateLabel} · ${dueFmt.label}` : dateLabel)
-                                  : (dueFmt ? dueFmt.label : null))
-                            const isElected = task.id === electedTaskId
-                            const isBillTask = task.title?.startsWith('Pay: ')
-                            return (
-                              <Draggable key={String(task.id)} draggableId={String(task.id)} index={index}>
-                                {(provided) => (
-                                  <div ref={provided.innerRef} {...provided.draggableProps} className={`${styles.taskCard}${isBillTask ? ` ${styles.billTaskCard}` : ''}`}>
-                                    <button
-                                      className={`${styles.starBtn} ${isElected ? styles.starBtnActive : ''}`}
-                                      onClick={e => { e.stopPropagation(); setElectedTaskId(isElected ? null : task.id) }}
-                                      title={isElected ? 'Remove priority' : 'Set as priority focus'}
-                                    >{isElected ? '★' : '☆'}</button>
-                                    <span {...provided.dragHandleProps} className={styles.dragHandle} title="Drag to reorder">⠿</span>
-                                    <button onClick={() => completeTask(task)} className={styles.taskCheck} aria-label="Complete" />
-                                    <div className={styles.taskInfo} onClick={() => setDetailTask(task)} style={{ cursor: 'pointer' }}>
-                                      <span className={styles.taskTitle}>{isBillTask && <Receipt size={16} style={{ marginRight: '4px', verticalAlign: 'middle', opacity: 0.7 }} />}{task.title}{isBillTask && <span className={styles.billBadge}>Bill</span>}</span>
-                                      {task.notes && <span className={styles.taskNotes}>{task.notes}</span>}
-                                      <div className={styles.taskMeta}>
-                                        {countdown && <span className={`${styles.taskDueTime} ${styles.taskDueUrgent}`} style={{ color: 'var(--accent)' }}>{countdown}</span>}
-                                        {!countdown && dateDisplay && <span className={`${styles.taskDueTime} ${dueFmt?.urgent ? styles.taskDueUrgent : ''}`}>{dateDisplay}</span>}
-                                        {task.rollover_count > 0 && <span className={styles.taskRollover}>↷ {task.rollover_count}×</span>}
-                                        {task.consequence_level === 'external' && <span className={styles.taskExternal}>External</span>}
-                                        {task.recurrence && task.recurrence !== 'none' && <span className={styles.taskRecurrence}>↻ {task.recurrence}</span>}
-                                      </div>
-                                    </div>
-                                    <div className={styles.taskActions}>
-                                      <button onClick={e => { e.stopPropagation(); rescheduleTask(task) }} className={styles.taskAction} title="Push to tomorrow">
-                                        <CaretRight size={13} />
-                                      </button>
-                                      <button onClick={e => { e.stopPropagation(); if (!window.confirm('Delete this task?')) return; archiveTask(task) }} className={styles.taskActionDelete} title="Remove">×</button>
-                                    </div>
-                                  </div>
-                                )}
-                              </Draggable>
-                            )
-                          })}
-                          {provided.placeholder}
+                {/* 2 — Overdue Card */}
+                {s17Overdue.length > 0 && (() => {
+                  const worst = s17Overdue[0]
+                  const daysOver = Math.floor((s17Today - new Date(worst.scheduled_for).setHours(0,0,0,0)) / 86400000)
+                  return (
+                    <div className={styles.s17OverdueCard}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: EMBER, marginBottom: 4, fontFamily: "'Figtree', sans-serif" }}>Overdue</div>
+                          <div style={{ fontSize: 15, fontWeight: 600, color: ASH, fontFamily: "'Figtree', sans-serif", lineHeight: 1.3, marginBottom: 4 }}>{worst.title}</div>
+                          <div style={{ fontSize: 12, color: EMBER, fontFamily: "'Sora', sans-serif", fontWeight: 600 }}>{daysOver} day{daysOver !== 1 ? 's' : ''} overdue</div>
+                          {s17Overdue.length > 1 && (
+                            <div style={{ fontSize: 12, color: 'rgba(240,234,214,0.45)', marginTop: 4, fontFamily: "'Sora', sans-serif" }}>+{s17Overdue.length - 1} more overdue</div>
+                          )}
                         </div>
-                      )}
-                    </Droppable>
-                  </DragDropContext>
-                </>
-              )}
-
-              {allPendingTasks.length === 0 && completedTasks.length === 0 && (
-                <div className={styles.emptyState}>
-                  <div className={styles.emptyIcon}>✦</div>
-                  <p className={styles.emptyText}>Nothing on your list.</p>
-                  <p className={styles.emptySubtext}>Add your first task and FocusBuddy will handle the rest.</p>
-                  <button onClick={() => setShowAddModal(true)} className={styles.emptyAddBtn}>+ Add your first task</button>
-                </div>
-              )}
-
-              {/* ── Coming up ── */}
-              {comingUpItems.length > 0 && (
-                <div className={styles.taskGroup} style={{ marginTop: '28px' }}>
-                  <div className={styles.taskGroupLabel}>Coming up</div>
-                  {comingUpItems.map(item => (
-                    <div key={item.id} className={styles.comingUpCard}
-                      onClick={() => item.type === 'task' && item.task && setDetailTask(item.task)}>
-                      <div className={styles.comingUpLeft}>
-                        <span className={`${styles.comingUpBadge} ${item.type === 'bill' ? styles.comingUpBadgeBill : styles.comingUpBadgeTask}`}>
-                          {item.type === 'bill' ? 'Bill' : 'Recurring'}
-                        </span>
-                        <span className={styles.comingUpTitle}>
-                          {item.title}
-                          {item.type === 'bill' && item.amount ? ` · ${fmtMoney(item.amount)}` : ''}
-                        </span>
                       </div>
-                      <span className={`${styles.comingUpDue} ${item.daysUntil <= 1 ? styles.comingUpDueSoon : ''}`}>
-                        {item.label}
-                      </span>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                        <button className={styles.s17OverdueDoNow} onClick={() => completeTaskWithXP(worst)}>Do now</button>
+                        <button className={styles.s17OverdueReschedule} onClick={() => rescheduleTask(worst)}>Reschedule →</button>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  )
+                })()}
 
-              {/* ── Routines ── */}
-              {pendingChores.length > 0 && (
-                <div className={styles.routinesGroup}>
-                  <button className={styles.routinesHeader} onClick={() => setRoutinesExpanded(v => !v)}>
-                    <span>🧹 Routines — {pendingChores.length} task{pendingChores.length !== 1 ? 's' : ''} today</span>
-                    <span className={styles.routinesChevron}>{routinesExpanded ? '▲' : '▼'}</span>
-                  </button>
-                  {routinesExpanded && (
-                    <div className={styles.routinesList}>
-                      {pendingChores.map(task => (
-                        <div key={task.id} className={styles.routineItem}>
-                          <button onClick={() => completeTask(task)} className={styles.taskCheck} aria-label="Complete" />
-                          <span className={styles.routineTitle}>{task.title}</span>
-                          <span className={styles.routineBadge}>{task.recurrence}</span>
+                {/* 3 — Priority Card */}
+                {s17StarredTask && (() => {
+                  const dueMs = s17StarredTask.due_time ? new Date(s17StarredTask.due_time) - new Date() : null
+                  const cdHours = dueMs ? Math.floor(dueMs / 3600000) : null
+                  const cdMins = dueMs ? Math.floor((dueMs % 3600000) / 60000) : null
+                  const cdStr = dueMs && dueMs > 0
+                    ? (cdHours > 0 ? `Due in ${cdHours}h ${cdMins}m` : `Due in ${cdMins}m`)
+                    : (dueMs != null ? 'Due now' : null)
+                  return (
+                    <div className={styles.s17PriorityCard}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: HP, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: HP, display: 'inline-block', animation: 'pulse 2s infinite' }} />
+                            Your #1 priority
+                          </div>
+                          <div style={{ fontSize: 16, fontWeight: 600, color: ASH, fontFamily: "'Figtree', sans-serif", lineHeight: 1.3 }}>{s17StarredTask.title}</div>
+                          {cdStr && (
+                            <div style={{ fontSize: 13, color: HP, fontFamily: "'Sora', sans-serif", fontWeight: 600, marginTop: 4 }}>{cdStr}</div>
+                          )}
                         </div>
-                      ))}
+                      </div>
+                      <button
+                        className={styles.s17StartTimerBtn}
+                        onClick={() => { setElectedTaskId(s17StarredTask.id); switchTab('focus') }}
+                      >Start timer →</button>
                     </div>
-                  )}
-                </div>
-              )}
+                  )
+                })()}
 
-              {completedTasks.length > 0 && (
-                <div className={styles.taskGroup} style={{ marginTop: '32px' }}>
-                  <div className={styles.taskGroupLabel}>Done today · {completedTasks.length} {completedTasks.length === 1 ? 'win' : 'wins'} 🔥</div>
-                  {completedTasks.map(task => (
-                    <div key={task.id} className={`${styles.taskCard} ${styles.taskDone}`}>
-                      <button onClick={() => uncompleteTask(task)} className={`${styles.taskCheck} ${styles.taskCheckDone}`}>✓</button>
-                      <div className={styles.taskInfo}><span className={styles.taskTitleDone}>{task.title}</span></div>
-                      <button onClick={e => { e.stopPropagation(); if (!window.confirm('Delete this task?')) return; archiveTask(task) }} className={styles.taskActionDelete} title="Remove">×</button>
-                    </div>
-                  ))}
+                {/* 4 — Momentum Bar */}
+                <div className={styles.s17MomentumWrap}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontSize: 11, fontFamily: "'Figtree', sans-serif", color: 'rgba(240,234,214,0.5)', fontWeight: 600 }}>
+                      🔥 {profile?.current_streak || 0} streak
+                    </span>
+                    <span style={{ fontSize: 11, fontFamily: "'Figtree', sans-serif", color: 'rgba(240,234,214,0.4)', fontWeight: 600 }}>
+                      {profile?.total_xp || 0} XP
+                    </span>
+                  </div>
+                  <div className={styles.s17MomentumTrack}>
+                    <div
+                      className={styles.s17MomentumFill}
+                      style={{ width: s17TotalToday > 0 ? `${Math.min(100, (s17CompletedCount / s17TotalToday) * 100)}%` : '0%' }}
+                    />
+                  </div>
                 </div>
-              )}
-            </div>
+
+                {/* 5 — Collapsible task sections */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
+                  {renderSection('overdue', 'Overdue', s17Overdue, { isOverdue: true })}
+                  {renderSection('today', 'Today', s17TodayTasks)}
+                  {renderSection('tomorrow', 'Tomorrow', s17TomorrowTasks)}
+                  {renderSection('thisWeek', 'This Week', s17WeekTasks)}
+                  {renderSection('later', 'Later', s17LaterTasks)}
+                  {renderSection('completedToday', 'Completed Today', s17CompletedToday, { isDone: true })}
+                </div>
+
+                {/* Empty state */}
+                {s17Pending.length === 0 && s17CompletedToday.length === 0 && (
+                  <div className={styles.emptyState}>
+                    <div className={styles.emptyIcon}>✦</div>
+                    <p className={styles.emptyText}>Nothing on your list.</p>
+                    <p className={styles.emptySubtext}>Add your first task and let's get moving.</p>
+                    <button onClick={() => setShowAddModal(true)} className={styles.emptyAddBtn}>+ Add your first task</button>
+                  </div>
+                )}
+
+                {/* 8 — Add task button */}
+                <button className={styles.s17AddFab} onClick={() => setShowAddModal(true)}>
+                  <span style={{ fontSize: 20, lineHeight: 1 }}>+</span> Add task
+                </button>
+
+              </div>
+            )
+          })()}
           </TabErrorBoundary>
           )}
+
+
 
           {/* ── CHECK-IN ── */}
           {activeTab === 'checkin' && (
@@ -3114,6 +3323,9 @@ export default function Dashboard() {
                               due_time: null,
                               scheduled_for: scheduledFor.toISOString(),
                               created_at: new Date().toISOString(),
+                              starred: false,
+                              task_type: 'chore',
+                              estimated_minutes: chore.estimated_minutes || null,
                             }
                           })
                           await supabase.from('tasks').insert(choreTasks)
@@ -3476,6 +3688,26 @@ export default function Dashboard() {
           </TabErrorBoundary>
           )}
 
+          {/* ── HABITS ── */}
+          {activeTab === 'habits' && (
+          <TabErrorBoundary tabName="Habits">
+            <div className={styles.view}>
+              <h1 className={styles.viewTitle}>Habits</h1>
+              <p style={{ color: 'rgba(240,234,214,0.45)', fontSize: 14 }}>Habit tracking is coming soon.</p>
+            </div>
+          </TabErrorBoundary>
+          )}
+
+          {/* ── TAG TEAM ── */}
+          {activeTab === 'tagteam' && (
+          <TabErrorBoundary tabName="Tag Team">
+            <div className={styles.view}>
+              <h1 className={styles.viewTitle}>Tag Team</h1>
+              <p style={{ color: 'rgba(240,234,214,0.45)', fontSize: 14 }}>Accountability partners are coming soon.</p>
+            </div>
+          </TabErrorBoundary>
+          )}
+
         </main>
 
         {/* BOTTOM NAV (mobile) */}
@@ -3522,42 +3754,222 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ADD TASK MODAL */}
+        {/* ADD TASK MODAL — S17 */}
         {showAddModal && (
-          <div className={styles.modalOverlay} onClick={e => e.target === e.currentTarget && (setShowAddModal(false), resetForm(), setAddMode('single'), setBulkPreview([]), setBulkText(''))}>
-            <div className={styles.modal}>
+          <div className={styles.s17OverlayBg} onClick={e => e.target === e.currentTarget && (setShowAddModal(false), resetForm(), setAddMode('single'), setBulkPreview([]), setBulkText(''), setNewTaskDates([]), setNewTaskType('task'), setTaskTimeEnabled(false))}>
+            <div className={styles.s17OverlaySheet}>
               <div className={styles.modalHeader}>
                 <h2 className={styles.modalTitle}>New task</h2>
-                <div className={styles.modalHeaderRight}>
-                  {addMode === 'single' && (
-                    <button type="button" onClick={listening ? stopListening : startListening}
-                      className={`${styles.micBtn} ${listening ? styles.micBtnActive : ''}`}
-                      title={listening ? 'Stop recording' : 'Speak your task'}>
-                      {listening ? (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
-                      ) : (
-                        <Microphone size={18} />
-                      )}
-                    </button>
-                  )}
-                  <button onClick={() => { setShowAddModal(false); resetForm(); setAddMode('single'); setBulkPreview([]); setBulkText('') }} className={styles.modalClose}>×</button>
-                </div>
+                <button onClick={() => { setShowAddModal(false); resetForm(); setAddMode('single'); setBulkPreview([]); setBulkText(''); setNewTaskDates([]); setNewTaskType('task'); setTaskTimeEnabled(false) }} className={styles.modalClose}>×</button>
               </div>
 
-              {/* Single / Bulk toggle */}
-              <div className={styles.modeToggleRow}>
-                <button type="button" onClick={() => setAddMode('single')}
-                  className={`${styles.modeToggleBtn} ${addMode === 'single' ? styles.modeToggleBtnActive : ''}`}>
-                  Single task
-                </button>
-                <button type="button" onClick={() => setAddMode('bulk')}
-                  className={`${styles.modeToggleBtn} ${addMode === 'bulk' ? styles.modeToggleBtnActive : ''}`}>
-                  Bulk import
-                </button>
+              {/* Mode tabs: Single | Bulk | Voice */}
+              <div className={styles.s17ModeTabs}>
+                {[['single','Single'],['bulk','Bulk'],['voice','Voice']].map(([mode, label]) => (
+                  <button key={mode} type="button"
+                    className={`${styles.s17ModeTab} ${addMode === mode ? styles.s17ModeTabActive : ''}`}
+                    onClick={() => setAddMode(mode)}>
+                    {label}
+                  </button>
+                ))}
               </div>
 
+              {/* ─ Single mode ─ */}
               {addMode === 'single' && (
-                <>
+                <form onSubmit={addTaskFromOverlay} className={styles.modalForm}>
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>What needs to get done?</label>
+                    <input ref={titleInputRef} type="text" placeholder="e.g. Call the insurance company"
+                      value={newTitle} onChange={e => { setNewTitle(e.target.value); if (titleInputError) setTitleInputError(false) }}
+                      className={`${styles.fieldInput} ${titleInputError ? styles.titleInputError : ''}`} />
+                  </div>
+
+                  {/* Task type selector */}
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>Type</label>
+                    <div className={styles.toggleRow}>
+                      {[['task','Task'],['bill','Bill'],['appointment','Appt'],['chore','Chore']].map(([val,lbl]) => (
+                        <button key={val} type="button"
+                          onClick={() => setNewTaskType(val)}
+                          className={`${styles.toggleBtn} ${newTaskType === val ? styles.toggleBtnActive : ''}`}>{lbl}</button>
+                      ))}
+                    </div>
+                    {(newTaskType === 'bill') && <p className={styles.fieldHint}>Will also appear in Finance.</p>}
+                    {(newTaskType === 'appointment') && <p className={styles.fieldHint}>Gets calendar icon treatment.</p>}
+                  </div>
+
+                  {/* Multi-day calendar */}
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>
+                      Date{newTaskDates.length > 1 ? `s — ${newTaskDates.length} selected` : ''}
+                      {newTaskDates.length > 0 && <button type="button" onClick={() => setNewTaskDates([])} style={{ marginLeft: 8, background: 'none', border: 'none', color: 'rgba(240,234,214,0.4)', fontSize: 12, cursor: 'pointer', fontFamily: "'Figtree', sans-serif" }}>clear</button>}
+                    </label>
+                    <div className={styles.quickRow}>
+                      <button type="button" onClick={() => toggleCalDate(todayStr())}
+                        className={`${styles.quickBtn} ${newTaskDates.includes(todayStr()) ? styles.quickBtnActive : ''}`}>Today</button>
+                      <button type="button" onClick={() => toggleCalDate(tomorrowStr())}
+                        className={`${styles.quickBtn} ${newTaskDates.includes(tomorrowStr()) ? styles.quickBtnActive : ''}`}>Tomorrow</button>
+                    </div>
+                    {/* Mini calendar */}
+                    <div className={styles.s17CalendarWrap}>
+                      <div className={styles.s17CalHeader}>
+                        <button type="button" onClick={() => setCalPickerMonth(d => new Date(d.getFullYear(), d.getMonth()-1, 1))} className={styles.s17CalNav}>‹</button>
+                        <span style={{ fontSize: 13, color: 'rgba(240,234,214,0.7)', fontFamily: "'Figtree', sans-serif", fontWeight: 600 }}>
+                          {calPickerMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                        </span>
+                        <button type="button" onClick={() => setCalPickerMonth(d => new Date(d.getFullYear(), d.getMonth()+1, 1))} className={styles.s17CalNav}>›</button>
+                      </div>
+                      <div className={styles.s17CalGrid}>
+                        {['S','M','T','W','T','F','S'].map((d,i) => (
+                          <div key={i} style={{ textAlign:'center', fontSize: 10, color: 'rgba(240,234,214,0.3)', fontFamily: "'Sora', sans-serif", padding: '2px 0' }}>{d}</div>
+                        ))}
+                        {(() => {
+                          const year = calPickerMonth.getFullYear()
+                          const month = calPickerMonth.getMonth()
+                          const firstDay = new Date(year, month, 1).getDay()
+                          const daysInMonth = new Date(year, month+1, 0).getDate()
+                          const cells = []
+                          for (let i = 0; i < firstDay; i++) cells.push(<div key={`e${i}`} />)
+                          for (let d = 1; d <= daysInMonth; d++) {
+                            const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+                            const sel = newTaskDates.includes(ds)
+                            const isToday = ds === todayStr()
+                            cells.push(
+                              <button key={ds} type="button"
+                                onClick={() => toggleCalDate(ds)}
+                                className={`${styles.s17CalDay} ${sel ? styles.s17CalDaySelected : ''} ${isToday ? styles.s17CalDayToday : ''}`}>
+                                {d}
+                              </button>
+                            )
+                          }
+                          return cells
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Custom time picker */}
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>
+                      Time
+                      <button type="button"
+                        onClick={() => setTaskTimeEnabled(v => !v)}
+                        style={{ marginLeft: 10, background: 'none', border: 'none', color: taskTimeEnabled ? '#FF6644' : 'rgba(240,234,214,0.35)', fontSize: 12, cursor: 'pointer', fontFamily: "'Figtree', sans-serif" }}>
+                        {taskTimeEnabled ? '✓ set' : '+ set time'}
+                      </button>
+                    </label>
+                    {taskTimeEnabled && (
+                      <div className={styles.s17TimePicker}>
+                        <div className={styles.s17TimeCol}>
+                          {Array.from({length: 12}, (_,i) => i+1).concat([0]).map(h => (
+                            <button key={h} type="button"
+                              className={`${styles.s17TimeCell} ${taskTimeHour === h ? styles.s17TimeCellActive : ''}`}
+                              onClick={() => setTaskTimeHour(h)}>
+                              {h === 0 ? '12' : String(h).padStart(2,'0')}
+                            </button>
+                          ))}
+                        </div>
+                        <span style={{ color: 'rgba(240,234,214,0.3)', fontSize: 18, padding: '0 4px', alignSelf: 'center' }}>:</span>
+                        <div className={styles.s17TimeCol}>
+                          {[0,5,10,15,20,25,30,35,40,45,50,55].map(m => (
+                            <button key={m} type="button"
+                              className={`${styles.s17TimeCell} ${taskTimeMinute === m ? styles.s17TimeCellActive : ''}`}
+                              onClick={() => setTaskTimeMinute(m)}>
+                              {String(m).padStart(2,'0')}
+                            </button>
+                          ))}
+                        </div>
+                        <div className={styles.s17TimeCol}>
+                          {[['AM', taskTimeHour < 12], ['PM', taskTimeHour >= 12]].map(([label, active]) => (
+                            <button key={label} type="button"
+                              className={`${styles.s17TimeCell} ${active ? styles.s17TimeCellActive : ''}`}
+                              onClick={() => {
+                                if (label === 'AM' && taskTimeHour >= 12) setTaskTimeHour(h => h - 12)
+                                if (label === 'PM' && taskTimeHour < 12) setTaskTimeHour(h => h + 12)
+                              }}>
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Estimated time */}
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>Estimated time <span className={styles.fieldLabelOptional}>(minutes, optional)</span></label>
+                    <div className={styles.quickRow}>
+                      {[15,30,60,90].map(m => (
+                        <button key={m} type="button"
+                          onClick={() => setTaskEstimated(taskEstimated === String(m) ? '' : String(m))}
+                          className={`${styles.quickBtn} ${taskEstimated === String(m) ? styles.quickBtnActive : ''}`}>{m}m</button>
+                      ))}
+                      <input type="number" placeholder="custom" min="1" max="480"
+                        value={taskEstimated}
+                        onChange={e => setTaskEstimated(e.target.value)}
+                        className={styles.fieldInputCompact}
+                        style={{ width: 72 }} />
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>Notes <span className={styles.fieldLabelOptional}>(optional)</span></label>
+                    <input type="text" placeholder="Context that makes this easier to start"
+                      value={newNotes} onChange={e => setNewNotes(e.target.value)} className={styles.fieldInput} />
+                  </div>
+
+                  <button type="submit" disabled={addingTaskOverlay || !newTitle.trim()} className={styles.s17SubmitBtn}>
+                    {addingTaskOverlay ? 'Adding…' : newTaskDates.length > 1 ? `Add ${newTaskDates.length} tasks` : 'Add task'}
+                  </button>
+                </form>
+              )}
+
+              {/* ─ Bulk mode ─ */}
+              {addMode === 'bulk' && (
+                <div className={styles.modalForm}>
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>One task per line</label>
+                    <textarea
+                      className={styles.bulkTextarea}
+                      placeholder={"Call the insurance company\nPay electric bill by Friday\nSchedule dentist appointment"}
+                      value={bulkText}
+                      onChange={e => setBulkText(e.target.value)}
+                    />
+                  </div>
+                  <div className={styles.bulkActionRow}>
+                    <button type="button" onClick={() => navigator.clipboard.readText().then(t => setBulkText(prev => prev ? prev + '\n' + t : t)).catch(() => {})} className={styles.bulkActionBtn}>
+                      Paste
+                    </button>
+                    <button type="button" onClick={parseBulkTasks} disabled={bulkParsing || !bulkText.trim()} className={styles.bulkParseBtn}>
+                      {bulkParsing ? 'Parsing...' : 'Parse →'}
+                    </button>
+                  </div>
+                  {bulkPreview.length > 0 && (
+                    <>
+                      <div className={styles.fieldGroup} style={{ marginTop: 16 }}>
+                        <label className={styles.fieldLabel}>Preview — {bulkPreview.length} tasks</label>
+                        <div className={styles.bulkPreviewList}>
+                          {bulkPreview.map((t, i) => (
+                            <div key={t._id} className={styles.bulkPreviewItem}>
+                              <input className={styles.bulkPreviewInput} value={t.title}
+                                onChange={e => setBulkPreview(prev => prev.map((x, xi) => xi === i ? { ...x, title: e.target.value } : x))} />
+                              <button type="button" onClick={() => setBulkPreview(prev => prev.filter((_, xi) => xi !== i))} className={styles.bulkPreviewRemove}>×</button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <button type="button" onClick={addAllBulkTasks} className={styles.s17SubmitBtn}>
+                        Add {bulkPreview.length} tasks
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* ─ Voice mode ─ */}
+              {addMode === 'voice' && (
+                <div className={styles.modalForm}>
                   {(listening || parsing || voiceTranscript) && (
                     <div className={styles.voiceState}>
                       {listening && (
@@ -3566,127 +3978,34 @@ export default function Dashboard() {
                           <span className={styles.voiceListeningText}>Listening...</span>
                         </div>
                       )}
-                      {parsing && <div className={styles.voiceParsing}>Working out the details...</div>}
+                      {parsing && <div className={styles.voiceParsing}>Parsing your task...</div>}
                       {voiceTranscript && !listening && !parsing && <div className={styles.voiceTranscript}>"{voiceTranscript}"</div>}
                     </div>
                   )}
-                  <form onSubmit={addTask} className={styles.modalForm}>
-                    <div className={styles.fieldGroup}>
-                      <label className={styles.fieldLabel}>What needs to get done?</label>
-                      <input ref={titleInputRef} type="text" placeholder="e.g. Call the insurance company"
-                        value={newTitle} onChange={e => { setNewTitle(e.target.value); if (titleInputError) setTitleInputError(false) }}
-                        className={`${styles.fieldInput} ${titleInputError ? styles.titleInputError : ''}`} />
-                    </div>
-                    <div className={styles.fieldGroup}>
-                      <label className={styles.fieldLabel}>Due date</label>
-                      <div className={styles.quickRow}>
-                        <button type="button" onClick={() => setNewDueDate(todayStr())}
-                          className={`${styles.quickBtn} ${newDueDate === todayStr() ? styles.quickBtnActive : ''}`}>Today</button>
-                        <button type="button" onClick={() => setNewDueDate(tomorrowStr())}
-                          className={`${styles.quickBtn} ${newDueDate === tomorrowStr() ? styles.quickBtnActive : ''}`}>Tomorrow</button>
-                        <input type="date" value={newDueDate} onChange={e => setNewDueDate(e.target.value)} className={styles.fieldInputCompact} />
-                      </div>
-                    </div>
-                    <div className={styles.fieldGroup}>
-                      <label className={styles.fieldLabel}>Due time</label>
-                      <div className={styles.quickRow}>
-                        {[['Morning', '09:00'], ['Afternoon', '14:00'], ['Evening', '18:00']].map(([label, val]) => (
-                          <button key={val} type="button"
-                            onClick={() => { setNewDueTime(val); if (!newDueDate) setNewDueDate(todayStr()) }}
-                            className={`${styles.quickBtn} ${newDueTime === val ? styles.quickBtnActive : ''}`}>{label}</button>
-                        ))}
-                        <span className={styles.orLabel}>or</span>
-                        <input type="time" value={newDueTime} onChange={e => { setNewDueTime(e.target.value); if (!newDueDate) setNewDueDate(todayStr()) }}
-                          className={styles.fieldInputCompact} />
-                      </div>
-                    </div>
-                    <div className={styles.fieldGroup}>
-                      <label className={styles.fieldLabel}>Type</label>
-                      <div className={styles.toggleRow}>
-                        <button type="button" onClick={() => setNewConsequence('self')}
-                          className={`${styles.toggleBtn} ${newConsequence === 'self' ? styles.toggleBtnActive : ''}`}>Personal</button>
-                        <button type="button" onClick={() => setNewConsequence('external')}
-                          className={`${styles.toggleBtn} ${newConsequence === 'external' ? styles.toggleBtnActive : ''}`}>External commitment</button>
-                      </div>
-                      <p className={styles.fieldHint}>
-                        {newConsequence === 'external' ? 'Someone else is counting on this — it gets priority.' : 'This is for you — still important, context matters.'}
-                      </p>
-                    </div>
-                    <div className={styles.fieldGroup}>
-                      <label className={styles.fieldLabel}>Repeat</label>
-                      <div className={styles.toggleRow}>
-                        {RECURRENCE_OPTIONS.map(opt => (
-                          <button key={opt.value} type="button" onClick={() => setNewRecurrence(opt.value)}
-                            className={`${styles.toggleBtn} ${newRecurrence === opt.value ? styles.toggleBtnActive : ''}`}>
-                            {opt.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className={styles.fieldGroup}>
-                      <label className={styles.fieldLabel}>Notes <span className={styles.fieldLabelOptional}>(optional)</span></label>
-                      <input type="text" placeholder="Context that makes this easier to start"
-                        value={newNotes} onChange={e => setNewNotes(e.target.value)} className={styles.fieldInput} />
-                    </div>
-                    <button type="submit" disabled={adding || !newTitle.trim()} className={styles.modalSubmit}>
-                      {adding ? 'Adding...' : 'Add to my list'}
-                    </button>
-                  </form>
-                </>
-              )}
-
-              {addMode === 'bulk' && (
-                <div className={styles.modalForm}>
-                  <div className={styles.fieldGroup}>
-                    <label className={styles.fieldLabel}>Paste or speak your tasks — one per line</label>
-                    <textarea
-                      className={styles.bulkTextarea}
-                      placeholder={"Call the insurance company\nPay electric bill by Friday\nSchedule dentist appointment next week\nReturn Amazon package"}
-                      value={bulkText}
-                      onChange={e => setBulkText(e.target.value)}
-                    />
-                  </div>
-                  <div className={styles.bulkActionRow}>
-                    <button type="button" onClick={() => navigator.clipboard.readText().then(t => setBulkText(prev => prev ? prev + '\n' + t : t)).catch(() => {})}
-                      className={styles.bulkActionBtn}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-                      Paste
-                    </button>
-                    <button type="button" onClick={bulkListening ? () => { bulkRecognitionRef.current?.stop(); setBulkListening(false) } : startBulkListening}
-                      className={`${styles.bulkActionBtn} ${bulkListening ? styles.bulkActionBtnActive : ''}`}>
-                      {bulkListening ? (
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                  <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                    <button type="button"
+                      onClick={listening ? stopListening : startListening}
+                      className={`${styles.s17VoiceFab} ${listening ? styles.micBtnActive : ''}`}>
+                      {listening ? (
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
                       ) : (
-                        <Microphone size={14} />
+                        <Microphone size={28} />
                       )}
-                      {bulkListening ? 'Listening...' : 'Speak'}
                     </button>
-                    <button type="button" onClick={parseBulkTasks} disabled={bulkParsing || !bulkText.trim()}
-                      className={styles.bulkParseBtn}>
-                      {bulkParsing ? 'Parsing...' : 'Parse →'}
-                    </button>
+                    <p style={{ fontSize: 13, color: 'rgba(240,234,214,0.4)', marginTop: 12, fontFamily: "'Figtree', sans-serif" }}>
+                      {listening ? 'Tap to stop' : 'Tap to speak your task'}
+                    </p>
                   </div>
-
-                  {bulkPreview.length > 0 && (
-                    <>
-                      <div className={styles.fieldGroup} style={{ marginTop: '16px' }}>
-                        <label className={styles.fieldLabel}>Preview — {bulkPreview.length} task{bulkPreview.length !== 1 ? 's' : ''}</label>
-                        <div className={styles.bulkPreviewList}>
-                          {bulkPreview.map((t, i) => (
-                            <div key={t._id} className={styles.bulkPreviewItem}>
-                              <input className={styles.bulkPreviewInput} value={t.title}
-                                onChange={e => setBulkPreview(prev => prev.map((x, xi) => xi === i ? { ...x, title: e.target.value } : x))} />
-                              {t.due_date && <span className={styles.bulkPreviewMeta}>{t.due_date}</span>}
-                              <button type="button" onClick={() => setBulkPreview(prev => prev.filter((_, xi) => xi !== i))}
-                                className={styles.bulkPreviewRemove}>×</button>
-                            </div>
-                          ))}
-                        </div>
+                  {newTitle && (
+                    <form onSubmit={addTaskFromOverlay} className={styles.modalForm}>
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.fieldLabel}>Parsed task</label>
+                        <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} className={styles.fieldInput} />
                       </div>
-                      <button type="button" onClick={addAllBulkTasks} className={styles.modalSubmit}>
-                        Add all {bulkPreview.length} task{bulkPreview.length !== 1 ? 's' : ''}
+                      <button type="submit" disabled={addingTaskOverlay} className={styles.s17SubmitBtn}>
+                        {addingTaskOverlay ? 'Adding…' : 'Add task'}
                       </button>
-                    </>
+                    </form>
                   )}
                 </div>
               )}

@@ -1,130 +1,144 @@
-# CLAUDE.md
+# CLAUDE.md — Cinis Session Configuration
+*Auto-read by Claude Code on every session start. Never skip this file.*
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+---
 
-## Commands
+## STEP 0 — SELF-ORIENT BEFORE ANYTHING ELSE
 
-**Development**
-- `npm run dev` — Start Next.js dev server on `http://localhost:3000`
-- `npm run build` — Build for production
-- `npm start` — Start production server
-- `npm run lint` — Run ESLint to check code quality
+Before writing a single line of code, run this in the terminal:
 
-**Testing & Debugging**
-- No automated test suite configured. Manual testing is primary.
-- API routes can be tested via curl or browser at `http://localhost:3000/api/<endpoint>`
-- Supabase queries: test against live Supabase project (dev/staging) — check `.env.local` for credentials
+```bash
+bash scripts/session_start.sh
+```
 
-**Database**
-- Migrations are SQL files in `database/migrations/`
-- Run migrations manually in Supabase SQL Editor; they're additive with `IF NOT EXISTS` guards
-- No migration runner script — migrations are reference docs for schema state
+This script reads PRIMER.md (current app state), confirms your model, and reports what happened last session. Do not proceed until you have read the PRIMER output.
 
-**Deployment**
-- Deployed to Vercel. Git push to `main` triggers automatic deploy.
-- Check `vercel.json` for cron schedules and redirects
-- Environment variables managed in Vercel dashboard; local `.env.local` mirrors them
+If PRIMER.md does not exist yet, report: "PRIMER.md not found — this is a fresh session. Awaiting kickoff instructions."
 
-## Architecture
+---
 
-**Tech Stack**
-- Next.js 14.1 (React 18) — page routes in `pages/`, API routes in `pages/api/`
-- Supabase (PostgreSQL + auth) — initialized in `lib/supabase.js`
-- CSS Modules — scoped styles in `styles/*.module.css`; global styles in `styles/globals.css`
-- Claude API (Anthropic SDK) — imported as `@anthropic-ai/sdk` for insights, check-ins, chat
-- Stripe (payment, not yet fully wired)
-- Service Worker — registered in `_app.js`; defined in `public/sw.js` (PWA support)
+## WHO YOU ARE
 
-**Data Model**
-- Core tables in Supabase: `profiles`, `tasks`, `bills`, `journal_entries`, `checkins`, `alarms`
-- Auth via Supabase (email/password)
-- User sessions stored in Supabase auth; user ID from `getUser()` in auth helpers
+You are a Claude Code terminal assigned to a specific domain of the Cinis codebase. You do not touch files outside your declared scope. You do not ask for approval mid-task. You prove completion with evidence, not assertions.
 
-**Page Structure**
-- `index.js` — Landing page (public)
-- `login.js` / `signup.js` — Auth pages
-- `dashboard.js` — Main app (protected); ~228KB file with all dashboard UI
-- `guide.js` — Onboarding/help guide
-- `onboarding.js` — Setup wizard
-- `pricing.js` — Pricing/subscription page
-- `api/` — Backend routes for tasks, bills, journal, check-ins, Stripe, cron jobs
+---
 
-**Key Integrations**
-- **Claude API** (`lib/anthropic.js`): Persona blending, insights, check-in messages, financial chat, task breakdowns
-- **Supabase Auth** (`@supabase/auth-helpers-nextjs`): Session + user context in pages and API
-- **Drag & Drop** (`@dnd-kit`): Task reordering; also `react-beautiful-dnd` (legacy, may be replaced)
-- **Cron Jobs** (Vercel): `/api/cron/morning-checkin` and `/api/cron/evening-checkin` run at 8 AM and 8 PM UTC
-- **Push Notifications** (`web-push`): Registered in service worker; sent from `/api/push-notification`
+## TERMINAL ASSIGNMENTS (LOCKED)
 
-**Theme System**
-- Theme state: localStorage key `theme` + Supabase `profiles.theme` column
-- CSS variables in `styles/globals.css` + theme-specific overrides
-- Light themes (Paper, Light): soft backgrounds; dark themes (Dark, Midnight): high contrast
-- Icons may need dark overrides on light themes (known issue: Paper theme icons hard to see)
+| Terminal | Model | Owns |
+|----------|-------|------|
+| T1 | claude-sonnet-4-6 | pages/dashboard.js + styles/Dashboard.module.css |
+| T2 | claude-sonnet-4-6 | pages/api/* |
+| T3 | claude-haiku-4-5-20251001 | lib/* + public/* + scripts/* + PWA |
+| T4 | claude-haiku-4-5-20251001 | pages/onboarding.js + new pages + vercel.json |
 
-**Module Layout**
-- `lib/` — Utilities: Supabase client, Claude API wrapper, date/task/bill helpers, persona system, push notifications, subscription gating
-- `components/` — React components (minimal; most UI is inline in `dashboard.js`)
-- `styles/` — CSS Modules (one main file: `Dashboard.module.css` at ~94KB)
-- `database/` — Migration SQL files
-- `scripts/` — Standalone scripts (if any; usually run from API routes)
-- `public/` — Static files + service worker
+**Conflict rule:** T2, T3, T4 never touch lib/taskOrder.js, components/SortableTaskCard.js, or lib/accentColor.js while T1 is active.
 
-**API Route Patterns**
-- POST endpoints typically check `req.method` and extract `req.body`
-- Auth via Supabase: `const user = await getUser(req, res)` or `const { data: { user } } = await supabase.auth.getUser()`
-- Errors returned as JSON with status codes; no custom error middleware
-- Some routes depend on user session in cookie (`_vercel_jwt` from Supabase auth helpers)
+---
 
-## Data Flow
+## AUTONOMY RULES — NON-NEGOTIABLE
 
-1. **User opens app** → `_app.js` registers service worker → loads theme from localStorage/Supabase
-2. **User logs in** → Supabase auth → session cookie set → redirect to dashboard
-3. **Dashboard loads** → `dashboard.js` fetches tasks, bills, alarms from Supabase → renders all UI
-4. **User creates task** → POST `/api/parse-task` (Claude parses) → stored in tasks table → UI updates (no state management, page refetch)
-5. **Cron jobs** → Vercel calls `/api/cron/evening-checkin` at 8 PM → Claude generates check-in message → inserted into checkins table
-6. **Check-in modal** → User can chat with Claude, replies sent to `/api/checkin` → persisted in checkins table
-7. **Theme change** → POST `/api/settings` → updates `profiles.theme` → localStorage synced
+1. **Never ask for approval mid-task.** Execute. Report PASS with evidence or FAIL with exact error.
+2. **Never assume a library is installed.** Check package.json before importing anything new.
+3. **Never mark a task complete without proving it works.** Evidence = specific URL + specific action + specific visible result.
+4. **Never cross your scope boundary.** If the fix requires touching a file you don't own, STOP and report which terminal owns it.
+5. **Never push to main blind.** Always paste terminal output to main chat for pre-commit review first.
 
-## Notes for Development
+---
 
-**Large Files**
-- `dashboard.js` is ~228KB; contains all dashboard UI inline (tasks, bills, alarms, check-ins, journal, chat, settings, theme selector)
-- `Dashboard.module.css` is ~94KB with extensive theme variables
-- If making UI changes, be aware of the scale and consider breaking into components for future refactoring
+## RULES FOR EVERY CODE CHANGE
 
-**No State Management**
-- No Redux, Zustand, or Context API — state lives in Supabase and localStorage
-- Page reloads or refetches after mutations; no optimistic UI updates
-- This makes code simple but can feel slow; consider adding client state if UX degrades
+1. Read the relevant files completely before modifying them.
+2. Write the root cause in one sentence before writing any fix.
+3. After fixing, verify using the VERIFY BY steps in the prompt — not by reading the code.
+4. If verification fails, report FAIL with exact error. Do not try a different fix without reporting first.
+5. One terminal = one file domain. Never cross boundaries.
 
-**Authentication**
-- Supabase auth session stored in secure cookie set by auth helpers
-- Check `@supabase/auth-helpers-nextjs` docs for middleware/getServerSideProps patterns
-- Some API routes check session via `getUser(req, res)`; some query Supabase directly with anon key
+---
 
-**Claude API Usage**
-- Instantiated with `ANTHROPIC_API_KEY` in API routes
-- Called for: task breakdowns, financial insights, persona blending, check-in generation, chat replies
-- Model: typically Claude 3 or later (hardcoded in each route; check recent commits for current model)
-- Streaming not used; all responses are full completions
+## ESCALATION LADDER
 
-**Env Vars (Required)**
-- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` — public Supabase config
-- `SUPABASE_SERVICE_ROLE_KEY` — for server-side operations with elevated privileges
-- `ANTHROPIC_API_KEY` — for Claude API calls
-- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — Stripe integration (partial)
+| Passes Failed | Action |
+|---------------|--------|
+| 0 | Normal prompt |
+| 1 | Add /think |
+| 2 | Add /ultrathink + paste full file |
+| 3 | Escalate to Opus — full file + full pass history |
+| 4+ | Never — Opus at pass 3 is mandatory |
 
-**Common Tasks**
-- **Add a new API endpoint**: Create file in `pages/api/`, handle POST/GET, query Supabase, return JSON
-- **Add a new page**: Create file in `pages/`, use Supabase client to fetch data, render JSX
-- **Modify theme colors**: Edit CSS variables in `styles/globals.css` and theme sections in `Dashboard.module.css`
-- **Debug Supabase queries**: Check browser console (client) or Vercel logs (API) for errors; test queries in Supabase SQL Editor first
-- **Test Claude API changes**: Check `/api/checkin.js`, `/api/parse-task.js`, etc.; note that some routes may hardcode model names
+Claude flags this proactively. Ryan never counts passes manually.
 
-**Known Issues & TODOs**
-- Paper theme: interactive icons (stars, drag handles, delete buttons) are hard to see due to low opacity on cream background
-- Check-in tab: ~900px empty grey space above messages (Journal tab already fixed this; fix needs to be applied to Check-in)
-- No automated tests; quality relies on manual QA
-- Stripe integration incomplete (checkout/webhook placeholders exist)
-- Large monolithic CSS file may benefit from refactoring into component modules
+---
+
+## WAVE BATCHING
+
+**Wave 1:** Parallel surgical fixes — no dependencies, run T1–T4 simultaneously
+**Wave 2:** QC confirm Wave 1 clean — never skip this
+**Wave 3:** Feature builds — schema → API → frontend, always in that order
+**Wave 4:** Polish + Stripe only if QC score ≥ 7.5
+
+If QC score is below 7.0, do not proceed to feature builds. Fix the app first.
+
+---
+
+## THINKING TOOLS
+
+| Situation | Tool |
+|-----------|------|
+| CSS fix, copy change, label rename | None |
+| Logic failed once, non-trivial | /think |
+| 3+ files, complex feature, failed twice | /ultrathink |
+| Failed 3 Sonnet passes | Opus escalation |
+
+/ultrathink costs significantly more. Use surgically.
+
+---
+
+## TECH STACK — DO NOT DEVIATE
+
+- **Framework:** Next.js (pages router, NOT app router)
+- **Styling:** CSS Modules only — no Tailwind, no inline styles, no styled-components
+- **Auth:** Supabase Auth only — no Clerk, no NextAuth
+- **Database:** Supabase — use RLS on all tables
+- **Deployment:** Vercel — all secrets in Vercel env vars, never in code
+- **Email:** Not yet configured — do not add email logic without explicit instruction
+- **Payments:** Stripe — not yet live, do not touch without explicit instruction
+
+---
+
+## FILES YOU MUST NEVER TOUCH WITHOUT EXPLICIT INSTRUCTION
+
+- lib/taskOrder.js — fragile drag-and-drop ordering logic
+- components/SortableTaskCard.js — same, tightly coupled
+- lib/accentColor.js — accent color system, deeply integrated
+- Any file not in your declared terminal scope
+
+---
+
+## OUTPUT FORMAT — EVERY TERMINAL RESPONSE
+
+```
+TERMINAL: T[X]
+TASK: [what you did]
+ROOT CAUSE (if bug fix): [one sentence]
+FILES MODIFIED: [list]
+VERIFICATION: [exact steps taken + what you saw]
+RESULT: PASS [evidence] | FAIL [exact error + line number]
+```
+
+No exceptions. No "it should work." Evidence only.
+
+---
+
+## SELF-IMPROVEMENT LOOP
+
+After any correction from Ryan, immediately update `tasks/lessons.md` with:
+- What went wrong
+- Why it went wrong
+- The rule to prevent it from happening again
+
+This file is read at the start of every session. Lessons compound.
+
+---
+
+*CLAUDE.md v1.0 · Cinis · March 23, 2026 · Auto-read on session start · Update when process changes*

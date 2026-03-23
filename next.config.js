@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  api: {
+    bodyParser: {
+      sizeLimit: '1mb', // Security hardening — limit request bodies to 1MB on all API routes
+    },
+  },
   async headers() {
     return [
       {
