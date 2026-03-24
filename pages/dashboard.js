@@ -870,8 +870,12 @@ export default function Dashboard() {
       if (session) {
         hasSession.current = true
         setUser(session.user)
-        fetchProfile(session.user.id)
-        fetchTasks(session.user.id)
+        // Only load data on initial session or explicit sign-in — not on token refresh,
+        // which would overwrite in-flight optimistic updates (e.g. persona chip saves).
+        if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+          fetchProfile(session.user.id)
+          fetchTasks(session.user.id)
+        }
       } else if (event === 'SIGNED_OUT' && hasSession.current) {
         router.push('/login')
       }
@@ -1950,11 +1954,15 @@ export default function Dashboard() {
   const savePersona = async () => {
     if (!personaSelection.length || !user) return
     setPersonaSaving(true)
-    const updates = { persona_blend: personaSelection, persona_voice: personaVoice, persona_set: true }
-    await supabase.from('profiles').update(updates).eq('id', user.id)
-    setProfile(prev => ({ ...prev, persona_blend: personaSelection, persona_voice: personaVoice }))
-    setPersonaSaving(false); setShowPersonaModal(false)
-    showToast('Persona updated')
+    const ok = await patchSettings({ persona_blend: personaSelection, persona_voice: personaVoice, persona_set: true })
+    setPersonaSaving(false)
+    if (ok) {
+      setProfile(prev => ({ ...prev, persona_blend: personaSelection, persona_voice: personaVoice, persona_set: true }))
+      setShowPersonaModal(false)
+      showToast('Persona updated')
+    } else {
+      showToast('Could not save persona — try again')
+    }
   }
 
   const togglePersonaSelection = (key) => {

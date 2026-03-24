@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import withAuth from '../../lib/authGuard'
 
 const ALLOWED_FIELDS = [
-  'display_name', 'full_name', 'accent_color', 'persona_blend', 'persona_voice',
+  'full_name', 'accent_color', 'persona_blend', 'persona_voice',
   'checkin_times', 'morning_time', 'midday_time', 'evening_time',
   'push_notifications_enabled', 'push_subscription', 'theme_id',
 ]
