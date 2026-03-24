@@ -42,7 +42,7 @@ export default function Home() {
         <div className={styles.hero}>
           <div className={styles.badge}>Early Access — Now Open</div>
           <h1 className={styles.headline}>
-            Your brain isn't broken.<br />It just needs a better <em>buddy.</em>
+            Your brain isn't broken.<br />It just needs a better <em>system.</em>
           </h1>
           <p className={styles.sub}>
             Not another app waiting for you to use it.<br />
