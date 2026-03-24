@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
+import withAuth from '../../lib/authGuard'
+import { sanitizeTitle, sanitizeNotes } from '../../lib/sanitize'
 
 function getAdminClient() {
   return createClient(
@@ -17,19 +19,16 @@ const BILL_FIELDS = [
   'auto_task', 'interest_rate', 'bill_type'
 ]
 
-export default async function handler(req, res) {
+async function handler(req, res, userId) {
   const supabaseAdmin = getAdminClient()
 
-  // GET ?userId=xxx — fetch all bills for user
+  // GET — all bills ordered by due_day
   if (req.method === 'GET') {
-    const { userId } = req.query
-    if (!userId) return res.status(400).json({ error: 'userId required' })
-
     const { data: bills, error } = await supabaseAdmin
       .from('bills')
       .select('*')
       .eq('user_id', userId)
-      .order('name', { ascending: true })
+      .order('due_day', { ascending: true, nullsFirst: false })
 
     if (error) {
       console.error('[bills:GET] error:', JSON.stringify(error))
@@ -39,14 +38,10 @@ export default async function handler(req, res) {
     return res.status(200).json({ bills })
   }
 
-  // POST { userId, ...billFields } — create bill
+  // POST — create bill + optional auto-task
   if (req.method === 'POST') {
-    console.log('[bills] POST body:', JSON.stringify(req.body))
-    const { userId, ...raw } = req.body
-    if (!userId) return res.status(400).json({ error: 'userId required' })
-    console.log('[bills] POST userId:', userId)
+    const raw = req.body
 
-    // Normalize camelCase keys from frontend to snake_case
     const body = {
       ...raw,
       ...(raw.dueDay !== undefined      && { due_day: raw.dueDay }),
@@ -59,6 +54,9 @@ export default async function handler(req, res) {
 
     if (!body.name) return res.status(400).json({ error: 'name required' })
 
+    const cleanName = sanitizeTitle(body.name)
+    if (!cleanName) return res.status(400).json({ error: 'Invalid name' })
+
     if (body.frequency && !VALID_FREQUENCIES.includes(body.frequency)) {
       return res.status(400).json({ error: `frequency must be one of: ${VALID_FREQUENCIES.join(', ')}` })
     }
@@ -69,29 +67,25 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: `bill_type must be one of: ${VALID_BILL_TYPES.join(', ')}` })
     }
 
-    const insertObj = {
-      user_id: userId,
-      name: body.name,
-      amount: body.amount || 0,
-      due_day: body.due_day || null,
-      frequency: body.frequency || 'monthly',
-      category: body.category || 'other',
-      auto_task: body.auto_task || false,
-      autopay: body.autopay || false,
-      account: body.account || null,
-      url: body.url || null,
-      remind_days: body.remind_days || 3,
-      is_variable: body.is_variable || false,
-      notes: body.notes || null,
-      bill_type: body.bill_type || 'bill',
-      interest_rate: body.interest_rate || null,
-    }
-
-    console.log('[bills:POST] inserting:', JSON.stringify(insertObj))
-
-    const { data, error } = await supabaseAdmin
+    const { data: bill, error } = await supabaseAdmin
       .from('bills')
-      .insert(insertObj)
+      .insert({
+        user_id: userId,
+        name: cleanName,
+        amount: body.amount || 0,
+        due_day: body.due_day || null,
+        frequency: body.frequency || 'monthly',
+        category: body.category || 'other',
+        auto_task: body.auto_task || false,
+        autopay: body.autopay || false,
+        account: body.account || null,
+        url: body.url || null,
+        remind_days: body.remind_days || 3,
+        is_variable: body.is_variable || false,
+        notes: body.notes ? sanitizeNotes(body.notes) : null,
+        bill_type: body.bill_type || 'bill',
+        interest_rate: body.interest_rate || null,
+      })
       .select()
       .single()
 
@@ -100,52 +94,34 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: error.message, hint: error.hint })
     }
 
-    console.log(`[bills:POST] Created bill "${data.name}" for ${userId}`)
+    console.log(`[bills:POST] Created bill "${bill.name}" for ${userId}`)
 
-    // Auto-create task if auto_task is true
-    if (data.auto_task && data.due_day) {
+    if (bill.auto_task && bill.due_day) {
       const now = new Date()
-      const currentMonth = now.getMonth()
-      const currentYear = now.getFullYear()
-      const billDueDate = new Date(currentYear, currentMonth, data.due_day)
+      const dueDate = new Date(now.getFullYear(), now.getMonth(), bill.due_day, 12, 0, 0)
+      if (dueDate < now) dueDate.setMonth(dueDate.getMonth() + 1)
 
-      // If due date has already passed this month, schedule for next month
-      if (billDueDate < now) {
-        billDueDate.setMonth(billDueDate.getMonth() + 1)
-      }
-
-      const scheduledFor = billDueDate.toISOString().split('T')[0]
-
-      const taskObj = {
+      const { error: taskErr } = await supabaseAdmin.from('tasks').insert({
         user_id: userId,
-        title: `Pay ${data.name}`,
-        scheduled_for: scheduledFor,
+        title: `Pay ${bill.name}`,
+        scheduled_for: dueDate.toISOString(),
         completed: false,
         archived: false,
         task_type: 'bill',
-        notes: `$${data.amount.toFixed(2)} due`,
-      }
+        notes: `$${parseFloat(bill.amount).toFixed(2)} due`,
+      })
 
-      console.log('[bills:POST] Creating auto task:', JSON.stringify(taskObj))
-
-      const { data: taskData, error: taskError } = await supabaseAdmin
-        .from('tasks')
-        .insert(taskObj)
-        .select()
-        .single()
-
-      if (taskError) {
-        console.error('[bills:POST] auto-task creation error:', JSON.stringify(taskError))
-        // Don't fail the bill creation if task creation fails
+      if (taskErr) {
+        console.error('[bills:POST] auto-task error:', JSON.stringify(taskErr))
       } else {
-        console.log(`[bills:POST] Created auto-task for bill "${data.name}"`)
+        console.log(`[bills:POST] Auto-task created for "${bill.name}"`)
       }
     }
 
-    return res.status(200).json({ success: true, bill: data })
+    return res.status(200).json({ bill })
   }
 
-  // PATCH { id, ...updates } — update bill fields
+  // PATCH — update fields, ownership enforced via user_id filter
   if (req.method === 'PATCH') {
     const { id, ...body } = req.body
     if (!id) return res.status(400).json({ error: 'id required' })
@@ -159,7 +135,11 @@ export default async function handler(req, res) {
 
     const updates = {}
     for (const key of BILL_FIELDS) {
-      if (key in body) updates[key] = body[key]
+      if (key in body) {
+        if (key === 'name') updates[key] = sanitizeTitle(body[key])
+        else if (key === 'notes') updates[key] = body[key] ? sanitizeNotes(body[key]) : null
+        else updates[key] = body[key]
+      }
     }
 
     if (Object.keys(updates).length === 0) {
@@ -170,6 +150,7 @@ export default async function handler(req, res) {
       .from('bills')
       .update(updates)
       .eq('id', id)
+      .eq('user_id', userId)
       .select()
       .single()
 
@@ -177,29 +158,54 @@ export default async function handler(req, res) {
       console.error('[bills:PATCH] error:', JSON.stringify(error))
       return res.status(500).json({ error: 'Failed to update bill' })
     }
+    if (!bill) return res.status(404).json({ error: 'Bill not found' })
 
     console.log(`[bills:PATCH] Updated bill ${id} — fields: ${Object.keys(updates).join(', ')}`)
     return res.status(200).json({ bill })
   }
 
-  // DELETE { id } — delete bill
+  // DELETE ?id=[bill_id] — ownership verified, cleans up associated tasks
   if (req.method === 'DELETE') {
-    const { id } = req.body
+    const id = req.query.id || req.body?.id
     if (!id) return res.status(400).json({ error: 'id required' })
 
-    const { error } = await supabaseAdmin
+    const { data: bill, error: fetchErr } = await supabaseAdmin
+      .from('bills')
+      .select('id, name')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single()
+
+    if (fetchErr || !bill) return res.status(404).json({ error: 'Bill not found' })
+
+    const { error: deleteErr } = await supabaseAdmin
       .from('bills')
       .delete()
       .eq('id', id)
+      .eq('user_id', userId)
 
-    if (error) {
-      console.error('[bills:DELETE] error:', JSON.stringify(error))
+    if (deleteErr) {
+      console.error('[bills:DELETE] error:', JSON.stringify(deleteErr))
       return res.status(500).json({ error: 'Failed to delete bill' })
     }
 
-    console.log(`[bills:DELETE] Deleted bill ${id}`)
+    // Clean up auto-tasks created for this bill
+    const { error: taskCleanErr } = await supabaseAdmin
+      .from('tasks')
+      .delete()
+      .eq('user_id', userId)
+      .eq('task_type', 'bill')
+      .ilike('notes', `%${bill.name}%`)
+
+    if (taskCleanErr) {
+      console.error('[bills:DELETE] task cleanup error:', JSON.stringify(taskCleanErr))
+    }
+
+    console.log(`[bills:DELETE] Deleted bill "${bill.name}" (${id}) for ${userId}`)
     return res.status(200).json({ success: true })
   }
 
   return res.status(405).json({ error: 'Method not allowed' })
 }
+
+export default withAuth(handler)
