@@ -567,11 +567,12 @@ export default async function handler(req, res) {
   const allCompleted = (allTasks || []).filter(t => t.completed)
   const overdueCount = allPending.filter(t => t.scheduled_for && t.scheduled_for.slice(0, 10) < todayStr).length
   const currentStreak = profile.current_streak || 0
-  const taskSummary = allPending.slice(0, 12).map(t => {
-    let label = `"${t.title}" [${t.completed ? 'done' : 'pending'}]`
-    if ((t.rollover_count || 0) > 0) label += ` [rolled ${t.rollover_count}×]`
+  const taskLines = allPending.slice(0, 12).map(t => {
+    let label = `- "${t.title}" | id:${t.id} | sched:${(t.scheduled_for || '').slice(0, 10)}`
+    if ((t.rollover_count || 0) > 0) label += ` | rolled:${t.rollover_count}×`
     return label
-  }).join(', ') || 'none'
+  })
+  const taskSummary = taskLines.length > 0 ? '\n' + taskLines.join('\n') : 'none'
 
   // Resolve persona blend before liveContext so the label can be included
   const personaBlend = profile?.persona_blend || ['coach']
@@ -579,7 +580,7 @@ export default async function handler(req, res) {
     .map(p => p.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()))
     .join(', ')
 
-  const liveContext = `\n\nCurrent context:\n- Tasks today: ${taskSummary}\n- Overdue: ${overdueCount} task${overdueCount !== 1 ? 's' : ''}\n- Streak: ${currentStreak} day${currentStreak !== 1 ? 's' : ''}\n- Coaching persona: ${personaBlendLabel}`
+  const liveContext = `\n\nCurrent context:\n- Tasks today (use id field when calling tools):${taskSummary}\n- Overdue: ${overdueCount} task${overdueCount !== 1 ? 's' : ''}\n- Streak: ${currentStreak} day${currentStreak !== 1 ? 's' : ''}\n- Coaching persona: ${personaBlendLabel}`
 
   const baselineContext = profile?.baseline_profile ? `USER COACHING PROFILE:\n${profile.baseline_profile}\n\n` : ''
   const isPro = profile.subscription_status === 'pro' ||
