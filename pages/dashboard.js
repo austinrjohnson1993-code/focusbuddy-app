@@ -64,6 +64,7 @@ const NAV_ITEMS = [
   { id: 'focus', label: 'Focus', icon: <Target size={22} /> },
   { id: 'calendar', label: 'Calendar', icon: <CalendarBlank size={22} /> },
   { id: 'habits', label: 'Habits', icon: <ArrowCounterClockwise size={22} /> },
+  { id: 'journal', label: 'Journal', icon: <Notebook size={22} /> },
   { id: 'tagteam', label: 'Tag Team', icon: <UsersThree size={22} /> },
   { id: 'finance', label: 'Finance', icon: <Wallet size={22} /> },
   { id: 'progress', label: 'Progress', icon: <ChartLineUp size={22} /> },
@@ -72,7 +73,7 @@ const NAV_ITEMS = [
 ]
 
 const NAV_PRIMARY_IDS = ['tasks', 'checkin', 'focus', 'calendar']
-const NAV_MORE_IDS = ['habits', 'tagteam', 'finance', 'progress', 'guide', 'settings']
+const NAV_MORE_IDS = ['habits', 'journal', 'tagteam', 'finance', 'progress', 'guide', 'settings']
 
 // ── GUIDE TAB STRATEGIES ────────────────────────────────────────────────────────
 const GUIDE_STRATEGIES = [
@@ -1673,14 +1674,18 @@ export default function Dashboard() {
         body: JSON.stringify({ userId: user.id, content, conversationHistory: journalMessages })
       })
       const data = await res.json()
-      setJournalMessages(prev => {
-        const next = [...prev, { role: 'assistant', content: data.message }]
-        saveChatHistory(journalKey, next)
-        return next
-      })
-      const userMsgCount = journalMessages.filter(m => m.role === 'user').length + 1
-      if (!journalReminderShown && userMsgCount >= 3) { setJournalReminderShown(true); setShowJournalReminder(true) }
-      if (data.extractedTasks?.length > 0) setJournalPendingTask(data.extractedTasks[0])
+      if (!res.ok) {
+        setJournalMessages(prev => [...prev, { role: 'assistant', content: "I'm here. Keep going." }])
+      } else if (data.message) {
+        setJournalMessages(prev => {
+          const next = [...prev, { role: 'assistant', content: data.message }]
+          saveChatHistory(journalKey, next)
+          return next
+        })
+        const userMsgCount = journalMessages.filter(m => m.role === 'user').length + 1
+        if (!journalReminderShown && userMsgCount >= 3) { setJournalReminderShown(true); setShowJournalReminder(true) }
+        if (data.detectedTasks?.length > 0) setJournalPendingTask(data.detectedTasks[0])
+      }
     } catch {
       setJournalMessages(prev => [...prev, { role: 'assistant', content: "I'm here. Keep going." }])
     }
