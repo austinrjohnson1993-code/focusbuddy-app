@@ -5072,6 +5072,27 @@ export default function Dashboard() {
                 )
               })()}
 
+              {/* Ask Cinis button */}
+              <div style={{ padding: '0 14px 80px', marginTop: '20px' }}>
+                <button
+                  onClick={() => {
+                    switchTab('checkin')
+                    setTimeout(() => {
+                      const input = document.querySelector('input[placeholder*="What"]') || document.querySelector('textarea')
+                      if (input) {
+                        input.value = "What's my financial picture?"
+                        input.focus()
+                        input.dispatchEvent(new Event('input', { bubbles: true }))
+                        input.form?.dispatchEvent(new Event('submit', { bubbles: true }))
+                      }
+                    }, 100)
+                  }}
+                  className={styles.addTaskBtn}
+                  style={{ width: '100%', marginBottom: '10px' }}
+                >
+                  Ask Cinis about this
+                </button>
+              </div>
             </div>
           </TabErrorBoundary>
           )}

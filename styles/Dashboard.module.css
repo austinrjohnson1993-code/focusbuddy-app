@@ -1678,6 +1678,78 @@
   color: var(--accent);
   opacity: 0.8;
   margin-left: 6px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(255, 102, 68, 0.08);
+}
+.billBadgeSoon {
+  color: #FFB800;
+  background: rgba(255, 184, 0, 0.08);
+}
+.billBadgeToday {
+  color: #FFB800;
+  background: rgba(255, 184, 0, 0.08);
+}
+.billBadgeOverdue {
+  color: #E8321A;
+  background: rgba(232, 50, 26, 0.08);
+}
+.billDeleteConfirm {
+  background: rgba(62, 50, 40, 0.8);
+  border: 1px solid rgba(232, 50, 26, 0.2);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-top: 6px;
+  margin-bottom: 12px;
+  animation: slideDown 0.2s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.billDeleteMsg {
+  font-size: 0.85rem;
+  color: rgba(240, 234, 214, 0.7);
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+.billDeleteActions {
+  display: flex;
+  gap: 8px;
+}
+.billDeleteCancel {
+  flex: 1;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid rgba(240, 234, 214, 0.12);
+  border-radius: 8px;
+  color: rgba(240, 234, 214, 0.6);
+  font-family: 'Figtree', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.billDeleteCancel:hover {
+  border-color: rgba(240, 234, 214, 0.24);
+  color: rgba(240, 234, 214, 0.8);
+}
+.billDeleteConfirmBtn {
+  flex: 1;
+  padding: 8px 12px;
+  background: #E8321A;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-family: 'Figtree', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.billDeleteConfirmBtn:hover {
+  background: #d02813;
+  box-shadow: 0 4px 12px rgba(232, 50, 26, 0.3);
 }
 .financeBreakdown {
   margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,200,120,0.06);
