@@ -576,9 +576,9 @@ export default async function handler(req, res) {
       const actions = await Promise.all(
         toolUses.map(tu => executeTool(tu.name, tu.input, supabaseAdmin, userId))
       )
-      // Fire-and-forget memory compression after continuation turns
-      if (isPro && messages && messages.length >= 3) {
-        compressAndSaveMemory(userId, messages, profile.rolling_memory_summary).catch(() => {})
+      // Fire-and-forget memory compression after 3+ message exchanges (6+ total messages)
+      if (isPro && messages && messages.length >= 6) {
+        compressAndSaveMemory(userId, messages, profile.rolling_memory_summary).catch(err => console.error('Memory compression failed:', err))
       }
       return res.status(200).json({
         message: text,
@@ -644,9 +644,9 @@ export default async function handler(req, res) {
       toolUses.map(tu => executeTool(tu.name, tu.input, supabaseAdmin, userId))
     )
     console.log(`[checkin] ${type} for ${userId}: ${toolActions.length + actionsExecuted.length} actions executed`)
-    // Fire-and-forget memory compression for opening messages with prior context
-    if (isPro && conversationHistory && conversationHistory.length >= 3) {
-      compressAndSaveMemory(userId, conversationHistory, profile.rolling_memory_summary).catch(() => {})
+    // Fire-and-forget memory compression for opening messages after 3+ exchanges (6+ total)
+    if (isPro && conversationHistory && conversationHistory.length >= 6) {
+      compressAndSaveMemory(userId, conversationHistory, profile.rolling_memory_summary).catch(err => console.error('Memory compression failed:', err))
     }
     return res.status(200).json({
       message: text,
