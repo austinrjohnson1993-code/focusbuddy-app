@@ -4770,7 +4770,7 @@ export default function Dashboard() {
         </main>
 
         {/* VOICE FAB */}
-        {!showAddModal && !addingTaskOverlay && (
+        {activeTab === 'tasks' && !showAddModal && !addingTaskOverlay && (
           <button
             className={`${styles.voiceFab} ${voiceFabState === 'recording' ? styles.voiceFabRecording : ''} ${voiceFabState === 'processing' ? styles.voiceFabProcessing : ''}`}
             onClick={handleVoiceFabClick}
