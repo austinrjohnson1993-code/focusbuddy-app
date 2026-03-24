@@ -2888,7 +2888,7 @@ export default function Dashboard() {
 
                 {/* 1 — Context ribbon */}
                 <div className={styles.ciRibbonWrap}>
-                  <span className={styles.ciRibbonLabel}>What your coach sees</span>
+                  <span className={styles.ciRibbonLabel}>Cinis {personaLabel ? `· ${personaLabel}` : ''}</span>
                   <div className={styles.ciRibbon}>
                     <span className={`${styles.ciPill} ${styles.ciPillHot}`} style={{ animationDelay: '0ms' }}>
                       {todayTasks.length} task{todayTasks.length !== 1 ? 's' : ''}
@@ -2910,7 +2910,7 @@ export default function Dashboard() {
                 {/* 2 — Persona badge */}
                 <div className={styles.ciPersonaBadgeWrap}>
                   {personaLabel
-                    ? <span className={styles.ciPersonaBadge}>✦ {personaLabel}</span>
+                    ? <span className={styles.ciPersonaBadge}>✦ Cinis · {personaLabel}</span>
                     : <span className={styles.ciPersonaEmpty}>No persona set — configure in Settings</span>
                   }
                 </div>
@@ -2958,7 +2958,10 @@ export default function Dashboard() {
                   {checkinMessages.map((msg, i) => (
                     <div key={i} className={msg.role === 'assistant' ? styles.ciBubbleWrap : styles.ciBubbleUserWrap}>
                       {msg.role === 'assistant' && (
-                        <span className={styles.ciPersonaLabel}>{primaryPersonaName}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '6px' }}>
+                          <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 600, fontSize: '11px', color: '#FF6644', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Cinis</span>
+                          <span style={{ fontSize: '10px', color: 'rgba(240,234,214,0.35)', marginTop: '2px' }}>· {primaryPersonaName}</span>
+                        </div>
                       )}
                       <div className={msg.role === 'assistant' ? styles.ciBubbleAI : styles.ciBubbleUser}>
                         {msg.content}
@@ -2967,7 +2970,10 @@ export default function Dashboard() {
                   ))}
                   {checkinLoading && (
                     <div className={styles.ciBubbleWrap}>
-                      <span className={styles.ciPersonaLabel}>{primaryPersonaName}</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '6px' }}>
+                        <span style={{ fontFamily: 'Sora, sans-serif', fontWeight: 600, fontSize: '11px', color: '#FF6644', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Cinis</span>
+                        <span style={{ fontSize: '10px', color: 'rgba(240,234,214,0.35)', marginTop: '2px' }}>· {primaryPersonaName}</span>
+                      </div>
                       <div className={styles.ciBubbleAI}><span className={styles.checkinTyping}>···</span></div>
                     </div>
                   )}
