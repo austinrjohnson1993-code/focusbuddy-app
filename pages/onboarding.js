@@ -283,14 +283,27 @@ export default function Onboarding() {
   if (phase === 'context') {
     return (
       <>
-        <Head><title>Getting Started — FocusBuddy</title></Head>
+        <Head><title>Getting Started — Cinis</title></Head>
         <div className={styles.page}>
           <div className={styles.contextContainer}>
             <div className={styles.contextLogo}>
-              <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
+              <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                <svg width="32" height="32" viewBox="0 0 64 64" fill="none">
+                  <polygon points="32,2 56,15 56,43 32,56 8,43 8,15" fill="none" stroke="#FF6644" strokeWidth="1.1" opacity="0.45"/>
+                  <polygon points="32,4 54,16 54,42 32,54 10,42 10,16" fill="#FF6644"/>
+                  <polygon points="32,7 51,18 51,40 32,52 13,40 13,18" fill="#120704"/>
+                  <polygon points="32,14 46,22 46,40 32,48 18,40 18,22" fill="#5A1005"/>
+                  <polygon points="32,20 42,26 42,40 32,45 22,40 22,26" fill="#A82010"/>
+                  <polygon points="32,26 38,29 38,40 32,43 26,40 26,29" fill="#E8321A"/>
+                  <polygon points="32,29 45,40 40,43 32,47 24,43 19,40" fill="#FF6644" opacity="0.92"/>
+                  <polygon points="32,33 41,40 38,42 32,45 26,42 23,40" fill="#FFD0C0" opacity="0.76"/>
+                  <polygon points="32,36 37,40 36,41 32,43 28,41 27,40" fill="#FFF0EB" opacity="0.60"/>
+                </svg>
+                <span style={{ fontFamily: "'Sora', sans-serif", fontWeight: 600, fontSize: '0.75rem', letterSpacing: '0.16em', color: '#F0EAD6' }}>CINIS</span>
+              </span>
             </div>
             <h1 className={styles.introTitle}>What brings you here?</h1>
-            <p className={styles.introSub}>This helps FocusBuddy understand how to support you. You can always update this later.</p>
+            <p className={styles.introSub}>This helps Cinis understand how to support you. You can always update this later.</p>
 
             <div className={styles.mhGrid}>
               {MH_OPTIONS.map(opt => {
@@ -324,11 +337,24 @@ export default function Onboarding() {
   if (phase === 'intro') {
     return (
       <>
-        <Head><title>Getting Started — FocusBuddy</title></Head>
+        <Head><title>Getting Started — Cinis</title></Head>
         <div className={styles.page}>
           <div className={styles.introContainer}>
             <div className={styles.introLogo}>
-              <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
+              <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                <svg width="32" height="32" viewBox="0 0 64 64" fill="none">
+                  <polygon points="32,2 56,15 56,43 32,56 8,43 8,15" fill="none" stroke="#FF6644" strokeWidth="1.1" opacity="0.45"/>
+                  <polygon points="32,4 54,16 54,42 32,54 10,42 10,16" fill="#FF6644"/>
+                  <polygon points="32,7 51,18 51,40 32,52 13,40 13,18" fill="#120704"/>
+                  <polygon points="32,14 46,22 46,40 32,48 18,40 18,22" fill="#5A1005"/>
+                  <polygon points="32,20 42,26 42,40 32,45 22,40 22,26" fill="#A82010"/>
+                  <polygon points="32,26 38,29 38,40 32,43 26,40 26,29" fill="#E8321A"/>
+                  <polygon points="32,29 45,40 40,43 32,47 24,43 19,40" fill="#FF6644" opacity="0.92"/>
+                  <polygon points="32,33 41,40 38,42 32,45 26,42 23,40" fill="#FFD0C0" opacity="0.76"/>
+                  <polygon points="32,36 37,40 36,41 32,43 28,41 27,40" fill="#FFF0EB" opacity="0.60"/>
+                </svg>
+                <span style={{ fontFamily: "'Sora', sans-serif", fontWeight: 600, fontSize: '0.75rem', letterSpacing: '0.16em', color: '#F0EAD6' }}>CINIS</span>
+              </span>
             </div>
             <h1 className={styles.introTitle}>Let's set you up.</h1>
             <p className={styles.introSub}>12 quick questions. No wrong answers. Takes about 2 minutes.</p>
@@ -380,7 +406,7 @@ export default function Onboarding() {
 
     return (
       <>
-        <Head><title>Getting Started — FocusBuddy</title></Head>
+        <Head><title>Getting Started — Cinis</title></Head>
         <div className={styles.page}>
           <div className={styles.progressBar}>
             <div className={styles.progressFill} style={{ width: `${progress}%` }} />
@@ -421,7 +447,7 @@ export default function Onboarding() {
     const progress = (QUESTIONS.length / (QUESTIONS.length + 1)) * 100
     return (
       <>
-        <Head><title>Getting Started — FocusBuddy</title></Head>
+        <Head><title>Getting Started — Cinis</title></Head>
         <div className={styles.page}>
           <div className={styles.progressBar}>
             <div className={styles.progressFill} style={{ width: `${progress}%` }} />
@@ -433,7 +459,7 @@ export default function Onboarding() {
             </div>
             <div className={styles.questionWrap}>
               <h2 className={styles.questionText}>Drag to rank what matters most to you.</h2>
-              <p className={styles.rankSubtext}>Top = highest priority. This helps FocusBuddy sort your tasks.</p>
+              <p className={styles.rankSubtext}>Top = highest priority. This helps Cinis sort your tasks.</p>
               <div className={styles.rankList}>
                 {rankItems.map((item, i) => (
                   <div
@@ -471,7 +497,7 @@ export default function Onboarding() {
   if (phase === 'analyzing') {
     return (
       <>
-        <Head><title>Getting Started — FocusBuddy</title></Head>
+        <Head><title>Getting Started — Cinis</title></Head>
         <div className={styles.page}>
           <div className={styles.analyzeScreen}>
             <p className={styles.analyzeText}>
@@ -494,7 +520,7 @@ export default function Onboarding() {
 
     return (
       <>
-        <Head><title>Getting Started — FocusBuddy</title></Head>
+        <Head><title>Getting Started — Cinis</title></Head>
         <div className={styles.page}>
           <div className={styles.revealContainer}>
             <div className={styles.revealCard}>
@@ -542,7 +568,7 @@ export default function Onboarding() {
   // ── Saving ────────────────────────────────────────────────────────────────
   return (
     <>
-      <Head><title>Getting Started — FocusBuddy</title></Head>
+      <Head><title>Getting Started — Cinis</title></Head>
       <div className={styles.page}>
         <div className={styles.savingContainer}>
           <div className={styles.savingLogo}>

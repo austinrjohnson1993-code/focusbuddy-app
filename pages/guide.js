@@ -23,7 +23,7 @@ const THEME_ACCENT_MAP = {
 const SECTIONS = [
   {
     title: '🧠 Start with your persona',
-    body: "Your persona blend is the most important setting in the app. It controls how FocusBuddy talks to you — from blunt and direct (Drill Sergeant) to warm and strategic (Coach). If the tone feels off, go to Settings → Coaching style and adjust it. Most people land on a blend of 2-3 personas.",
+    body: "Your persona blend is the most important setting in the app. It controls how Cinis talks to you — from blunt and direct (Drill Sergeant) to warm and strategic (Coach). If the tone feels off, go to Settings → Coaching style and adjust it. Most people land on a blend of 2-3 personas.",
     tip: "Not sure what you want? Try The Coach + The Thinking Partner for a few days. You can always change it.",
   },
   {
@@ -33,12 +33,12 @@ const SECTIONS = [
   },
   {
     title: '💬 Daily check-ins',
-    body: "Check-in is the core loop. FocusBuddy opens a brief conversation 1-3 times a day depending on your settings. It knows your task list, notices patterns, and can reschedule, complete, or create tasks directly from the conversation. The AI can create, reschedule, and complete tasks directly from the conversation — you don't have to do anything separately. Just reply.",
+    body: "Check-in is the core loop. Cinis opens a brief conversation 1-3 times a day depending on your settings. It knows your task list, notices patterns, and can reschedule, complete, or create tasks directly from the conversation. The AI can create, reschedule, and complete tasks directly from the conversation — you don't have to do anything separately. Just reply.",
     tip: "Tell it anything mid-conversation. 'I need to pick up Sarah's gift at 6pm' — it will add the task.",
   },
   {
     title: '🎯 Focus sessions',
-    body: "Go to Focus when you're ready to work. Pick your top task, set a timer (5, 15, 25, 45, or 60 min), and start. The Fuel, Move, and Supplements tabs give you science-backed prep tips. Use them before a session — they actually make a difference. When your timer ends, tell FocusBuddy how it went: Nailed it marks it complete, Made progress resets the timer, Got stuck routes you to a coaching response.",
+    body: "Go to Focus when you're ready to work. Pick your top task, set a timer (5, 15, 25, 45, or 60 min), and start. The Fuel, Move, and Supplements tabs give you science-backed prep tips. Use them before a session — they actually make a difference. When your timer ends, tell Cinis how it went: Nailed it marks it complete, Made progress resets the timer, Got stuck routes you to a coaching response.",
     tip: "25 minutes is the sweet spot for most people. Long enough to get into flow, short enough to not dread starting.",
   },
   {
@@ -48,7 +48,7 @@ const SECTIONS = [
   },
   {
     title: '📓 Journal',
-    body: "The journal is a private thinking space. Write anything — FocusBuddy reads it, reflects back what it hears, and can pull out tasks you mention. Entries are saved automatically with date and time.",
+    body: "The journal is a private thinking space. Write anything — Cinis reads it, reflects back what it hears, and can pull out tasks you mention. Entries are saved automatically with date and time.",
     tip: "Use it when you're overwhelmed. Just dump everything on screen. The AI will help you organize it.",
   },
   {
@@ -87,11 +87,11 @@ export default function Guide() {
 
   return (
     <>
-      <Head><title>Guide — FocusBuddy</title></Head>
+      <Head><title>Guide — Cinis</title></Head>
       <div className={styles.guidePage}>
         <button className={styles.backBtn} onClick={() => router.back()}>← Back</button>
 
-        <h1 className={styles.guideHeading}>How to get the most out of FocusBuddy</h1>
+        <h1 className={styles.guideHeading}>How to get the most out of Cinis</h1>
         <p className={styles.guideSub}>A quick guide to every feature and how to use it well.</p>
 
         {SECTIONS.map((section, i) => {

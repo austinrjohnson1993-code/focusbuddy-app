@@ -1,4 +1,4 @@
-const CACHE_NAME = 'focusbuddy-v1';
+const CACHE_NAME = 'cinis-v1';
 const PRECACHE_URLS = ['/', '/dashboard', '/login'];
 
 self.addEventListener('install', function(event) {
@@ -54,7 +54,7 @@ self.addEventListener('push', function(event) {
     vibrate: [200, 100, 200],
     data: { url: data.url || '/dashboard' },
     actions: [
-      { action: 'open', title: 'Open FocusBuddy' },
+      { action: 'open', title: 'Open Cinis' },
       { action: 'dismiss', title: 'Dismiss' }
     ]
   };

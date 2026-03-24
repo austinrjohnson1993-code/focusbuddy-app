@@ -9,10 +9,11 @@ const FREE_FEATURES = [
 ]
 
 const PRO_FEATURES = [
-  'Unlimited AI coaching',
-  'SMS check-ins',
-  'All integrations',
-  'Pattern recognition',
+  '15 AI coaching check-ins per day',
+  'AI memory across sessions',
+  'Voice task capture',
+  'Focus timer with coaching',
+  'XP rewards + physical mail milestones',
 ]
 
 export default function Pricing() {
@@ -30,14 +31,23 @@ export default function Pricing() {
 
   return (
     <>
-      <Head><title>Pricing — FocusBuddy</title></Head>
+      <Head><title>Pricing — Cinis</title></Head>
       <div style={s.page}>
         <div style={s.header}>
-          <a href="/" style={s.logo}>
-            <span className="brand">
-              <span className="focus">Focus</span><span className="buddy">Buddy</span>
-            </span>
-          </a>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <svg width="40" height="40" viewBox="0 0 64 64" fill="none">
+              <polygon points="32,2 56,15 56,43 32,56 8,43 8,15" fill="none" stroke="#FF6644" strokeWidth="1.1" opacity="0.45"/>
+              <polygon points="32,4 54,16 54,42 32,54 10,42 10,16" fill="#FF6644"/>
+              <polygon points="32,7 51,18 51,40 32,52 13,40 13,18" fill="#120704"/>
+              <polygon points="32,14 46,22 46,40 32,48 18,40 18,22" fill="#5A1005"/>
+              <polygon points="32,20 42,26 42,40 32,45 22,40 22,26" fill="#A82010"/>
+              <polygon points="32,26 38,29 38,40 32,43 26,40 26,29" fill="#E8321A"/>
+              <polygon points="32,29 45,40 40,43 32,47 24,43 19,40" fill="#FF6644" opacity="0.92"/>
+              <polygon points="32,33 41,40 38,42 32,45 26,42 23,40" fill="#FFD0C0" opacity="0.76"/>
+              <polygon points="32,36 37,40 36,41 32,43 28,41 27,40" fill="#FFF0EB" opacity="0.60"/>
+            </svg>
+            <span style={{ fontFamily: "'Sora', sans-serif", fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.16em', color: '#F0EAD6' }}>CINIS</span>
+          </div>
           <p style={s.tagline}>Simple pricing. No surprises.</p>
         </div>
 
@@ -63,8 +73,9 @@ export default function Pricing() {
           <div style={{ ...s.card, ...s.cardPro }}>
             <div style={s.proBadge}>Most Popular</div>
             <p style={s.tierLabel}>Pro</p>
-            <p style={s.price}>$9.99<span style={s.per}>/month</span></p>
-            <p style={s.tierDesc}>For people serious about getting things done.</p>
+            <p style={s.price}>$14<span style={s.per}>/month</span></p>
+            <p style={{ ...s.per, fontSize: '0.85rem', marginTop: 2 }}>or $99/year <span style={{ color: '#FF6644', fontWeight: 600 }}>· Save 41% vs monthly</span></p>
+            <p style={s.tierDesc}>For brains that need more than a to-do list.</p>
             <ul style={s.featureList}>
               <li style={s.featureItem}><span style={s.check}>✓</span> Everything in Free</li>
               {PRO_FEATURES.map(f => (

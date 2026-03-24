@@ -497,7 +497,7 @@ export default async function handler(req, res) {
   supabaseAdmin.from('tasks')
     .delete()
     .eq('user_id', userId)
-    .eq('title', 'Morning check-in with FocusBuddy')
+    .eq('title', 'Morning check-in with Cinis')
 
   const { data: profile, error: profileErr } = await supabaseAdmin
     .from('profiles').select('*').eq('id', userId).single()

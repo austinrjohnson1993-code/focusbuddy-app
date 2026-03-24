@@ -57,7 +57,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 400,
-        system: 'You are generating a private coaching profile for a FocusBuddy AI coach. This profile will be injected into every future AI interaction to make coaching personal. Write in second person about the user. Be specific, warm, and actionable. 200 words maximum.',
+        system: 'You are generating a private coaching profile for a Cinis AI coach. This profile will be injected into every future AI interaction to make coaching personal. Write in second person about the user. Be specific, warm, and actionable. 200 words maximum.',
         messages: [{ role: 'user', content: userPrompt }]
       })
     })

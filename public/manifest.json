@@ -1,6 +1,6 @@
 {
-  "name": "FocusBuddy",
-  "short_name": "FocusBuddy",
+  "name": "Cinis",
+  "short_name": "Cinis",
   "description": "Your personal AI productivity coach",
   "start_url": "/dashboard",
   "display": "standalone",

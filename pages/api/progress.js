@@ -7,7 +7,7 @@ function getAdminClient() {
   )
 }
 
-const NEW_USER_INSIGHT = "Welcome to FocusBuddy. This is day one — your first win starts here. Add your first task and let's start building."
+const NEW_USER_INSIGHT = "Welcome to Cinis. This is day one — your first win starts here. Add your first task and let's start building."
 
 async function callHaiku(prompt) {
   try {

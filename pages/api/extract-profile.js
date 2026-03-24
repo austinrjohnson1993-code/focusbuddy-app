@@ -38,7 +38,7 @@ Return ONLY valid JSON, no other text:
 
   try {
     const conversationText = messages
-      .map(m => `${m.role === 'user' ? 'User' : 'FocusBuddy'}: ${m.content}`)
+      .map(m => `${m.role === 'user' ? 'User' : 'Cinis'}: ${m.content}`)
       .join('\n');
 
     const result = await lightweightMessage(

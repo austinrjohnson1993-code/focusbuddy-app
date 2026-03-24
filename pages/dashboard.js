@@ -10,6 +10,7 @@ import { isDueSoon as billIsDueSoon, formatBillAmount, getBillCategory, getNextD
 import { CHORE_PRESETS, getChoresByPreset } from '../lib/chores'
 import { requestNotificationPermission, disablePushNotifications } from '../lib/pushNotifications'
 import { CheckSquare, ChatCircle, Target, CalendarBlank, Notebook, Wallet, ChartLineUp, Plus, Trash, Archive, Star, Gear, MagnifyingGlass, X, CaretLeft, CaretRight, CaretDown, Receipt, Scales, Books, Robot, List, Timer, ChartBar, Lightning, ArrowCounterClockwise, CheckCircle, Microphone, UsersThree } from '@phosphor-icons/react'
+import { showToast as libShowToast, ToastContainer } from '../lib/toast.js'
 
 const THEMES = [
   { id: 'orange-bronze', name: 'Classic', accent: '#FF6644', gradient: 'radial-gradient(ellipse at top left, rgba(101,60,10,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(80,45,8,0.35) 0%, transparent 60%)', logo: '#FF6644' },
@@ -468,6 +469,60 @@ function generateGreetingLine(tasks) {
   return `${pending.length} thing${pending.length !== 1 ? 's' : ''} on your plate today.`
 }
 
+// ── Shared UI primitives ──────────────────────────────────────────────────────
+
+const CINIS_MARK_SVG = (
+  <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
+    <polygon points="32,2 56,15 56,43 32,56 8,43 8,15" fill="none" stroke="#FF6644" strokeWidth="1.1" opacity="0.45"/>
+    <path d="M 12.63,14.56 L 29.37,5.44 Q 32,4 34.63,5.44 L 51.37,14.56 Q 54,16 54,19 L 54,39 Q 54,42 51.37,43.44 L 34.63,52.56 Q 32,54 29.37,52.56 L 12.63,43.44 Q 10,42 10,39 L 10,19 Q 10,16 12.63,14.56 Z" fill="#FF6644"/>
+    <path d="M 14.9,16.1 L 29.8,7.8 Q 32,6.6 34.2,7.8 L 49.1,16.1 Q 51.4,17.4 51.4,20 L 51.4,38 Q 51.4,40.6 49.1,41.9 L 34.2,50.2 Q 32,51.4 29.8,50.2 L 14.9,41.9 Q 12.6,40.6 12.6,38 L 12.6,20 Q 12.6,17.4 14.9,16.1 Z" fill="#120704"/>
+    <polygon points="32,14 46,22 46,40 32,48 18,40 18,22" fill="#5A1005"/>
+    <polygon points="32,20 42,26 42,40 32,45 22,40 22,26" fill="#A82010"/>
+    <polygon points="32,26 38,29 38,40 32,43 26,40 26,29" fill="#E8321A"/>
+    <polygon points="32,29 45,40 40,43 32,47 24,43 19,40" fill="#FF6644" opacity="0.92"/>
+    <polygon points="32,33 41,40 38,42 32,45 26,42 23,40" fill="#FFD0C0" opacity="0.76"/>
+    <polygon points="32,36 37,40 36,41 32,43 28,41 27,40" fill="#FFF0EB" opacity="0.60"/>
+  </svg>
+)
+
+function EmptyState({ headline, subtext, ctaLabel, onCtaClick, useMarkIcon }) {
+  return (
+    <div className={styles.emptyState}>
+      {useMarkIcon && <div className={styles.emptyMarkIcon}>{CINIS_MARK_SVG}</div>}
+      <p className={styles.emptyHeadline}>{headline}</p>
+      {subtext && <p className={styles.emptySubtext}>{subtext}</p>}
+      {ctaLabel && onCtaClick && (
+        <button className={styles.emptyCtaBtn} onClick={onCtaClick}>{ctaLabel}</button>
+      )}
+    </div>
+  )
+}
+
+const SKELETON_LINE_WIDTHS = ['70%', '50%', '85%', '40%']
+
+function SkeletonCard({ lines = 2, showAvatar = false }) {
+  return (
+    <div className={styles.skeletonCard}>
+      {showAvatar && <div className={styles.skeletonCircle} />}
+      {Array.from({ length: lines }, (_, i) => (
+        <div key={i} className={styles.skeletonBar} style={{ width: SKELETON_LINE_WIDTHS[i % 4] }} />
+      ))}
+    </div>
+  )
+}
+
+function ErrorState({ message, onRetry }) {
+  return (
+    <div className={styles.errorState}>
+      <span style={{ fontSize: 24 }}>⚠️</span>
+      <p className={styles.errorMessage}>{message}</p>
+      {onRetry && (
+        <button className={styles.errorRetryBtn} onClick={onRetry}>Try again</button>
+      )}
+    </div>
+  )
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
@@ -517,6 +572,10 @@ export default function Dashboard() {
   const recognitionRef = useRef(null)
   const titleInputRef = useRef(null)
   const dragSrcRef = useRef(null)
+
+  // Voice FAB
+  const [voiceFabState, setVoiceFabState] = useState('idle') // 'idle' | 'recording' | 'processing'
+  const voiceFabRecognitionRef = useRef(null)
 
   // Calendar
   const [calView, setCalView] = useState('month')
@@ -672,9 +731,26 @@ export default function Dashboard() {
   const [habitJournalSending, setHabitJournalSending] = useState(false)
   const [habitJournalAiReply, setHabitJournalAiReply] = useState(null)
 
+  // Tab error states
+  const [tasksError, setTasksError] = useState(false)
+  const [habitsLoading, setHabitsLoading] = useState(false)
+  const [habitsError, setHabitsError] = useState(false)
+  const [billsLoading, setBillsLoading] = useState(false)
+  const [billsError, setBillsError] = useState(false)
+  const [progressError, setProgressError] = useState(false)
+
+  // Check-in input ref (for CTA focus)
+  const checkinInputRef = useRef(null)
+
   // S17 Tasks tab
   const [greetingDismissed, setGreetingDismissed] = useState(false)
+  const greetCardHasAnimated = useRef(false)
+  const [greetCardAnimate, setGreetCardAnimate] = useState(false)
   const [sectionCollapsed, setSectionCollapsed] = useState({ overdue: false, today: false, tomorrow: false, thisWeek: false, later: false, completedToday: true })
+
+  // Streak celebration
+  const [showStreakCelebration, setShowStreakCelebration] = useState(false)
+  const [streakCelebMilestone, setStreakCelebMilestone] = useState(0)
   const [xpFloat, setXpFloat] = useState(null) // { taskId, amount }
   const [taskDragOver, setTaskDragOver] = useState(null)
   const [newTaskType, setNewTaskType] = useState('task')
@@ -692,6 +768,8 @@ export default function Dashboard() {
   // Settings
   const [settingsName, setSettingsName] = useState('')
   const [settingsSaving, setSettingsSaving] = useState(false)
+  const [exportLoading, setExportLoading] = useState(false)
+  const [exportError, setExportError] = useState(null)
   const [notifMorning, setNotifMorning] = useState(true)
   const [notifMidday, setNotifMidday] = useState(false)
   const [notifEvening, setNotifEvening] = useState(true)
@@ -787,12 +865,16 @@ export default function Dashboard() {
   }, [])
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { router.push('/login'); return }
-      setUser(session.user)
-      fetchProfile(session.user.id)
-      fetchTasks(session.user.id)
+    const hasSession = { current: false }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        hasSession.current = true
+        fetchProfile(session.user.id)
+      } else if (event === 'SIGNED_OUT' && hasSession.current) {
+        router.push('/login')
+      }
     })
+    return () => subscription.unsubscribe()
   }, [])
 
   useEffect(() => {
@@ -821,6 +903,22 @@ export default function Dashboard() {
     if (profile.morning_time) setCheckinMorningTime(profile.morning_time)
     if (profile.midday_time) setCheckinMiddayTime(profile.midday_time)
     if (profile.evening_time) setCheckinEveningTime(profile.evening_time)
+    if (Array.isArray(profile.checkin_times)) {
+      setNotifMorning(profile.checkin_times.includes('morning'))
+      setNotifMidday(profile.checkin_times.includes('midday'))
+      setNotifEvening(profile.checkin_times.includes('evening'))
+    }
+    // Streak celebration
+    const STREAK_MILESTONES = [7, 14, 30, 60, 90, 365]
+    const streak = profile.current_streak || 0
+    if (STREAK_MILESTONES.includes(streak) && typeof localStorage !== 'undefined') {
+      const celebKey = `streak_celebrated_${streak}`
+      if (!localStorage.getItem(celebKey)) {
+        localStorage.setItem(celebKey, '1')
+        setStreakCelebMilestone(streak)
+        setShowStreakCelebration(true)
+      }
+    }
   }, [profile])
 
   useEffect(() => {
@@ -1008,6 +1106,14 @@ export default function Dashboard() {
     if (Object.keys(collapsed).length > 0) setSectionCollapsed(prev => ({ ...prev, ...collapsed }))
   }, [])
 
+  // Greeting card animation — play once per session when tasks tab opens with card visible
+  useEffect(() => {
+    if (activeTab === 'tasks' && !greetingDismissed && !greetCardHasAnimated.current) {
+      greetCardHasAnimated.current = true
+      setGreetCardAnimate(true)
+    }
+  }, [activeTab, greetingDismissed])
+
   // ── Seed / reset QC helpers (only active when ?debug=true is in URL) ──────
 
   useEffect(() => {
@@ -1079,12 +1185,19 @@ export default function Dashboard() {
   }
 
   const fetchTasks = async (userId) => {
-    const { data } = await supabase
-      .from('tasks').select('*').eq('user_id', userId).eq('archived', false)
-      .order('sort_order', { ascending: true, nullsLast: true })
-      .order('created_at', { ascending: false })
-    setTasks(data || [])
-    setLoading(false)
+    setTasksError(false)
+    try {
+      const { data, error } = await supabase
+        .from('tasks').select('*').eq('user_id', userId).eq('archived', false)
+        .order('sort_order', { ascending: true, nullsLast: true })
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      setTasks(data || [])
+    } catch {
+      setTasksError(true)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const fetchJournalEntries = async (userId) => {
@@ -1104,13 +1217,19 @@ export default function Dashboard() {
 
   const fetchHabits = async (userId) => {
     setHabitsLoaded(true)
+    setHabitsLoading(true)
+    setHabitsError(false)
     try {
       const res = await loggedFetch(`/api/habits?userId=${userId}`)
-      if (!res.ok) return
+      if (!res.ok) throw new Error('Failed')
       const data = await res.json()
       setHabits(data.habits || [])
       setHabitCompletions(data.completions || [])
-    } catch {}
+    } catch {
+      setHabitsError(true)
+    } finally {
+      setHabitsLoading(false)
+    }
   }
 
   const fetchProgressInsights = async () => {
@@ -1122,8 +1241,12 @@ export default function Dashboard() {
       if (res.ok) {
         const data = await res.json()
         setProgressInsights(data.insights || [])
+      } else {
+        setProgressError(true)
       }
-    } catch {}
+    } catch {
+      setProgressError(true)
+    }
     setProgressInsightsLoading(false)
   }
 
@@ -1161,10 +1284,19 @@ export default function Dashboard() {
 
   const fetchBills = async (userId) => {
     setBillsLoaded(true)
-    const { data } = await supabase
-      .from('bills').select('*').eq('user_id', userId)
-      .order('created_at', { ascending: false })
-    setBills(data || [])
+    setBillsLoading(true)
+    setBillsError(false)
+    try {
+      const { data, error } = await supabase
+        .from('bills').select('*').eq('user_id', userId)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      setBills(data || [])
+    } catch {
+      setBillsError(true)
+    } finally {
+      setBillsLoading(false)
+    }
   }
 
   const fetchAlarms = async (userId) => {
@@ -1354,6 +1486,84 @@ export default function Dashboard() {
   }
 
   const stopBillListening = () => { billRecognitionRef.current?.stop(); setBillListening(false) }
+
+  // ── Voice FAB ─────────────────────────────────────────────────────────────
+
+  const startVoiceFab = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      libShowToast('Voice input not supported in this browser.', { type: 'error' })
+      return
+    }
+    const recognition = new SpeechRecognition()
+    recognition.continuous = false
+    recognition.interimResults = false
+    recognition.lang = 'en-US'
+    recognition.onstart = () => setVoiceFabState('recording')
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript
+      setVoiceFabState('processing')
+      handleVoiceInput(transcript)
+    }
+    recognition.onerror = () => {
+      setVoiceFabState('idle')
+      libShowToast('Could not hear you. Try again.', { type: 'error' })
+    }
+    recognition.onend = () => {
+      setVoiceFabState(prev => prev === 'recording' ? 'idle' : prev)
+    }
+    voiceFabRecognitionRef.current = recognition
+    recognition.start()
+  }
+
+  const stopVoiceFab = () => {
+    voiceFabRecognitionRef.current?.stop()
+  }
+
+  const handleVoiceFabClick = () => {
+    if (voiceFabState === 'idle') startVoiceFab()
+    else if (voiceFabState === 'recording') stopVoiceFab()
+  }
+
+  const handleVoiceInput = async (transcript) => {
+    try {
+      const res = await loggedFetch('/api/voice/parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: transcript })
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) throw new Error(data.error || 'Failed')
+      setVoiceFabState('idle')
+      if (user) fetchTasks(user.id)
+      libShowToast(`Created: ${data.message}`, {
+        type: 'undo',
+        duration: 5000,
+        undoCallback: () => handleUndoVoiceTask(data.record.id, data.type)
+      })
+    } catch {
+      setVoiceFabState('idle')
+      libShowToast('Could not create task. Try again.', { type: 'error' })
+    }
+  }
+
+  const handleUndoVoiceTask = async (id, type) => {
+    try {
+      if (type === 'bill') {
+        await loggedFetch(`/api/bills/${id}`, { method: 'DELETE' })
+      } else {
+        await loggedFetch(`/api/tasks/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ archived: true })
+        })
+      }
+      if (user) fetchTasks(user.id)
+      libShowToast('Undone.', { type: 'success', duration: 2000 })
+    } catch {
+      libShowToast('Could not undo. Try again.', { type: 'error' })
+    }
+  }
 
   // ── Task actions ──────────────────────────────────────────────────────────
 
@@ -1648,6 +1858,34 @@ export default function Dashboard() {
       if (ok) applyTheme(theme)
     } else {
       applyTheme(theme)
+    }
+  }
+
+  const handleExportData = async () => {
+    setExportLoading(true)
+    setExportError(null)
+    try {
+      const res = await fetch('/api/export', {
+        method: 'GET',
+        credentials: 'include',
+      })
+      if (!res.ok) throw new Error('Export failed')
+      const data = await res.json()
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const today = new Date().toISOString().split('T')[0]
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `cinis-export-${today}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      showToast('Data exported successfully')
+    } catch (err) {
+      setExportError('Export failed — try again')
+    } finally {
+      setExportLoading(false)
     }
   }
 
@@ -2266,8 +2504,8 @@ export default function Dashboard() {
           <div className={styles.sidebarLogo}>
             <svg width="24" height="24" viewBox="0 0 64 64" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
               <polygon points="32,2 56,15 56,43 32,56 8,43 8,15" fill="none" stroke="#FF6644" strokeWidth="1.1" opacity="0.45"/>
-              <polygon points="32,4 54,16 54,42 32,54 10,42 10,16" fill="#FF6644"/>
-              <polygon points="32,7 51,18 51,40 32,52 13,40 13,18" fill="#120704"/>
+              <path d="M 12.63,14.56 L 29.37,5.44 Q 32,4 34.63,5.44 L 51.37,14.56 Q 54,16 54,19 L 54,39 Q 54,42 51.37,43.44 L 34.63,52.56 Q 32,54 29.37,52.56 L 12.63,43.44 Q 10,42 10,39 L 10,19 Q 10,16 12.63,14.56 Z" fill="#FF6644"/>
+              <path d="M 14.9,16.1 L 29.8,7.8 Q 32,6.6 34.2,7.8 L 49.1,16.1 Q 51.4,17.4 51.4,20 L 51.4,38 Q 51.4,40.6 49.1,41.9 L 34.2,50.2 Q 32,51.4 29.8,50.2 L 14.9,41.9 Q 12.6,40.6 12.6,38 L 12.6,20 Q 12.6,17.4 14.9,16.1 Z" fill="#120704"/>
               <polygon points="32,14 46,22 46,40 32,48 18,40 18,22" fill="#5A1005"/>
               <polygon points="32,20 42,26 42,40 32,45 22,40 22,26" fill="#A82010"/>
               <polygon points="32,26 38,29 38,40 32,43 26,40 26,29" fill="#E8321A"/>
@@ -2422,12 +2660,26 @@ export default function Dashboard() {
               )
             }
 
+            if (loading) return (
+              <div style={{ padding: '12px 14px', paddingBottom: 80, maxWidth: 680, margin: '0 auto', overflowY: 'auto', minHeight: '100%' }}>
+                <SkeletonCard lines={3} />
+                <SkeletonCard lines={3} />
+                <SkeletonCard lines={3} />
+              </div>
+            )
+
+            if (tasksError) return (
+              <div style={{ padding: '12px 14px', paddingBottom: 80, maxWidth: 680, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60%' }}>
+                <ErrorState message="Couldn't load your data." onRetry={() => { setTasksError(false); setLoading(true); fetchTasks(user.id) }} />
+              </div>
+            )
+
             return (
               <div style={{ padding: '12px 14px', paddingBottom: 80, maxWidth: 680, margin: '0 auto', overflowY: 'auto', minHeight: '100%' }}>
 
                 {/* 1 — Morning Greeting Card */}
                 {!greetingDismissed && (
-                  <div className={styles.s17GreetCard}>
+                  <div className={`${styles.s17GreetCard} ${greetCardAnimate ? styles.s17GreetCardAnimate : ''}`}>
                     <button
                       className={styles.s17GreetDismiss}
                       onClick={() => {
@@ -2525,12 +2777,13 @@ export default function Dashboard() {
 
                 {/* Empty state */}
                 {s17Pending.length === 0 && s17CompletedToday.length === 0 && (
-                  <div className={styles.emptyState}>
-                    <div className={styles.emptyIcon}>✦</div>
-                    <p className={styles.emptyText}>Nothing on your list.</p>
-                    <p className={styles.emptySubtext}>Add your first task and let's get moving.</p>
-                    <button onClick={() => setShowAddModal(true)} className={styles.emptyAddBtn}>+ Add your first task</button>
-                  </div>
+                  <EmptyState
+                    useMarkIcon
+                    headline="Your day is a blank slate."
+                    subtext="Add your first task and let's get moving."
+                    ctaLabel="Add a task"
+                    onCtaClick={() => setShowAddModal(true)}
+                  />
                 )}
 
                 {/* 8 — Add task button */}
@@ -2619,8 +2872,17 @@ export default function Dashboard() {
 
                 {/* 5 — Conversation area */}
                 <div className={styles.ciMessages}>
+                  {checkinLoading && checkinMessages.length === 0 && (
+                    <><SkeletonCard lines={2} /><SkeletonCard lines={2} /></>
+                  )}
                   {checkinMessages.length === 0 && !checkinLoading && (
-                    <div className={styles.ciEmptyState}>Your coach is ready. Say hello or tap a chip below.</div>
+                    <EmptyState
+                      useMarkIcon
+                      headline="Your coach is here."
+                      subtext="Ask anything, share what's on your plate, or just say you're stuck."
+                      ctaLabel="Start check-in"
+                      onCtaClick={() => checkinInputRef.current?.focus()}
+                    />
                   )}
                   {checkinMessages.map((msg, i) => (
                     <div key={i} className={msg.role === 'assistant' ? styles.ciBubbleWrap : styles.ciBubbleUserWrap}>
@@ -2664,6 +2926,7 @@ export default function Dashboard() {
                 {/* 7 — Input bar */}
                 <form onSubmit={sendCheckinMessage} className={styles.ciInputBar}>
                   <input
+                    ref={checkinInputRef}
                     type="text"
                     placeholder="Message your coach..."
                     value={checkinInput}
@@ -2952,6 +3215,20 @@ export default function Dashboard() {
             const panelBills = calDay ? bills.filter(b => b.due_day === calDay.getDate()) : []
             const panelDayLabel = calDay ? calDay.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : ''
 
+            if (loading) return (
+              <div className={styles.calView2}>
+                <SkeletonCard lines={4} />
+              </div>
+            )
+
+            if (tasksError) return (
+              <div className={styles.calView2} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60%' }}>
+                <ErrorState message="Couldn't load your data." onRetry={() => { setTasksError(false); setLoading(true); fetchTasks(user.id) }} />
+              </div>
+            )
+
+            const hasAnyMonthTasks = Object.keys(monthOccurrences).length > 0
+
             return (
               <div className={styles.calView2}>
 
@@ -2994,7 +3271,9 @@ export default function Dashboard() {
                 <div className={styles.calUpcoming2}>
                   <p className={styles.calUpcoming2Label}>Coming up</p>
                   {Object.keys(upcomingByDate).length === 0 ? (
-                    <p className={styles.calUpcoming2Empty}>You're clear for the next 7 days.</p>
+                    !hasAnyMonthTasks
+                      ? <EmptyState useMarkIcon headline="Nothing scheduled." subtext="Tasks you add will show up here by date." />
+                      : <p className={styles.calUpcoming2Empty}>You're clear for the next 7 days.</p>
                   ) : (
                     Object.entries(upcomingByDate).map(([dStr, dayList]) => (
                       <div key={dStr}>
@@ -3253,6 +3532,28 @@ export default function Dashboard() {
               if (!Object.keys(dc).length) return null
               return Object.entries(dc).sort((a,b) => b[1]-a[1])[0]
             })()
+
+            // Loading / error / empty early returns
+            if (loading) return (
+              <div style={{ padding: '12px 14px', paddingBottom: 80, maxWidth: 680, margin: '0 auto', overflowY: 'auto', minHeight: '100%' }}>
+                <SkeletonCard lines={3} />
+                <SkeletonCard lines={3} />
+              </div>
+            )
+            if (tasksError || progressError) return (
+              <div style={{ padding: '12px 14px', paddingBottom: 80, maxWidth: 680, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60%' }}>
+                <ErrorState message="Couldn't load your data." onRetry={() => { setTasksError(false); setProgressError(false); setLoading(true); fetchTasks(user.id) }} />
+              </div>
+            )
+            if (!loading && tasks.length === 0 && totalXp === 0) return (
+              <div style={{ padding: '12px 14px', paddingBottom: 80, maxWidth: 680, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60%' }}>
+                <EmptyState
+                  useMarkIcon
+                  headline="Nothing tracked yet."
+                  subtext="Complete tasks and focus sessions to start building your history."
+                />
+              </div>
+            )
 
             // Ring renderer
             const renderRing = (pct, color, centerText, label) => {
@@ -3633,7 +3934,15 @@ export default function Dashboard() {
                         />
                         <button
                           className={`${styles.stgToggle} ${toggle ? styles.stgToggleOn : ''}`}
-                          onClick={() => setToggle(v => !v)}
+                          onClick={async () => {
+                            const newVal = !toggle
+                            setToggle(newVal)
+                            const newMorning = key === 'morning' ? newVal : notifMorning
+                            const newMidday  = key === 'midday'  ? newVal : notifMidday
+                            const newEvening = key === 'evening' ? newVal : notifEvening
+                            const checkin_times = ['morning','midday','evening'].filter((_,i) => [newMorning,newMidday,newEvening][i])
+                            await patchSettings({ checkin_times })
+                          }}
                         />
                       </div>
                     </div>
@@ -3718,10 +4027,21 @@ export default function Dashboard() {
                     <span className={styles.stgEmailDisplay}>{user?.email}</span>
                   </div>
                   <div className={`${styles.stgRow} ${styles.stgRowLast}`}>
-                    <span className={styles.stgRowLabel}>Data</span>
-                    <button className={styles.stgGhostBtn} disabled title="Coming soon">
-                      Export my data
-                    </button>
+                    <div>
+                      <span className={styles.stgRowLabel}>Data</span>
+                      <span className={styles.stgRowSub}>Download a copy of everything Cinis has saved</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                      <button
+                        className={styles.stgGhostBtn}
+                        onClick={handleExportData}
+                        disabled={exportLoading}
+                        style={{ opacity: exportLoading ? 0.6 : 1 }}
+                      >
+                        {exportLoading ? 'Exporting...' : 'Export'}
+                      </button>
+                      {exportError && <span style={{ color: '#E8321A', fontSize: '12px' }}>{exportError}</span>}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3798,9 +4118,37 @@ export default function Dashboard() {
                 ))}
               </div>
 
-              {/* ── BILLS (existing content, untouched) ── */}
+              {/* ── BILLS ── */}
               {financeSub === 'bills' && (
                 <>
+                  {billsLoading ? (
+                    <div style={{ padding: '12px 14px', paddingBottom: 80 }}>
+                      <SkeletonCard lines={3} />
+                      <SkeletonCard lines={3} />
+                    </div>
+                  ) : billsError ? (
+                    <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60%' }}>
+                      <ErrorState message="Couldn't load your data." onRetry={() => { setBillsError(false); fetchBills(user.id) }} />
+                    </div>
+                  ) : bills.length === 0 ? (
+                    <>
+                      <div className={styles.viewHeader}>
+                        <div>
+                          <h1 className={styles.greetingText}>Monthly expenses</h1>
+                          <p className={styles.financeTotal}>{fmtMoney(monthlyTotal)}<span className={styles.financeTotalSub}>/mo</span></p>
+                        </div>
+                        <button onClick={() => setShowAddBillModal(true)} className={styles.addTaskBtn}>+ Add bill</button>
+                      </div>
+                      <EmptyState
+                        useMarkIcon
+                        headline="No bills tracked yet."
+                        subtext="Add your recurring expenses to track your monthly burn."
+                        ctaLabel="Add your first bill"
+                        onCtaClick={() => setShowAddBillModal(true)}
+                      />
+                    </>
+                  ) : (
+                  <>
                   <div className={styles.viewHeader}>
                     <div>
                       <h1 className={styles.greetingText}>Monthly expenses</h1>
@@ -3808,16 +4156,7 @@ export default function Dashboard() {
                     </div>
                     <button onClick={() => setShowAddBillModal(true)} className={styles.addTaskBtn}>+ Add bill</button>
                   </div>
-
-                  {bills.length === 0 ? (
-                    <div className={styles.emptyState}>
-                      <div className={styles.emptyIcon}>💳</div>
-                      <p className={styles.emptyText}>No bills tracked yet.</p>
-                      <p className={styles.emptySubtext}>Add your recurring expenses to track your monthly burn.</p>
-                      <button onClick={() => setShowAddBillModal(true)} className={styles.emptyAddBtn}>+ Add your first bill</button>
-                    </div>
-                  ) : (
-                    <>
+                  <>
                       {/* Bills by category */}
                       {Object.entries(billsByCategory).map(([cat, catBills]) => (
                         <div key={cat} className={styles.financeCatGroup}>
@@ -3873,6 +4212,7 @@ export default function Dashboard() {
                         </div>
                       )}
                     </>
+                  </>
                   )}
                 </>
               )}
@@ -4229,6 +4569,18 @@ export default function Dashboard() {
               const MOOD_EMOJIS = ['😤', '😔', '😐', '🙂', '😄']
               const PROMPT_CHIPS = ["What's on my mind", 'What went well', 'What was hard', 'What I need tomorrow']
 
+              if (habitsLoading) return (
+                <div style={{ padding: '12px 14px', paddingBottom: 80, maxWidth: 680, margin: '0 auto', overflowY: 'auto', minHeight: '100%' }}>
+                  <SkeletonCard lines={2} showAvatar />
+                  <SkeletonCard lines={2} showAvatar />
+                </div>
+              )
+              if (habitsError) return (
+                <div style={{ padding: '12px 14px', paddingBottom: 80, maxWidth: 680, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60%' }}>
+                  <ErrorState message="Couldn't load your data." onRetry={() => { setHabitsError(false); fetchHabits(user.id) }} />
+                </div>
+              )
+
               return (
                 <div className={styles.view}>
                   {/* Header */}
@@ -4340,14 +4692,13 @@ export default function Dashboard() {
 
                   {/* Habits list */}
                   {habitsLoaded && habits.length === 0 ? (
-                    <div className={styles.habitsEmptyState}>
-                      <div className={styles.habitsEmptyIcon}>🌱</div>
-                      <p className={styles.habitsEmptyText}>No habits yet.</p>
-                      <p className={styles.habitsEmptySub}>Add a habit you want to build or break.</p>
-                      <button className={styles.habitsEmptyAddBtn} onClick={() => setShowAddHabitOverlay(true)}>
-                        Add first habit
-                      </button>
-                    </div>
+                    <EmptyState
+                      useMarkIcon
+                      headline="No habits yet."
+                      subtext="Add a habit you want to build or break."
+                      ctaLabel="Add first habit"
+                      onCtaClick={() => setShowAddHabitOverlay(true)}
+                    />
                   ) : (
                     <div className={styles.habitsList}>
                       {habits.map(habit => {
@@ -4407,6 +4758,35 @@ export default function Dashboard() {
           )}
 
         </main>
+
+        {/* VOICE FAB */}
+        {!showAddModal && !addingTaskOverlay && (
+          <button
+            className={`${styles.voiceFab} ${voiceFabState === 'recording' ? styles.voiceFabRecording : ''} ${voiceFabState === 'processing' ? styles.voiceFabProcessing : ''}`}
+            onClick={handleVoiceFabClick}
+            aria-label={voiceFabState === 'idle' ? 'Voice input' : voiceFabState === 'recording' ? 'Stop recording' : 'Processing'}
+          >
+            {voiceFabState === 'recording' ? (
+              <div className={styles.voiceWaveBars}>
+                <span className={styles.voiceWaveBar} />
+                <span className={styles.voiceWaveBar} />
+                <span className={styles.voiceWaveBar} />
+              </div>
+            ) : voiceFabState === 'processing' ? (
+              <div className={styles.voiceFabSpinner} />
+            ) : (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="9" y="2" width="6" height="12" rx="3" fill="white"/>
+                <path d="M5 11a7 7 0 0 0 14 0" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="12" y1="18" x2="12" y2="22" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="9" y1="22" x2="15" y2="22" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            )}
+          </button>
+        )}
+
+        {/* TOAST CONTAINER */}
+        <ToastContainer />
 
         {/* BOTTOM NAV (mobile) */}
         <nav className={styles.bottomNav} aria-hidden="true">
@@ -5270,6 +5650,35 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        {/* STREAK CELEBRATION OVERLAY */}
+        {showStreakCelebration && (() => {
+          const MILESTONE_TEXT = { 7: 'One week strong.', 14: 'Two weeks.', 30: 'A whole month.', 60: 'Two months.', 90: 'Ninety days.', 365: 'A full year.' }
+          const subtext = MILESTONE_TEXT[streakCelebMilestone] || ''
+          return (
+            <div className={styles.streakOverlay} onClick={() => setShowStreakCelebration(false)}>
+              <div className={styles.streakContent}>
+                {Array.from({ length: 20 }, (_, i) => {
+                  const angle = (i / 20) * 360
+                  const dist = 80 + (i % 3) * 30
+                  const px = Math.round(Math.cos(angle * Math.PI / 180) * dist)
+                  const py = Math.round(Math.sin(angle * Math.PI / 180) * dist)
+                  return (
+                    <div
+                      key={i}
+                      className={styles.streakParticle}
+                      style={{ '--px': `${px}px`, '--py': `${py}px`, animationDelay: `${(i % 5) * 50}ms`, opacity: 0.4 + (i % 3) * 0.2 }}
+                    />
+                  )
+                })}
+                <div className={styles.streakNum}>{streakCelebMilestone}</div>
+                <div className={styles.streakLabel}>Day Streak</div>
+                <div className={styles.streakSubtext}>{subtext}</div>
+                <div className={styles.streakDismiss}>Tap anywhere to continue</div>
+              </div>
+            </div>
+          )
+        })()}
 
       </div>
 

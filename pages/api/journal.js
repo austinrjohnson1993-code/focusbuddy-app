@@ -175,7 +175,7 @@ Only include a [TASK: ...] line if something genuinely actionable was mentioned.
     if (isConversationEnd(displayText)) {
       const allMessages = [...messages, { role: 'assistant', content: displayText }]
       const conversationText = allMessages
-        .map(m => `${m.role === 'user' ? 'User' : 'FocusBuddy'}: ${m.content}`)
+        .map(m => `${m.role === 'user' ? 'User' : 'Cinis'}: ${m.content}`)
         .join('\n\n')
 
       const summaryPrompt = `In one sentence describe what this journal conversation covered. If it seems personal or emotional (relationships, feelings, struggles), return exactly: 'Personal entry.' Otherwise describe the topic factually.\n\nConversation:\n${conversationText}`

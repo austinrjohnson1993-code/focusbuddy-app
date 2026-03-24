@@ -8,7 +8,7 @@ function getAdminClient() {
   )
 }
 
-const SYSTEM_PROMPT = `You are FocusBuddy's financial coach. Be practical and specific. Reference their actual numbers. Suggest one actionable thing at a time. Never shame. Point them toward specific app features when relevant. Keep responses under 4 sentences.`
+const SYSTEM_PROMPT = `You are Cinis's financial coach. Be practical and specific. Reference their actual numbers. Suggest one actionable thing at a time. Never shame. Point them toward specific app features when relevant. Keep responses under 4 sentences.`
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
