@@ -1,3 +1,9 @@
+⚠️ **BEFORE EVERY TASK: Read /docs/TERMINAL_CONTEXT.md first.**
+- Building UI → also read relevant section of FLOW_OF_FUNCTION.md
+- Touching DB → confirm column names in TERMINAL_CONTEXT.md first
+
+---
+
 # CLAUDE.md — Cinis Session Configuration
 *Auto-read by Claude Code on every session start. Never skip this file.*
 
