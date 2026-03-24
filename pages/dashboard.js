@@ -4182,10 +4182,10 @@ export default function Dashboard() {
                         <button onClick={() => setShowAddBillModal(true)} className={styles.addTaskBtn}>+ Add bill</button>
                       </div>
                       <EmptyState
-                        useMarkIcon
-                        headline="No bills tracked yet."
-                        subtext="Add your recurring expenses to track your monthly burn."
-                        ctaLabel="Add your first bill"
+                        customIcon={<Receipt size={32} weight="fill" color="#FF6644" />}
+                        headline="No bills tracked yet"
+                        subtext="Add your first bill to start tracking."
+                        ctaLabel="+ Add bill"
                         onCtaClick={() => setShowAddBillModal(true)}
                       />
                     </>
@@ -4214,6 +4214,10 @@ export default function Dashboard() {
                                     </span>
                                   )}
                                   <span className={styles.billFreq}>{bill.frequency}</span>
+                                  {bill.category && <span className={styles.billCatLabel}>{bill.category}</span>}
+                                  <span className={bill.autopay ? styles.billAutopayOn : styles.billAutopayOff}>
+                                    {bill.autopay ? 'Autopay on' : 'Autopay off'}
+                                  </span>
                                 </div>
                               </div>
                               <div className={styles.billRight}>
