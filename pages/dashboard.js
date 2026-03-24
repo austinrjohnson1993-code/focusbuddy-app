@@ -2784,34 +2784,26 @@ export default function Dashboard() {
                 })()}
 
                 {/* 3 — Priority Card */}
-                {s17StarredTask && (() => {
-                  const dueMs = s17StarredTask.due_time ? new Date(s17StarredTask.due_time) - new Date() : null
-                  const cdHours = dueMs ? Math.floor(dueMs / 3600000) : null
-                  const cdMins = dueMs ? Math.floor((dueMs % 3600000) / 60000) : null
-                  const cdStr = dueMs && dueMs > 0
-                    ? (cdHours > 0 ? `Due in ${cdHours}h ${cdMins}m` : `Due in ${cdMins}m`)
-                    : (dueMs != null ? 'Due now' : null)
-                  return (
-                    <div className={styles.s17PriorityCard}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: HP, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: HP, display: 'inline-block', animation: 'pulse 2s infinite' }} />
-                            Your #1 priority
-                          </div>
-                          <div style={{ fontSize: 16, fontWeight: 600, color: ASH, fontFamily: "'Figtree', sans-serif", lineHeight: 1.3 }}>{s17StarredTask.title}</div>
-                          {cdStr && (
-                            <div style={{ fontSize: 13, color: HP, fontFamily: "'Sora', sans-serif", fontWeight: 600, marginTop: 4 }}>{cdStr}</div>
-                          )}
+                {s17StarredTask && (
+                  <div className={styles.s17PriorityCard}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: HP, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: HP, display: 'inline-block', animation: 'pulse 2s infinite' }} />
+                          Your #1 priority
                         </div>
+                        <div style={{ fontSize: 16, fontWeight: 600, color: ASH, fontFamily: "'Figtree', sans-serif", lineHeight: 1.3 }}>{s17StarredTask.title}</div>
+                        {s17StarredCountdown && (
+                          <div style={{ fontSize: 13, color: HP, fontFamily: "'Sora', sans-serif", fontWeight: 600, marginTop: 4 }}>{s17StarredCountdown}</div>
+                        )}
                       </div>
-                      <button
-                        className={styles.s17StartTimerBtn}
-                        onClick={() => { setElectedTaskId(s17StarredTask.id); switchTab('focus') }}
-                      >Start timer →</button>
                     </div>
-                  )
-                })()}
+                    <button
+                      className={styles.s17StartTimerBtn}
+                      onClick={() => { setElectedTaskId(s17StarredTask.id); switchTab('focus') }}
+                    >Start timer →</button>
+                  </div>
+                )}
 
                 {/* 4 — Momentum Bar */}
                 <div className={styles.s17MomentumWrap}>
