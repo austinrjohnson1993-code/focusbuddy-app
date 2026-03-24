@@ -2,6 +2,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 import { buildPersonaPrompt } from '../../lib/persona'
 import { checkDailyRateLimit, rateLimitErrorResponse } from '../../lib/rateLimit'
+import withAuth from '../../lib/authGuard'
+import { sanitizeContent } from '../../lib/sanitize'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -19,7 +21,7 @@ function parseExtractedTasks(text) {
   const regex = /\[TASK:\s*(.+?)\]/g
   let match
   while ((match = regex.exec(text)) !== null) {
-    tasks.push(match[1].trim())
+    tasks.push({ title: match[1].trim(), task_type: 'task' })
   }
   return tasks
 }
@@ -63,11 +65,11 @@ async function callHaiku(prompt) {
   }
 }
 
-export default async function handler(req, res) {
+async function handler(req, res, userId) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { userId, content, conversationHistory } = req.body
-  if (!userId || !content) return res.status(400).json({ error: 'userId and content required' })
+  const { content, conversationHistory } = req.body
+  if (!content) return res.status(400).json({ error: 'content required' })
 
   if (content.length > 2000) {
     return res.status(400).json({ error: 'Message too long. Please keep messages under 2000 characters.' })
@@ -129,12 +131,12 @@ Only include a [TASK: ...] line if something genuinely actionable was mentioned.
     })
 
     const aiText = response.content.find(b => b.type === 'text')?.text ?? ''
-    const extractedTaskTitles = parseExtractedTasks(aiText)
+    const detectedTasks = parseExtractedTasks(aiText)
     const displayText = aiText.replace(/\[TASK:\s*.+?\]/g, '').trim()
+    const sanitizedContent = sanitizeContent(content)
 
     // FIX 2 + FIX 3 — insert extracted tasks with date normalization and reminder scheduling
-    const insertedTasks = []
-    for (const title of extractedTaskTitles) {
+    for (const { title, task_type } of detectedTasks) {
       let scheduledFor = null
 
       if (isJournalReminder(title)) {
@@ -153,22 +155,19 @@ Only include a [TASK: ...] line if something genuinely actionable was mentioned.
         scheduledFor = rawDate.toISOString()
       }
 
-      const { data: task, error: taskErr } = await supabaseAdmin
+      const { error: taskErr } = await supabaseAdmin
         .from('tasks')
         .insert({
           user_id: userId,
           title,
+          task_type,
           scheduled_for: scheduledFor,
           completed: false,
           archived: false,
         })
-        .select()
-        .single()
 
       if (taskErr) {
         console.error('[journal] task insert error:', JSON.stringify(taskErr))
-      } else {
-        insertedTasks.push({ id: task.id, title: task.title })
       }
     }
 
@@ -185,7 +184,7 @@ Only include a [TASK: ...] line if something genuinely actionable was mentioned.
       callHaiku(summaryPrompt).then(aiSummary => {
         supabaseAdmin.from('journal_entries').insert({
           user_id: userId,
-          content: conversationText,
+          content: sanitizeContent(conversationText),
           ai_response: displayText,
           ai_summary: aiSummary ?? 'Journal entry.',
           created_at: new Date().toISOString(),
@@ -195,14 +194,16 @@ Only include a [TASK: ...] line if something genuinely actionable was mentioned.
       // save individual turn
       supabaseAdmin.from('journal_entries').insert({
         user_id: userId,
-        content,
+        content: sanitizedContent,
         ai_response: displayText,
       })
     }
 
-    return res.status(200).json({ message: displayText, extractedTasks: insertedTasks })
+    return res.status(200).json({ message: displayText, detectedTasks })
   } catch (err) {
     console.error('[journal] error:', err.message)
     return res.status(500).json({ error: 'Failed to get response' })
   }
 }
+
+export default withAuth(handler)

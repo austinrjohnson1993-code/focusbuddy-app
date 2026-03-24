@@ -12,7 +12,7 @@ import { requestNotificationPermission, disablePushNotifications } from '../lib/
 import { CheckSquare, ChatCircle, Target, CalendarBlank, Notebook, Wallet, ChartLineUp, Plus, Trash, Archive, Star, Gear, MagnifyingGlass, X, CaretLeft, CaretRight, CaretDown, Receipt, Scales, Books, Robot, List, Timer, ChartBar, Lightning, ArrowCounterClockwise, CheckCircle, Microphone, UsersThree } from '@phosphor-icons/react'
 
 const THEMES = [
-  { id: 'orange-bronze', name: 'Classic', accent: '#ff4d1c', gradient: 'radial-gradient(ellipse at top left, rgba(101,60,10,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(80,45,8,0.35) 0%, transparent 60%)', logo: '#ff4d1c' },
+  { id: 'orange-bronze', name: 'Classic', accent: '#FF6644', gradient: 'radial-gradient(ellipse at top left, rgba(101,60,10,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(80,45,8,0.35) 0%, transparent 60%)', logo: '#FF6644' },
   { id: 'teal-ocean', name: 'Ocean', accent: '#2dd4bf', gradient: 'radial-gradient(ellipse at top left, rgba(15,80,90,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(10,60,70,0.35) 0%, transparent 60%)', logo: '#2dd4bf' },
   { id: 'purple-cosmos', name: 'Cosmos', accent: '#8b5cf6', gradient: 'radial-gradient(ellipse at top left, rgba(60,20,120,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(40,10,90,0.35) 0%, transparent 60%)', logo: '#8b5cf6' },
   { id: 'blue-arctic', name: 'Arctic', accent: '#3b82f6', gradient: 'radial-gradient(ellipse at top left, rgba(15,40,100,0.4) 0%, transparent 60%), radial-gradient(ellipse at bottom right, rgba(10,30,80,0.35) 0%, transparent 60%)', logo: '#3b82f6' },
@@ -60,10 +60,31 @@ const NAV_ITEMS = [
   { id: 'tagteam', label: 'Tag Team', icon: <UsersThree size={22} /> },
   { id: 'finance', label: 'Finance', icon: <Wallet size={22} /> },
   { id: 'progress', label: 'Progress', icon: <ChartLineUp size={22} /> },
+  { id: 'guide', label: 'Guide', icon: <Books size={22} /> },
+  { id: 'settings', label: 'Settings', icon: <Gear size={22} /> },
 ]
 
 const NAV_PRIMARY_IDS = ['tasks', 'checkin', 'focus', 'calendar']
-const NAV_MORE_IDS = ['habits', 'tagteam', 'finance', 'progress', 'settings']
+const NAV_MORE_IDS = ['habits', 'tagteam', 'finance', 'progress', 'guide', 'settings']
+
+// ── GUIDE TAB STRATEGIES ────────────────────────────────────────────────────────
+const GUIDE_STRATEGIES = [
+  // Cinis tag
+  { id: 'c1', tag: 'Cinis', icon: '✦', title: 'Set your coaching blend', body: 'Go to Settings → Coaching Blend. Pick up to 3 personas that match how you want to be coached. Your coach changes tone immediately.' },
+  { id: 'c2', tag: 'Cinis', icon: '⭐', title: 'Use star for your #1 task', body: 'Star exactly one task per day. It becomes your priority card with a countdown. One task. That\'s the whole system.' },
+  { id: 'c3', tag: 'Cinis', icon: '💬', title: 'The morning check-in is your launch pad', body: 'Don\'t open your task list cold. Open Check-in first. Let your coach orient you. Then go. The first message is the hardest — the chip buttons do it for you.' },
+  // Quick Wins tag
+  { id: 'q1', tag: 'Quick Wins', icon: '⚡', title: 'The 2-minute sweep', body: 'Scan your task list. Do every task that takes under 2 minutes right now, back to back. Don\'t schedule them — just do them. This clears cognitive load faster than any planning session.' },
+  { id: 'q2', tag: 'Quick Wins', icon: '🔪', title: 'Shrink the first step', body: 'The task isn\'t \'write the report.\' The task is \'open the document.\' Make the first step so small it\'s embarrassing to skip.' },
+  // Focus tag
+  { id: 'f1', tag: 'Focus', icon: '👥', title: 'Body doubles work', body: 'Working alongside someone — even silently, even virtually — dramatically increases follow-through for ADHD brains. Use Focus co-session when it launches, or just open a video call with anyone.' },
+  { id: 'f2', tag: 'Focus', icon: '🕐', title: 'Time blocks, not lists', body: 'A to-do list with no time attached is a wish list. Assign every important task a specific block on the calendar. Unscheduled = undone.' },
+  // Momentum tag
+  { id: 'm1', tag: 'Momentum', icon: '🔥', title: 'Never miss twice', body: 'Missing once is an accident. Missing twice is a new pattern. If you break a streak, the only move is to get one rep in today, no matter how small.' },
+  { id: 'm2', tag: 'Momentum', icon: '🎯', title: 'Done beats perfect', body: 'A completed task at 70% is worth more than a perfect task that never ships. Mark it done. Move forward. Refinement is a future task.' },
+  // Systems tag
+  { id: 's1', tag: 'Systems', icon: '📋', title: 'Weekly review in 5 minutes', body: 'Every Sunday: archive anything more than 2 weeks old with no progress. Reschedule anything you\'re actually going to do. Delete everything else. A clean list is a usable list.' },
+]
 
 // ── Pure helpers ──────────────────────────────────────────────────────────────
 
@@ -470,6 +491,9 @@ export default function Dashboard() {
   const [checkinLoading, setCheckinLoading] = useState(false)
   const [checkinInitialized, setCheckinInitialized] = useState(false)
   const checkinEndRef = useRef(null)
+  const [ciAiRateLocal, setCiAiRateLocal] = useState(null)
+  const [ciRateLimitMsg, setCiRateLimitMsg] = useState(null)
+  const [ciError, setCiError] = useState(null)
 
   // Persona settings modal
   const [showPersonaModal, setShowPersonaModal] = useState(false)
@@ -566,6 +590,14 @@ export default function Dashboard() {
   const [progressBand, setProgressBand] = useState('week')
   const [progressTodayError, setProgressTodayError] = useState(false)
 
+  // Calendar day panel
+  const [calDayPanelOpen, setCalDayPanelOpen] = useState(false)
+
+  // Progress insights
+  const [progressInsights, setProgressInsights] = useState([])
+  const [progressInsightsLoading, setProgressInsightsLoading] = useState(false)
+  const [progressInsightsLoaded, setProgressInsightsLoaded] = useState(false)
+
   // Guide modal
   const [showGuideModal, setShowGuideModal] = useState(false)
 
@@ -626,6 +658,20 @@ export default function Dashboard() {
   // Journal history (up to 20 past entries)
   const [journalHistory, setJournalHistory] = useState([])
 
+  // Habits tab
+  const [habits, setHabits] = useState([])
+  const [habitCompletions, setHabitCompletions] = useState([])
+  const [habitsLoaded, setHabitsLoaded] = useState(false)
+  const [showAddHabitOverlay, setShowAddHabitOverlay] = useState(false)
+  const [newHabitName, setNewHabitName] = useState('')
+  const [newHabitType, setNewHabitType] = useState('build')
+  const [addingHabit, setAddingHabit] = useState(false)
+  const [habitJournalExpanded, setHabitJournalExpanded] = useState(false)
+  const [habitJournalMood, setHabitJournalMood] = useState(null)
+  const [habitJournalText, setHabitJournalText] = useState('')
+  const [habitJournalSending, setHabitJournalSending] = useState(false)
+  const [habitJournalAiReply, setHabitJournalAiReply] = useState(null)
+
   // S17 Tasks tab
   const [greetingDismissed, setGreetingDismissed] = useState(false)
   const [sectionCollapsed, setSectionCollapsed] = useState({ overdue: false, today: false, tomorrow: false, thisWeek: false, later: false, completedToday: true })
@@ -650,6 +696,11 @@ export default function Dashboard() {
   const [notifMidday, setNotifMidday] = useState(false)
   const [notifEvening, setNotifEvening] = useState(true)
   const [notifPermission, setNotifPermission] = useState(() => typeof Notification !== 'undefined' ? Notification.permission : 'default')
+  const [checkinMorningTime, setCheckinMorningTime] = useState('08:00')
+  const [checkinMiddayTime, setCheckinMiddayTime] = useState('12:00')
+  const [checkinEveningTime, setCheckinEveningTime] = useState('21:00')
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
 
   // Bill voice input
   const [billListening, setBillListening] = useState(false)
@@ -660,6 +711,32 @@ export default function Dashboard() {
   // Next move
   const [nextMoveLoading, setNextMoveLoading] = useState(false)
   const [nextMoveResult, setNextMoveResult] = useState(null) // { raw, taskName, taskId }
+
+  // Guide tab
+  const [guideExpandedCard, setGuideExpandedCard] = useState(null)
+  const [guideSelectedFilter, setGuideSelectedFilter] = useState('All')
+  const [guideBookmarks, setGuideBookmarks] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('cinis_guide_bookmarks')
+        return saved ? JSON.parse(saved) : []
+      } catch {
+        return []
+      }
+    }
+    return []
+  })
+  const [guideTried, setGuideTried] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('cinis_guide_tried')
+        return saved ? JSON.parse(saved) : []
+      } catch {
+        return []
+      }
+    }
+    return []
+  })
 
   // Debug overlay
   const debugRef = useRef({ lastCall: null, lastError: null })
@@ -741,13 +818,16 @@ export default function Dashboard() {
     setActiveTheme(theme)
     applyTheme(theme)
     if (profile.full_name) setSettingsName(profile.full_name)
+    if (profile.morning_time) setCheckinMorningTime(profile.morning_time)
+    if (profile.midday_time) setCheckinMiddayTime(profile.midday_time)
+    if (profile.evening_time) setCheckinEveningTime(profile.evening_time)
   }, [profile])
 
   useEffect(() => {
     if (activeTab === 'checkin' && !checkinInitialized && user) {
       setCheckinInitialized(true)
-      const historyKey = `cinis_checkin_history_${user.id}`
-      const saved = loadChatHistory(historyKey)
+      const todayKey = `cinis_checkin_${user.id}_${new Date().toLocaleDateString('en-CA')}`
+      const saved = loadChatHistory(todayKey)
       if (saved && saved.length > 0) {
         setCheckinMessages(saved)
         return
@@ -760,10 +840,15 @@ export default function Dashboard() {
       })
         .then(r => r.json())
         .then(data => {
+          if (data.error === 'rate_limit_reached') {
+            setCiRateLimitMsg("You've used all your check-ins for today. Upgrade to Pro for more.")
+            return
+          }
           if (data.message) {
             const msgs = [{ role: 'assistant', content: data.message }]
             setCheckinMessages(msgs)
-            saveChatHistory(historyKey, msgs)
+            saveChatHistory(todayKey, msgs)
+            setCiAiRateLocal(prev => (prev ?? (profile?.ai_interactions_today || 0)) + 1)
           }
           fetchTasks(user.id)
         })
@@ -801,11 +886,18 @@ export default function Dashboard() {
     prevTabRef.current = activeTab
   }, [activeTab])
 
+  useEffect(() => {
+    if (activeTab === 'progress' && user && !progressInsightsLoaded) {
+      fetchProgressInsights()
+    }
+  }, [activeTab, user])
+
   // Global Escape key → close topmost modal
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key !== 'Escape') return
       if (showSessionEndModal) { setShowSessionEndModal(false); return }
+      if (calDayPanelOpen) { setCalDayPanelOpen(false); return }
       if (showPersonaModal) { setShowPersonaModal(false); return }
       if (showAlarmsModal) { setShowAlarmsModal(false); return }
       if (showGuideModal) { setShowGuideModal(false); return }
@@ -836,6 +928,12 @@ export default function Dashboard() {
   useEffect(() => {
     if (activeTab === 'finance' && user && !billsLoaded) {
       fetchBills(user.id)
+    }
+  }, [activeTab, user])
+
+  useEffect(() => {
+    if (activeTab === 'habits' && user && !habitsLoaded) {
+      fetchHabits(user.id)
     }
   }, [activeTab, user])
 
@@ -1002,6 +1100,31 @@ export default function Dashboard() {
       .from('journal_entries').select('*').eq('user_id', userId)
       .order('created_at', { ascending: false }).limit(20)
     setJournalHistory(data || [])
+  }
+
+  const fetchHabits = async (userId) => {
+    setHabitsLoaded(true)
+    try {
+      const res = await loggedFetch(`/api/habits?userId=${userId}`)
+      if (!res.ok) return
+      const data = await res.json()
+      setHabits(data.habits || [])
+      setHabitCompletions(data.completions || [])
+    } catch {}
+  }
+
+  const fetchProgressInsights = async () => {
+    if (!user) return
+    setProgressInsightsLoaded(true)
+    setProgressInsightsLoading(true)
+    try {
+      const res = await loggedFetch(`/api/progress/insights?userId=${user.id}`)
+      if (res.ok) {
+        const data = await res.json()
+        setProgressInsights(data.insights || [])
+      }
+    } catch {}
+    setProgressInsightsLoading(false)
   }
 
   const fetchWeeklySummary = async () => {
@@ -1270,35 +1393,46 @@ export default function Dashboard() {
 
   // ── Check-in ──────────────────────────────────────────────────────────────
 
-  const sendCheckinMessage = async (e) => {
-    e.preventDefault()
-    if (!checkinInput.trim() || checkinLoading) return
-    const historyKey = `cinis_checkin_history_${user.id}`
-    const userMsg = { role: 'user', content: checkinInput.trim() }
+  const sendCheckinMsg = async (text) => {
+    if (!text.trim() || checkinLoading || !user) return
+    const todayKey = `cinis_checkin_${user.id}_${new Date().toLocaleDateString('en-CA')}`
+    const userMsg = { role: 'user', content: text.trim() }
     const updated = [...checkinMessages, userMsg]
-    setCheckinMessages(updated); setCheckinInput(''); setCheckinLoading(true)
+    setCheckinMessages(updated)
+    setCheckinInput('')
+    setCheckinLoading(true)
+    setCiError(null)
+    setCiRateLimitMsg(null)
     try {
       const res = await loggedFetch('/api/checkin', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, checkInType: getCheckinType(), messages: updated, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone })
       })
       const data = await res.json()
-      if (data.message) {
+      if (data.error === 'rate_limit_reached') {
+        setCiRateLimitMsg("You've used all your check-ins for today. Upgrade to Pro for more.")
+      } else if (data.message) {
         setCheckinMessages(prev => {
           const next = [...prev, { role: 'assistant', content: data.message }]
-          saveChatHistory(historyKey, next)
+          saveChatHistory(todayKey, next)
           return next
         })
+        setCiAiRateLocal(prev => (prev ?? (profile?.ai_interactions_today || 0)) + 1)
       } else {
-        saveChatHistory(historyKey, updated)
+        saveChatHistory(todayKey, updated)
       }
       fetchTasks(user.id)
       if (billsLoaded) fetchBills(user.id)
       fetchAlarms(user.id)
     } catch {
-      setCheckinMessages(prev => [...prev, { role: 'assistant', content: "I'm here. Keep going." }])
+      setCiError("Something went wrong. Try again.")
     }
     setCheckinLoading(false)
+  }
+
+  const sendCheckinMessage = async (e) => {
+    e.preventDefault()
+    await sendCheckinMsg(checkinInput)
   }
 
   // ── Journal ───────────────────────────────────────────────────────────────
@@ -1455,6 +1589,31 @@ export default function Dashboard() {
     setBills(prev => prev.filter(b => b.id !== id))
   }
 
+  const patchSettings = async (updates) => {
+    if (!user) return false
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        console.error('[settings] patchSettings: no access token')
+        return false
+      }
+      const res = await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ userId: user.id, updates }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        console.error('[settings] PATCH failed:', res.status, err)
+        return false
+      }
+      return true
+    } catch (err) {
+      console.error('[settings] PATCH error:', err)
+      return false
+    }
+  }
+
   const saveSettings = async () => {
     if (!user || !settingsName.trim()) return
     setSettingsSaving(true)
@@ -1480,28 +1639,15 @@ export default function Dashboard() {
   }
 
   const saveTheme = async (theme) => {
-    applyTheme(theme)
     setActiveTheme(theme)
     setProfile(prev => ({ ...prev, accent_color: theme.id }))
     if (typeof localStorage !== 'undefined') localStorage.setItem('fb_accent_color', theme.id)
     if (user) {
-      // Direct Supabase update for reliability, plus API route as backup
-      await supabase.from('profiles').update({ accent_color: theme.id }).eq('id', user.id)
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.access_token) {
-        console.error('[settings] No session token available')
-        return
-      }
-      const payload = { userId: user.id, updates: { accent_color: theme.id } }
-      const response = await fetch('/api/settings', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify(payload),
-      }).catch(() => null)
-      if (response) console.log('[settings] saved successfully', response.status)
+      const themeId = theme.name?.toLowerCase() || theme.id
+      const ok = await patchSettings({ accent_color: theme.id, theme_id: themeId })
+      if (ok) applyTheme(theme)
+    } else {
+      applyTheme(theme)
     }
   }
 
@@ -1511,16 +1657,17 @@ export default function Dashboard() {
     try {
       const sub = await requestNotificationPermission()
       if (sub) {
-        await supabase.from('profiles').update({
+        await patchSettings({
           push_notifications_enabled: true,
-          push_subscription: sub.toJSON()
-        }).eq('id', user.id)
+          push_subscription: sub.toJSON(),
+        })
         try { localStorage.setItem('fb_push_enabled', 'true') } catch {}
         setProfile(prev => ({ ...prev, push_notifications_enabled: true }))
         setNotifPermission('granted')
         showToast('Push notifications enabled')
       } else {
-        showToast('Permission denied')
+        setNotifPermission('denied')
+        showToast('Notifications blocked in browser settings')
       }
     } catch (err) {
       console.error('[push] enable error:', err)
@@ -1530,8 +1677,14 @@ export default function Dashboard() {
 
   const handleDisablePush = async () => {
     try {
-      await disablePushNotifications(supabase, user.id)
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.ready
+        const existingSub = await reg.pushManager.getSubscription()
+        if (existingSub) await existingSub.unsubscribe()
+      }
+      await patchSettings({ push_notifications_enabled: false, push_subscription: null })
       setProfile(prev => ({ ...prev, push_notifications_enabled: false }))
+      try { localStorage.removeItem('fb_push_enabled') } catch {}
       showToast('Push notifications disabled')
     } catch (err) {
       console.error('[push] disable error:', err)
@@ -2138,19 +2291,6 @@ export default function Dashboard() {
           </nav>
           <div className={styles.sidebarFooter}>
             <span className={styles.sidebarEmail}>{user?.email}</span>
-            <button onClick={() => setShowGuideModal(true)}
-              className={styles.settingsFooterBtn}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-              </svg>
-              Guide
-            </button>
-            <button
-              onClick={() => switchTab('settings')}
-              className={`${styles.settingsFooterBtn} ${activeTab === 'settings' ? styles.settingsFooterBtnActive : ''}`}>
-              <Gear size={16} />
-              Settings
-            </button>
             <button onClick={handleSignOut} className={styles.signOutBtn}>Sign out</button>
             <button onClick={handleRunRollover} className={styles.rolloverDevBtn}>Run rollover</button>
           </div>
@@ -2410,50 +2550,146 @@ export default function Dashboard() {
           {activeTab === 'checkin' && (
           <TabErrorBoundary tabName="Check-in">
           {(() => {
-            const type = getCheckinType()
-            const typeLabel = type === 'morning' ? 'Morning check-in' : type === 'midday' ? 'Midday check-in' : 'Evening check-in'
-            const personaLabel = (() => {
-              const blend = profile?.persona_blend
-              if (!blend || blend.length === 0) return 'Default coaching style'
-              const nameMap = { drill_sergeant: 'The Drill Sergeant', coach: 'The Coach', thinking_partner: 'The Thinking Partner', hype_person: 'The Hype Person', strategist: 'The Strategist' }
-              return nameMap[blend[0]] || blend[0]
+            const PERSONA_NAMES = { drill_sergeant: 'Drill Sergeant', coach: 'Coach', thinking_partner: 'Thinking Partner', hype_person: 'Hype Person', strategist: 'Strategist', empath: 'Empath' }
+            const personaBlend = profile?.persona_blend || []
+            const personaLabel = personaBlend.length > 0 ? personaBlend.map(p => PERSONA_NAMES[p] || p).join(' · ') : null
+            const primaryPersonaName = personaBlend[0] ? (PERSONA_NAMES[personaBlend[0]] || personaBlend[0]) : 'Coach'
+
+            const aiRate = ciAiRateLocal ?? (profile?.ai_interactions_today || 0)
+            const tierLimit = (() => {
+              const s = profile?.subscription_status || 'free'
+              if (s === 'unlimited') return 40
+              if (s === 'pro_sms') return 20
+              if (s === 'pro') return 15
+              return 5
             })()
+
+            const todayLocalStr = new Date().toLocaleDateString('en-CA')
+            const todayTasks = tasks.filter(t => !t.archived && !t.completed && t.scheduled_for && t.scheduled_for.slice(0, 10) === todayLocalStr)
+            const overdueTasks = tasks.filter(t => !t.archived && !t.completed && t.scheduled_for && t.scheduled_for.slice(0, 10) < todayLocalStr)
+
+            const lastCheckinAt = profile?.last_checkin_at
+            const showProactiveBadge = lastCheckinAt && new Date(lastCheckinAt).toLocaleDateString('en-CA') === todayLocalStr
+            const checkinTimeStr = lastCheckinAt ? new Date(lastCheckinAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : ''
+
             return (
-              <div className={styles.checkinWrap}>
-                <div className={styles.checkinHeader}>
-                  <div>
-                    <div className={styles.checkinTypeTag}>{typeLabel}</div>
-                    <div className={styles.checkinPersonaTag}>{personaLabel}</div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <button onClick={() => setShowAlarmsModal(true)} className={styles.checkinSkipBtn} title="Alarms">
-                      <Timer size={16} />
-                    </button>
-                    <button onClick={() => switchTab('tasks')} className={styles.checkinSkipBtn}>Skip to tasks</button>
+              <div className={styles.ciView}>
+
+                {/* 1 — Context ribbon */}
+                <div className={styles.ciRibbonWrap}>
+                  <span className={styles.ciRibbonLabel}>What your coach sees</span>
+                  <div className={styles.ciRibbon}>
+                    <span className={`${styles.ciPill} ${styles.ciPillHot}`} style={{ animationDelay: '0ms' }}>
+                      {todayTasks.length} task{todayTasks.length !== 1 ? 's' : ''}
+                    </span>
+                    {overdueTasks.length > 0 && (
+                      <span className={`${styles.ciPill} ${styles.ciPillEmber}`} style={{ animationDelay: '50ms' }}>
+                        {overdueTasks.length} overdue
+                      </span>
+                    )}
+                    <span className={`${styles.ciPill} ${styles.ciPillGreen}`} style={{ animationDelay: '100ms' }}>
+                      🔥 {profile?.current_streak || 0} day{(profile?.current_streak || 0) !== 1 ? 's' : ''}
+                    </span>
+                    <span className={`${styles.ciPill} ${styles.ciPillGhost}`} style={{ animationDelay: '150ms' }}>
+                      {aiRate} / {tierLimit} today
+                    </span>
                   </div>
                 </div>
-                <div className={styles.checkinMessages}>
+
+                {/* 2 — Persona badge */}
+                <div className={styles.ciPersonaBadgeWrap}>
+                  {personaLabel
+                    ? <span className={styles.ciPersonaBadge}>✦ {personaLabel}</span>
+                    : <span className={styles.ciPersonaEmpty}>No persona set — configure in Settings</span>
+                  }
+                </div>
+
+                {/* 3 — Rate counter bar */}
+                <div className={styles.ciRateBarTrack}>
+                  <div className={styles.ciRateBarFill} style={{ width: `${Math.min((aiRate / tierLimit) * 100, 100)}%` }} />
+                </div>
+
+                {/* 4 — Proactive check-in badge */}
+                {showProactiveBadge && (
+                  <div className={styles.ciCheckinBadge}>
+                    <span className={styles.ciCheckinDot} />
+                    {getCheckinType() === 'morning' ? 'Morning' : getCheckinType() === 'midday' ? 'Midday' : 'Evening'} check-in · {checkinTimeStr}
+                  </div>
+                )}
+
+                {/* 5 — Conversation area */}
+                <div className={styles.ciMessages}>
+                  {checkinMessages.length === 0 && !checkinLoading && (
+                    <div className={styles.ciEmptyState}>Your coach is ready. Say hello or tap a chip below.</div>
+                  )}
                   {checkinMessages.map((msg, i) => (
-                    <div key={i} className={msg.role === 'assistant' ? styles.checkinBubbleAI : styles.checkinBubbleUser}>
-                      {msg.content}
+                    <div key={i} className={msg.role === 'assistant' ? styles.ciBubbleWrap : styles.ciBubbleUserWrap}>
+                      {msg.role === 'assistant' && (
+                        <span className={styles.ciPersonaLabel}>{primaryPersonaName}</span>
+                      )}
+                      <div className={msg.role === 'assistant' ? styles.ciBubbleAI : styles.ciBubbleUser}>
+                        {msg.content}
+                      </div>
                     </div>
                   ))}
-                  {checkinLoading && <div className={styles.checkinBubbleAI}><span className={styles.checkinTyping}>···</span></div>}
+                  {checkinLoading && (
+                    <div className={styles.ciBubbleWrap}>
+                      <span className={styles.ciPersonaLabel}>{primaryPersonaName}</span>
+                      <div className={styles.ciBubbleAI}><span className={styles.checkinTyping}>···</span></div>
+                    </div>
+                  )}
                   <div ref={checkinEndRef} />
                 </div>
+
+                {/* Rate limit inline message */}
+                {ciRateLimitMsg && (
+                  <div className={styles.ciRateLimitMsg}>
+                    {ciRateLimitMsg}{' '}
+                    <a href="/upgrade" className={styles.ciUpgradeLink}>Upgrade</a>
+                  </div>
+                )}
+
+                {/* Error inline message */}
+                {ciError && <div className={styles.ciErrorMsg}>{ciError}</div>}
+
+                {/* 6 — Quick chips */}
+                <div className={styles.ciChips}>
+                  {["What's my next move?", "I'm stuck", "What did I miss?"].map(chip => (
+                    <button key={chip} className={styles.ciChip} onClick={() => sendCheckinMsg(chip)}>
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+
+                {/* 7 — Input bar */}
+                <form onSubmit={sendCheckinMessage} className={styles.ciInputBar}>
+                  <input
+                    type="text"
+                    placeholder="Message your coach..."
+                    value={checkinInput}
+                    onChange={e => setCheckinInput(e.target.value)}
+                    className={styles.ciInput}
+                    autoFocus
+                  />
+                  <button type="submit" disabled={checkinLoading || !checkinInput.trim()} className={styles.ciSendBtn}>
+                    {checkinLoading
+                      ? <span className={styles.ciSendSpinner} />
+                      : <span style={{ fontSize: 18, lineHeight: 1 }}>↑</span>
+                    }
+                  </button>
+                </form>
+
+                {/* Clear history */}
                 {checkinMessages.length > 1 && (
                   <button className={styles.clearHistoryBtn} onClick={() => {
-                    try { localStorage.removeItem(`cinis_checkin_history_${user.id}`) } catch {}
+                    try { localStorage.removeItem(`cinis_checkin_${user.id}_${new Date().toLocaleDateString('en-CA')}`) } catch {}
                     setCheckinMessages([])
                     setCheckinInitialized(false)
+                    setCiRateLimitMsg(null)
+                    setCiError(null)
                   }}>Clear history</button>
                 )}
-                <form onSubmit={sendCheckinMessage} className={styles.checkinForm}>
-                  <input type="text" placeholder="Reply..." value={checkinInput}
-                    onChange={e => setCheckinInput(e.target.value)}
-                    className={styles.checkinInput} autoFocus />
-                  <button type="submit" disabled={checkinLoading || !checkinInput.trim()} className={styles.checkinSendBtn}>→</button>
-                </form>
+
               </div>
             )
           })()}
@@ -2678,7 +2914,6 @@ export default function Dashboard() {
             for (let d = 1; d <= daysInMonth; d++) cells.push(d)
             while (cells.length % 7 !== 0) cells.push(null)
             const monthOccurrences = getTaskOccurrencesForMonth(tasks, year, month)
-            // Bills with due_day in this month
             const billDueDays = {}
             bills.forEach(b => {
               if (b.due_day) {
@@ -2688,201 +2923,165 @@ export default function Dashboard() {
               }
             })
 
-            if (calView === 'day' && calDay) {
-              const dayDStr = localDateStr(calDay)
-              const dayTasks = calTasksForDay(dayDStr)
-              const unscheduled = dayTasks.filter(t => !t.due_time)
-              const scheduled = dayTasks.filter(t => !!t.due_time)
-              const HOURS = Array.from({ length: 18 }, (_, i) => i + 6)
-              const tasksByHour = {}
-              scheduled.forEach(t => {
-                const h = new Date(t.due_time).getHours()
-                if (!tasksByHour[h]) tasksByHour[h] = []
-                tasksByHour[h].push(t)
-              })
-              const dayBillsDue = bills.filter(b => b.due_day === calDay.getDate())
-              const dayLabel = calDay.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
-              return (
-                <div className={styles.calViewWrap}>
-                  <div className={styles.calDayViewHeader}>
-                    <button className={styles.calBackBtn} onClick={() => setCalView('month')}>← Back</button>
-                    <div className={styles.calDayTitleBlock}>
-                      <h2 className={styles.calDayTitle}>{dayLabel}</h2>
-                      <p className={styles.calDaySub}>{dayTasks.length} task{dayTasks.length !== 1 ? 's' : ''}</p>
-                    </div>
-                    <button onClick={() => {
-                      if (calDay) {
-                        const d = calDay
-                        setNewDueDate(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`)
-                      }
-                      setShowAddModal(true)
-                    }} className={styles.calAddBtn}>+ Add</button>
+            // Upcoming — next 7 days using scheduled_for
+            const upStart = new Date(); upStart.setHours(0,0,0,0)
+            const upEnd = new Date(upStart); upEnd.setDate(upStart.getDate() + 7)
+            const upcomingTasks = tasks
+              .filter(t => !t.completed && !t.archived && t.scheduled_for)
+              .filter(t => { const sf = new Date(t.scheduled_for); sf.setHours(0,0,0,0); return sf >= upStart && sf <= upEnd })
+              .sort((a, b) => new Date(a.scheduled_for) - new Date(b.scheduled_for))
+            const upcomingByDate = {}
+            upcomingTasks.forEach(t => {
+              const d = t.scheduled_for.slice(0, 10)
+              if (!upcomingByDate[d]) upcomingByDate[d] = []
+              upcomingByDate[d].push(t)
+            })
+            const todayD = todayStr()
+            const tomD = tomorrowStr()
+            const fmtUpDate = (dStr) => {
+              if (dStr === todayD) return 'Today'
+              if (dStr === tomD) return 'Tomorrow'
+              const [y, m, day] = dStr.split('-').map(Number)
+              return new Date(y, m - 1, day).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+            }
+
+            // Day panel data
+            const panelDayTasks = calDay ? calTasksForDay(localDateStr(calDay)) : []
+            const panelScheduled = panelDayTasks.filter(t => t.due_time).sort((a, b) => new Date(a.due_time) - new Date(b.due_time))
+            const panelUnscheduled = panelDayTasks.filter(t => !t.due_time)
+            const panelBills = calDay ? bills.filter(b => b.due_day === calDay.getDate()) : []
+            const panelDayLabel = calDay ? calDay.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : ''
+
+            return (
+              <div className={styles.calView2}>
+
+                {/* Month grid card */}
+                <div className={styles.calCard}>
+                  <div className={styles.calMonthNav}>
+                    <button className={styles.calNavBtn} onClick={calPrevMonth}><CaretLeft size={18} /></button>
+                    <h2 className={styles.calMonthLabel}>{monthName} {year}</h2>
+                    <button className={styles.calNavBtn} onClick={calNextMonth}><CaretRight size={18} /></button>
                   </div>
-                  <div className={styles.calTimeline}>
-                    {unscheduled.length > 0 && (
-                      <div className={styles.calUnscheduledBlock}>
-                        <div className={styles.calSlotLabel}>Unscheduled — drag to a time slot</div>
-                        <div className={styles.calSlotTasks}>
-                          {unscheduled.map(t => (
-                            <div
-                              key={t.id}
-                              draggable={true}
-                              onDragStart={e => e.dataTransfer.setData('taskId', t.id)}
-                              className={`${styles.calTaskChip} ${t.completed ? styles.calTaskChipDone : ''} ${t.consequence_level === 'external' ? styles.calTaskChipExt : ''}`}
-                            >
-                              <button onClick={() => t.completed ? uncompleteTask(t) : completeTask(t)} className={styles.calChipCheck}>{t.completed ? '✓' : ''}</button>
-                              <div className={styles.calChipBody} onClick={() => setDetailTask(t)}>
-                                <span className={styles.calChipTitle}>{t.title}</span>
-                                <div className={styles.calChipBadges}>
-                                  {t.consequence_level === 'external' && <span className={styles.calChipExtBadge} title="External commitment">Ext</span>}
-                                  {t.rollover_count > 0 && <span className={styles.calChipRollover}>↷{t.rollover_count}</span>}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {HOURS.map(h => {
-                      const slotTasks = tasksByHour[h] || []
-                      const label = h === 0 ? '12am' : h === 12 ? '12pm' : h < 12 ? `${h}am` : `${h - 12}pm`
-                      const isCurrentHour = calDay && calDay.toDateString() === new Date().toDateString() && h === new Date().getHours()
+                  <div className={styles.calDayHeaders}>
+                    {['S','M','T','W','T','F','S'].map((d, i) => (
+                      <div key={i} className={styles.calDayHeaderCell}>{d}</div>
+                    ))}
+                  </div>
+                  <div className={styles.calGrid}>
+                    {cells.map((day, idx) => {
+                      if (!day) return <div key={idx} className={styles.calCellEmpty} />
+                      const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                      const dayTaskList = monthOccurrences[dStr] || []
+                      const dayBillList = billDueDays[dStr] || []
+                      const isToday = dStr === todayDStr
+                      const isSelected = calDay && localDateStr(calDay) === dStr
                       return (
-                        <div
-                          key={h}
-                          id={isCurrentHour ? 'time-slot-now' : undefined}
-                          className={`${styles.calHourSlot} ${slotTasks.length > 0 ? styles.calHourSlotFilled : ''} ${dragOverHour === h ? styles.timeSlotDragOver : ''}`}
-                          onDragOver={e => { e.preventDefault(); setDragOverHour(h) }}
-                          onDragLeave={() => setDragOverHour(null)}
-                          onDrop={e => handleDropOnTimeSlot(e, h)}
-                        >
-                          <div className={styles.calHourLabel}>{label}</div>
-                          {isCurrentHour && <div className={styles.calNowLine}><div className={styles.calNowDot} /></div>}
-                          <div className={styles.calHourLine} />
-                          <div className={styles.calHourTasks}>
-                            {slotTasks.map(t => (
-                              <div
-                                key={t.id}
-                                draggable={true}
-                                onDragStart={e => e.dataTransfer.setData('taskId', t.id)}
-                                className={`${styles.calTaskChip} ${t.completed ? styles.calTaskChipDone : ''} ${t.consequence_level === 'external' ? styles.calTaskChipExt : ''}`}>
-                                <button onClick={() => t.completed ? uncompleteTask(t) : completeTask(t)} className={styles.calChipCheck}>{t.completed ? '✓' : ''}</button>
-                                <div className={styles.calChipBody} onClick={() => setDetailTask(t)}>
-                                  <span className={styles.calChipTitle}>{t.title}</span>
-                                  <div className={styles.calChipBadges}>
-                                    {t.consequence_level === 'external' && <span className={styles.calChipExtBadge} title="External commitment">Ext</span>}
-                                    {t.rollover_count > 0 && <span className={styles.calChipRollover}>↷{t.rollover_count}</span>}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
+                        <div key={idx}
+                          className={`${styles.calCell} ${isToday ? styles.calCellToday : ''} ${isSelected ? styles.calCellSelected : ''}`}
+                          onClick={() => { setCalDay(new Date(year, month, day)); setCalDayPanelOpen(true) }}>
+                          <span className={styles.calCellNum}>{day}</span>
+                          <div className={styles.calDots}>
+                            {dayTaskList.length > 0 && <span className={styles.calDotTask} />}
+                            {dayBillList.length > 0 && <span className={styles.calDotBill} />}
                           </div>
                         </div>
                       )
                     })}
                   </div>
+                </div>
 
-                  {dayBillsDue.length > 0 && (
-                    <div className={styles.calBillsBlock}>
-                      <div className={styles.calBillsLabel}>Bills Due</div>
-                      {dayBillsDue.map(bill => (
-                        <div key={bill.id} className={styles.calBillRow}>
-                          <span className={styles.calBillName}>{bill.name}</span>
-                          <span className={styles.calBillAmount}>{fmtMoney(bill.amount)}</span>
-                          <span className={styles.calBillCat}>{bill.category || 'Other'}</span>
-                        </div>
-                      ))}
-                    </div>
+                {/* Upcoming tasks hero */}
+                <div className={styles.calUpcoming2}>
+                  <p className={styles.calUpcoming2Label}>Coming up</p>
+                  {Object.keys(upcomingByDate).length === 0 ? (
+                    <p className={styles.calUpcoming2Empty}>You're clear for the next 7 days.</p>
+                  ) : (
+                    Object.entries(upcomingByDate).map(([dStr, dayList]) => (
+                      <div key={dStr}>
+                        <p className={styles.calUpcoming2DateHeader}>{fmtUpDate(dStr)}</p>
+                        {dayList.map(t => (
+                          <div key={t.id} className={styles.calUpcoming2Row} onClick={() => setDetailTask(t)}>
+                            <div className={styles.calUpcoming2Left}>
+                              <span className={styles.calUpcoming2Title}>{t.title}</span>
+                              {t.due_time && (
+                                <span className={styles.calUpcoming2Time}>
+                                  {new Date(t.due_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                                </span>
+                              )}
+                            </div>
+                            {t.consequence_level === 'external' && <span className={styles.calUpcoming2ExtBadge}>Ext</span>}
+                          </div>
+                        ))}
+                      </div>
+                    ))
                   )}
                 </div>
-              )
-            }
 
-            return (
-              <div className={styles.calViewWrap}>
-                <div className={styles.calMonthNav}>
-                  <button className={styles.calNavBtn} onClick={calPrevMonth}><CaretLeft size={18} /></button>
-                  <h2 className={styles.calMonthLabel}>{monthName} {year}</h2>
-                  <button className={styles.calNavBtn} onClick={calNextMonth}><CaretRight size={18} /></button>
-                </div>
-                <div className={styles.calDayHeaders}>
-                  {['S','M','T','W','T','F','S'].map((d, i) => (
-                    <div key={i} className={styles.calDayHeaderCell}>{d}</div>
-                  ))}
-                </div>
-                <div className={styles.calGrid}>
-                  {cells.map((day, idx) => {
-                    if (!day) return <div key={idx} className={styles.calCellEmpty} />
-                    const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-                    const dayTasks = monthOccurrences[dStr] || []
-                    const dayBills = billDueDays[dStr] || []
-                    const isToday = dStr === todayDStr
-                    return (
-                      <div key={idx} className={`${styles.calCell} ${isToday ? styles.calCellToday : ''}`}
-                        onClick={() => { setCalDay(new Date(year, month, day)); setCalView('day') }}>
-                        <span className={styles.calCellNum}>{day}</span>
-                        {(dayTasks.length > 0 || dayBills.length > 0) && (
-                          <div className={styles.calDots}>
-                            {dayTasks.slice(0, 2).map((t, di) => (
-                              <span key={`t${di}`} className={styles.calDot}
-                                style={{ background: t.consequence_level === 'external' ? 'var(--accent)' : 'rgba(240,234,214,0.4)' }} />
+                {/* Day Panel slide-up sheet */}
+                {calDayPanelOpen && calDay && (
+                  <>
+                    <div className={styles.calPanelBg} onClick={() => setCalDayPanelOpen(false)} />
+                    <div className={styles.calPanel}>
+                      <div className={styles.calPanelHandle} />
+                      <div className={styles.calPanelHeader}>
+                        <h3 className={styles.calPanelTitle}>{panelDayLabel}</h3>
+                        <button className={styles.calPanelClose} onClick={() => setCalDayPanelOpen(false)}>✕</button>
+                      </div>
+                      <div className={styles.calPanelBody}>
+                        {panelScheduled.length > 0 && (
+                          <div className={styles.calPanelSection}>
+                            {panelScheduled.map(t => (
+                              <div key={t.id} className={styles.calPanelTaskRow} onClick={() => { setDetailTask(t); setCalDayPanelOpen(false) }}>
+                                <span className={styles.calPanelTaskTime}>
+                                  {new Date(t.due_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                                </span>
+                                <span className={styles.calPanelTaskTitle}>{t.title}</span>
+                              </div>
                             ))}
-                            {dayBills.slice(0, 1).map((b, bi) => (
-                              <span key={`b${bi}`} className={styles.calDot} style={{ background: '#00b5a5' }} />
-                            ))}
-                            {(dayTasks.length + dayBills.length) > 3 && <span className={styles.calDotMore}>+</span>}
                           </div>
                         )}
+                        {panelUnscheduled.length > 0 && (
+                          <div className={styles.calPanelSection}>
+                            <p className={styles.calPanelSectionLabel}>Unscheduled</p>
+                            {panelUnscheduled.map(t => (
+                              <div key={t.id} className={styles.calPanelTaskRow} onClick={() => { setDetailTask(t); setCalDayPanelOpen(false) }}>
+                                <span className={styles.calPanelTaskTitle}>{t.title}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {panelBills.length > 0 && (
+                          <div className={styles.calPanelSection}>
+                            <p className={styles.calPanelSectionLabel}>Bills Due</p>
+                            {panelBills.map(b => (
+                              <div key={b.id} className={styles.calPanelBillRow}>
+                                <Receipt size={14} style={{ color: '#E8321A', flexShrink: 0 }} />
+                                <span className={styles.calPanelBillName}>{b.name}</span>
+                                <span className={styles.calPanelBillAmt}>{fmtMoney(b.amount)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {panelDayTasks.length === 0 && panelBills.length === 0 && (
+                          <p className={styles.calPanelEmpty}>Nothing scheduled</p>
+                        )}
+                        <button className={styles.calPanelAddBtn} onClick={() => {
+                          if (calDay) setNewDueDate(`${calDay.getFullYear()}-${String(calDay.getMonth()+1).padStart(2,'0')}-${String(calDay.getDate()).padStart(2,'0')}`)
+                          setCalDayPanelOpen(false)
+                          setShowAddModal(true)
+                        }}>+ Add task for this day</button>
                       </div>
-                    )
-                  })}
-                </div>
-                <p className={styles.calendarHint}>Tap a day to view your schedule</p>
-
-                {/* ── Upcoming tasks list — always visible below month grid ── */}
-                {(() => {
-                  const upcomingTasks = tasks
-                    .filter(t => !t.completed && !t.archived && t.due_date)
-                    .sort((a, b) => (a.due_date < b.due_date ? -1 : a.due_date > b.due_date ? 1 : 0))
-                  const today = todayStr()
-                  const tomorrow = tomorrowStr()
-                  const fmtUpcomingDate = (dateStr) => {
-                    if (dateStr === today) return 'Today'
-                    if (dateStr === tomorrow) return 'Tomorrow'
-                    const [y, m, d] = dateStr.split('-').map(Number)
-                    const dt = new Date(y, m - 1, d)
-                    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
-                    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-                    const diffDays = Math.round((dt - new Date(today)) / 86400000)
-                    if (diffDays <= 6) return `${days[dt.getDay()]} ${months[dt.getMonth()]} ${d}`
-                    return `${days[dt.getDay()]} ${months[dt.getMonth()]} ${d}`
-                  }
-                  return (
-                    <div className={styles.calUpcomingSection}>
-                      <p className={styles.calUpcomingLabel}>Upcoming tasks</p>
-                      {upcomingTasks.length === 0 ? (
-                        <p className={styles.calUpcomingEmpty}>No upcoming tasks — add a due date to any task to see it here.</p>
-                      ) : (
-                        <div className={styles.calUpcomingList}>
-                          {upcomingTasks.map(t => (
-                            <div key={t.id} className={styles.calUpcomingRow} onClick={() => setDetailTask(t)}>
-                              <div className={styles.calUpcomingDate}>{fmtUpcomingDate(t.due_date)}</div>
-                              <div className={styles.calUpcomingTitle}>{t.title}</div>
-                              {t.consequence_level === 'external' && <span className={styles.calUpcomingExt}>Ext</span>}
-                            </div>
-                          ))}
-                        </div>
-                      )}
                     </div>
-                  )
-                })()}
+                  </>
+                )}
+
               </div>
             )
           })()}
           </TabErrorBoundary>
           )}
 
-          {/* ── JOURNAL ── */}
+                    {/* ── JOURNAL ── */}
           {activeTab === 'journal' && (
           <TabErrorBoundary tabName="Journal">
             <div className={styles.view}>
@@ -3000,134 +3199,364 @@ export default function Dashboard() {
           {/* ── PROGRESS ── */}
           {activeTab === 'progress' && (
           <TabErrorBoundary tabName="Progress">
-            <div className={styles.view}>
-              <div className={styles.header}>
-                <h1 className={styles.greetingText}>Progress</h1>
-              </div>
+          {(() => {
+            // ── Derived data ──────────────────────────────────────────────
+            const pgTodayStr = s17TodayStr
+            const todayTasksForRings = tasks.filter(t => !t.archived && t.scheduled_for && t.scheduled_for.slice(0,10) === pgTodayStr)
+            const completedTodayCount = todayTasksForRings.filter(t => t.completed).length
+            const totalTodayCount = todayTasksForRings.length
+            const taskRingPct = totalTodayCount > 0 ? completedTodayCount / totalTodayCount : 0
 
-              {/* Time band selector */}
-              <div className={styles.progressBands}>
-                {[['today','Today'],['week','This week'],['month','This month']].map(([id, label]) => (
-                  <button key={id} onClick={() => setProgressBand(id)}
-                    className={`${styles.progressBandBtn} ${progressBand === id ? styles.progressBandBtnActive : ''}`}>
-                    {label}
-                  </button>
-                ))}
-              </div>
+            const todayIso = new Date().toISOString().split('T')[0]
+            const todayJournaled = (Array.isArray(journalEntries) ? journalEntries : []).some(j => j.created_at?.startsWith(todayIso))
+            const journalRingPct = todayJournaled ? 1 : 0
 
-              {progressBand === 'today' && (() => {
-                if (!user?.id) {
-                  return <p style={{color:'rgba(240,234,214,0.5)', padding:'24px 0'}}>Loading...</p>
-                }
-                if (progressTodayError) return <p style={{color:'rgba(240,234,214,0.5)', padding:'24px 0'}}>Couldn't load today's stats. Try refreshing.</p>
-                try {
-                  const safeJournalEntries = Array.isArray(journalEntries) ? journalEntries : []
-                  const todayStr = new Date().toISOString().split('T')[0]
-                  const todayTasks = (tasks || []).filter(t => t.completed && t.completed_at && new Date(t.completed_at).toDateString() === new Date().toDateString())
-                  const journalCount = safeJournalEntries.filter(j => j.created_at?.startsWith(todayStr)).length
-                  const stillPending = (allPendingTasks || []).length
-                  return (
-                    <div>
-                      <div className={styles.progressStats}>
-                        <div className={styles.progressStat}><span className={styles.progressStatNum}>{todayTasks.length}</span><span className={styles.progressStatLabel}>Done today</span></div>
-                        <div className={styles.progressStat}><span className={styles.progressStatNum}>{stillPending}</span><span className={styles.progressStatLabel}>Still pending</span></div>
-                        <div className={styles.progressStat}><span className={styles.progressStatNum}>{journalCount}</span><span className={styles.progressStatLabel}>Journal entries</span></div>
-                      </div>
-                      {todayTasks.length > 0 ? (
-                        <div className={styles.progressWins}>
-                          <p className={styles.progressWinsLabel}>Today's wins</p>
-                          {todayTasks.map(t => (
-                            <div key={t.id} className={styles.progressWinItem}>
-                              <span className={styles.progressWinDot}>✓</span>
-                              <span className={styles.progressWinTitle}>{t.title}</span>
-                              <span className={styles.progressWinTime}>{new Date(t.completed_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className={styles.progressDayOneEmpty}>
-                          <p className={styles.progressDayOneHeadline}>Day one starts now.</p>
-                          <p className={styles.progressDayOneSub}>Complete your first task and it'll show up here.</p>
-                          <button onClick={() => setActiveTab('tasks')} className={styles.progressDayOneCta}>Go to Tasks</button>
-                        </div>
+            // XP milestones
+            const totalXp = profile?.total_xp || 0
+            const XP_MILESTONES = [
+              { xp: 1000, label: 'Sticker pack' },
+              { xp: 5000, label: 'Journal' },
+              { xp: 25000, label: 'Lifetime Pro' },
+            ]
+            const nextMilestone = XP_MILESTONES.find(m => m.xp > totalXp)
+            const xpBarPct = nextMilestone ? Math.min((totalXp / nextMilestone.xp) * 100, 100) : 100
+            const xpToNext = nextMilestone ? (nextMilestone.xp - totalXp).toLocaleString() : null
+
+            // Weekly bar chart — last 7 days from tasks
+            const barDays = Array.from({length: 7}, (_, i) => {
+              const d = new Date(); d.setDate(d.getDate() - (6 - i)); d.setHours(0,0,0,0)
+              return d
+            })
+            const prevBarDays = Array.from({length: 7}, (_, i) => {
+              const d = new Date(); d.setDate(d.getDate() - (13 - i)); d.setHours(0,0,0,0)
+              return d
+            })
+            const barCounts = barDays.map(d => {
+              const dStr = localDateStr(d)
+              return tasks.filter(t => t.completed && t.completed_at && localDateStr(new Date(t.completed_at)) === dStr).length
+            })
+            const prevBarCounts = prevBarDays.map(d => {
+              const dStr = localDateStr(d)
+              return tasks.filter(t => t.completed && t.completed_at && localDateStr(new Date(t.completed_at)) === dStr).length
+            })
+            const barMax = Math.max(...barCounts, ...prevBarCounts, 1)
+
+            // Monthly summary data (separate from weekly)
+            const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0)
+            const completedThisMonthList = tasks.filter(t => t.completed && t.completed_at && new Date(t.completed_at) >= monthStart)
+            const monthBestDay = (() => {
+              const dc = {}
+              completedThisMonthList.forEach(t => {
+                const d = new Date(t.completed_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+                dc[d] = (dc[d] || 0) + 1
+              })
+              if (!Object.keys(dc).length) return null
+              return Object.entries(dc).sort((a,b) => b[1]-a[1])[0]
+            })()
+
+            // Ring renderer
+            const renderRing = (pct, color, centerText, label) => {
+              const r = 28
+              const circ = 2 * Math.PI * r
+              const offset = circ * (1 - Math.min(pct, 1))
+              return (
+                <div className={styles.pgRingWrap}>
+                  <div className={styles.pgRingSvgWrap}>
+                    <svg width="72" height="72" viewBox="0 0 72 72">
+                      <circle cx="36" cy="36" r={r} fill="none" stroke="#3E3228" strokeWidth="5" />
+                      {pct > 0 && (
+                        <circle cx="36" cy="36" r={r} fill="none" stroke={color} strokeWidth="5"
+                          strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+                          style={{ transform: 'rotate(-90deg)', transformOrigin: '36px 36px', transition: 'stroke-dashoffset 0.6s ease' }} />
                       )}
+                    </svg>
+                    <div className={styles.pgRingCenter}>
+                      <span className={styles.pgRingValue}>{centerText}</span>
                     </div>
-                  )
-                } catch (e) {
-                  setProgressTodayError(true)
-                  return <p style={{color:'rgba(240,234,214,0.5)', padding:'24px 0'}}>Couldn't load today's stats. Try refreshing.</p>
-                }
-              })()}
-
-              {progressBand === 'week' && (
-                <div>
-                  <div className={styles.progressStats}>
-                    <div className={styles.progressStat}><span className={styles.progressStatNum}>{completedThisWeek.length}</span><span className={styles.progressStatLabel}>Completed</span></div>
-                    <div className={styles.progressStat}><span className={styles.progressStatNum}>{getStreak()}</span><span className={styles.progressStatLabel}>Day streak</span></div>
-                    {(() => { const best = getBestDay(); return (
-                      <div className={styles.progressStat}>
-                        <span className={styles.progressStatNum} style={{ fontSize: '1.2rem' }}>{best ? best.day : '—'}</span>
-                        <span className={styles.progressStatLabel}>Best day</span>
-                        <span className={styles.progressStatSub}>{best ? `${best.count} task${best.count !== 1 ? 's' : ''}` : 'No data yet'}</span>
-                      </div>
-                    ) })()}
                   </div>
-                  {Object.keys(completedByDay).length > 0 ? (
-                    <div className={styles.progressWins}>
-                      <p className={styles.progressWinsLabel}>Weekly wins</p>
-                      {Object.entries(completedByDay).map(([day, items]) => (
-                        <div key={day} className={styles.progressDayGroup}>
-                          <p className={styles.progressDayLabel}>{day}</p>
-                          {items.map(t => (
-                            <div key={t.id} className={styles.progressWinItem}>
-                              <span className={styles.progressWinDot}>✓</span>
-                              <span className={styles.progressWinTitle}>{t.title}</span>
-                              <span className={styles.progressWinTime}>{new Date(t.completed_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
-                            </div>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  ) : <div className={styles.progressEmpty}><p className={styles.emptyText}>No completions this week yet.</p></div>}
-                  <div className={styles.progressSummaryCard}>
-                    <p className={styles.progressSummaryLabel}>Weekly summary</p>
-                    {completedThisWeek.length === 0
-                      ? <p className={styles.progressSummaryText}>Complete some tasks this week and come back for your AI summary.</p>
-                      : weeklySummaryLoading ? <p className={styles.progressSummaryLoading}>···</p>
-                      : weeklySummary ? <p className={styles.progressSummaryText}>{weeklySummary}</p>
-                      : <button onClick={fetchWeeklySummary} className={styles.progressSummaryRefresh}>Generate summary</button>}
+                  <span className={styles.pgRingLabel}>{label}</span>
+                </div>
+              )
+            }
+
+            return (
+              <div className={styles.pgView}>
+
+                {/* 1 — Today's rings */}
+                <div className={styles.pgSection}>
+                  <p className={styles.pgSectionLabel}>Today</p>
+                  <div className={styles.pgRingsRow}>
+                    {renderRing(taskRingPct, '#FF6644', `${completedTodayCount}/${totalTodayCount}`, 'Tasks')}
+                    {renderRing(0, '#E8321A', '0m', 'Focus')}
+                    {renderRing(journalRingPct, '#4CAF50', todayJournaled ? '✓' : '—', 'Journal')}
                   </div>
                 </div>
-              )}
 
-              {progressBand === 'month' && (() => {
-                const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-                const completedThisMonth = tasks.filter(t => t.completed && t.completed_at && new Date(t.completed_at) > thirtyDaysAgo)
-                const totalCompleted = tasks.filter(t => t.completed).length
-                return (
-                  <div>
-                    <div className={styles.progressStats}>
-                      <div className={styles.progressStat}><span className={styles.progressStatNum}>{completedThisMonth.length}</span><span className={styles.progressStatLabel}>This month</span></div>
-                      <div className={styles.progressStat}><span className={styles.progressStatNum}>{totalCompleted}</span><span className={styles.progressStatLabel}>All time</span></div>
-                      {(() => { const best = getBestDay(); return (
-                        <div className={styles.progressStat}>
-                          <span className={styles.progressStatNum} style={{ fontSize: '1.2rem' }}>{best ? best.day : '—'}</span>
-                          <span className={styles.progressStatLabel}>Best day</span>
-                          <span className={styles.progressStatSub}>{best ? `${best.count} task${best.count !== 1 ? 's' : ''}` : 'No data yet'}</span>
+                {/* 2 — XP bar */}
+                <div className={styles.pgSection}>
+                  <div className={styles.pgXpHeader}>
+                    <p className={styles.pgSectionLabel}>XP</p>
+                    <span className={styles.pgXpValue}>{totalXp.toLocaleString()} XP</span>
+                  </div>
+                  <div className={styles.pgXpBarTrack}>
+                    <div className={styles.pgXpBarFill} style={{ width: `${xpBarPct}%` }} />
+                    {XP_MILESTONES.map(m => (
+                      <div key={m.xp} className={styles.pgXpMilestoneMarker}
+                        style={{ left: `${Math.min((m.xp / 25000) * 100, 100)}%` }}>
+                        <div className={styles.pgXpMilestoneTick} />
+                        <span className={styles.pgXpMilestoneLabel}>{m.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {xpToNext && (
+                    <p className={styles.pgXpNextLabel}>{xpToNext} XP to {nextMilestone.label}</p>
+                  )}
+                </div>
+
+                {/* 3 — AI Insight cards */}
+                <div className={styles.pgSection}>
+                  <p className={styles.pgSectionLabel}>Insights</p>
+                  {progressInsightsLoading ? (
+                    <>
+                      <div className={styles.pgInsightSkeleton} />
+                      <div className={styles.pgInsightSkeleton} />
+                      <div className={styles.pgInsightSkeleton} />
+                    </>
+                  ) : progressInsights.length > 0 ? (
+                    progressInsights.map((ins, i) => (
+                      <div key={i} className={styles.pgInsightCard}>
+                        <span className={styles.pgInsightIcon}>
+                          {ins.type === 'alert' ? '⚠' : ins.type === 'win' ? '🏆' : '🔍'}
+                        </span>
+                        <div>
+                          <p className={styles.pgInsightTitle}>{ins.title}</p>
+                          <p className={styles.pgInsightBody}>{ins.body}</p>
                         </div>
-                      ) })()}
+                      </div>
+                    ))
+                  ) : (
+                    <div className={styles.pgInsightEmpty}>
+                      <p className={styles.pgInsightEmptyText}>Insights generate after a few days of activity.</p>
                     </div>
-                    <div className={styles.progressSummaryCard}>
-                      <p className={styles.progressSummaryLabel}>Monthly insight</p>
-                      {completedThisMonth.length === 0
-                        ? <p className={styles.progressSummaryText}>Complete some tasks this month and come back for your AI insight.</p>
+                  )}
+                </div>
+
+                {/* 4 — Weekly bar chart */}
+                <div className={styles.pgSection}>
+                  <p className={styles.pgSectionLabel}>This week vs last week</p>
+                  <div className={styles.pgBarChart}>
+                    {barDays.map((d, i) => {
+                      const isToday = localDateStr(d) === todayLocalStr
+                      const pct = barMax > 0 ? (barCounts[i] / barMax) * 100 : 0
+                      const prevPct = barMax > 0 ? (prevBarCounts[i] / barMax) * 100 : 0
+                      return (
+                        <div key={i} className={styles.pgBarCol}>
+                          <div className={styles.pgBarStack}>
+                            {prevPct > 0 && (
+                              <div className={styles.pgBarPrev} style={{ height: `${prevPct}%` }} />
+                            )}
+                            <div className={`${styles.pgBar} ${isToday ? styles.pgBarToday : ''}`}
+                              style={{ height: `${Math.max(pct, 2)}%` }}>
+                              {barCounts[i] > 0 && <span className={styles.pgBarCount}>{barCounts[i]}</span>}
+                            </div>
+                          </div>
+                          <span className={`${styles.pgBarLabel} ${isToday ? styles.pgBarLabelToday : ''}`}>
+                            {d.toLocaleDateString('en-US', { weekday: 'narrow' })}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* 5 — Monthly summary card */}
+                <div className={styles.pgSection}>
+                  <p className={styles.pgSectionLabel}>This month</p>
+                  <div className={styles.pgMonthCard}>
+                    <div className={styles.pgMonthStats}>
+                      <div className={styles.pgMonthStat}>
+                        <span className={styles.pgMonthStatNum}>{completedThisMonthList.length}</span>
+                        <span className={styles.pgMonthStatLabel}>Completed</span>
+                      </div>
+                      {monthBestDay && (
+                        <div className={styles.pgMonthStat}>
+                          <span className={styles.pgMonthStatNum} style={{ fontSize: '0.9rem' }}>{monthBestDay[0]}</span>
+                          <span className={styles.pgMonthStatLabel}>{monthBestDay[1]} tasks (best day)</span>
+                        </div>
+                      )}
+                      <div className={styles.pgMonthStat}>
+                        <span className={styles.pgMonthStatNum}>{profile?.current_streak || 0}</span>
+                        <span className={styles.pgMonthStatLabel}>Day streak</span>
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 12 }}>
+                      {completedThisMonthList.length === 0
+                        ? <p className={styles.pgMonthSummaryText}>Complete tasks this month and come back for your AI insight.</p>
                         : monthlySummaryLoading ? <p className={styles.progressSummaryLoading}>···</p>
-                        : monthlySummary ? <p className={styles.progressSummaryText}>{monthlySummary}</p>
-                        : <button onClick={fetchMonthlySummary} className={styles.progressSummaryRefresh}>Generate insight</button>}
+                        : monthlySummary ? <p className={styles.pgMonthSummaryText}>{monthlySummary}</p>
+                        : <button onClick={fetchMonthlySummary} className={styles.progressSummaryRefresh}>Generate insight</button>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                {/* 6 — Streak card */}
+                <div className={styles.pgStreakCard}>
+                  {(profile?.current_streak || 0) === 0 ? (
+                    <p className={styles.pgStreakEmpty}>Start your streak today</p>
+                  ) : (
+                    <>
+                      <div className={styles.pgStreakMain}>
+                        <span className={styles.pgStreakNum}>{profile?.current_streak || 0}</span>
+                        <span className={styles.pgStreakLabel}>day streak</span>
+                      </div>
+                      {(profile?.longest_streak || 0) > 0 && (
+                        <p className={styles.pgStreakSub}>Longest: {profile.longest_streak} days</p>
+                      )}
+                    </>
+                  )}
+                </div>
+
+              </div>
+            )
+          })()}
+          </TabErrorBoundary>
+          )}
+
+          {/* ── GUIDE ── */}
+          {activeTab === 'guide' && (
+          <TabErrorBoundary tabName="Guide">
+            <div className={styles.guideView} style={{ paddingBottom: '80px', display: 'flex', flexDirection: 'column' }}>
+
+              {/* FOR YOU CAROUSEL */}
+              {(() => {
+                const forYouCards = []
+                const overdueCount = tasks.filter(t => !t.completed && t.due_time && new Date(t.due_time) < new Date()).length
+                if (overdueCount >= 3) {
+                  forYouCards.push({ id: 'overdue', icon: '🎯', title: 'The one-task rule', preview: 'Too many open loops?', cta: 'Open Tasks', action: 'tasks' })
+                }
+                const streak = profile?.current_streak || 0
+                if (streak >= 7) {
+                  forYouCards.push({ id: 'streak', icon: '🔥', title: 'Protect the streak', preview: 'You\'re on a roll.', cta: 'Open Check-in', action: 'checkin' })
+                }
+                const focusThisWeek = tasks.filter(t => {
+                  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7)
+                  return t.completed && t.completed_at && new Date(t.completed_at) > weekAgo && t.tag === 'focus'
+                }).length
+                if (focusThisWeek === 0) {
+                  forYouCards.push({ id: 'focus', icon: '👥', title: 'Body doubles work', preview: 'Focus alongside someone.', cta: 'Open Focus', action: 'focus' })
+                }
+                forYouCards.push(
+                  { id: 'tip1', icon: '✦', title: 'How Check-in works', preview: 'Your coach knows your context.', cta: 'Open Check-in', action: 'checkin' },
+                  { id: 'tip2', icon: '⭐', title: 'Star your #1 task', preview: 'One thing. Go.', cta: 'Open Tasks', action: 'tasks' }
+                )
+
+                return (
+                  <div style={{ marginBottom: '24px' }}>
+                    <p style={{ fontFamily: 'Figtree, sans-serif', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: '#FF6644', marginBottom: '12px', marginLeft: '12px' }}>For You</p>
+                    <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingLeft: '12px', paddingRight: '12px' }}>
+                      {forYouCards.map(card => (
+                        <div key={card.id} style={{ minWidth: '220px', backgroundColor: '#3E3228', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column' }}>
+                          <div style={{ fontSize: '32px', marginBottom: '8px' }}>{card.icon}</div>
+                          <p style={{ fontFamily: 'Figtree, sans-serif', fontWeight: 500, fontSize: '13px', color: '#F0EAD6', marginBottom: '4px' }}>{card.title}</p>
+                          <p style={{ fontFamily: 'Figtree, sans-serif', fontWeight: 400, fontSize: '11px', color: 'rgba(240,234,214,0.5)', marginBottom: '8px' }}>{card.preview}</p>
+                          <button onClick={() => card.action === 'tasks' || card.action === 'checkin' || card.action === 'focus' ? switchTab(card.action) : null} style={{ marginTop: 'auto', backgroundColor: 'transparent', color: '#FF6644', border: 'none', fontFamily: 'Figtree, sans-serif', fontSize: '11px', fontWeight: 500, cursor: 'pointer', textAlign: 'left', padding: 0 }}>
+                            {card.cta}
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )
               })()}
+
+              {/* FILTER CHIPS */}
+              <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingLeft: '12px', paddingRight: '12px', marginBottom: '20px' }}>
+                {['All', 'Cinis', 'Quick Wins', 'Focus', 'Momentum', 'Systems', 'Saved'].map(filter => (
+                  <button
+                    key={filter}
+                    onClick={() => setGuideSelectedFilter(filter)}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '20px',
+                      backgroundColor: guideSelectedFilter === filter ? '#FF6644' : '#3E3228',
+                      color: '#F0EAD6',
+                      border: guideSelectedFilter === filter ? 'none' : '1px solid rgba(255,102,68,0.3)',
+                      fontFamily: 'Figtree, sans-serif',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {filter}
+                  </button>
+                ))}
+              </div>
+
+              {/* STRATEGY CARDS */}
+              <div style={{ flex: 1, overflowY: 'auto', paddingLeft: '12px', paddingRight: '12px' }}>
+                {GUIDE_STRATEGIES.filter(s => {
+                  if (guideSelectedFilter === 'All') return true
+                  if (guideSelectedFilter === 'Saved') return guideBookmarks.includes(s.id)
+                  return s.tag === guideSelectedFilter
+                }).map(strategy => (
+                  <div key={strategy.id} style={{ marginBottom: '12px', backgroundColor: '#3E3228', borderRadius: '12px', padding: '12px 14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => setGuideExpandedCard(guideExpandedCard === strategy.id ? null : strategy.id)}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', flex: 1 }}>
+                        <span style={{ fontSize: '24px', marginTop: '2px' }}>{strategy.icon}</span>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontFamily: 'Figtree, sans-serif', fontWeight: 500, fontSize: '13px', color: '#F0EAD6', margin: 0, marginBottom: '4px' }}>{strategy.title}</p>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <span style={{ display: 'inline-block', backgroundColor: '#211A14', color: '#FF6644', padding: '4px 8px', borderRadius: '12px', fontFamily: 'Figtree, sans-serif', fontSize: '10px', fontWeight: 500 }}>{strategy.tag}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setGuideBookmarks(guideBookmarks.includes(strategy.id) ? guideBookmarks.filter(id => id !== strategy.id) : [...guideBookmarks, strategy.id])
+                          localStorage.setItem('cinis_guide_bookmarks', JSON.stringify(guideBookmarks.includes(strategy.id) ? guideBookmarks.filter(id => id !== strategy.id) : [...guideBookmarks, strategy.id]))
+                        }}
+                        style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', padding: 0, marginLeft: '8px' }}
+                      >
+                        {guideBookmarks.includes(strategy.id) ? '🔖' : '📄'}
+                      </button>
+                    </div>
+                    {guideExpandedCard === strategy.id && (
+                      <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(240,234,214,0.1)' }}>
+                        <p style={{ fontFamily: 'Figtree, sans-serif', fontWeight: 400, fontSize: '12px', color: '#F0EAD6', lineHeight: 1.5, margin: 0, marginBottom: '12px' }}>{strategy.body}</p>
+                        <button
+                          onClick={() => {
+                            setGuideTried(guideTried.includes(strategy.id) ? guideTried.filter(id => id !== strategy.id) : [...guideTried, strategy.id])
+                            localStorage.setItem('cinis_guide_tried', JSON.stringify(guideTried.includes(strategy.id) ? guideTried.filter(id => id !== strategy.id) : [...guideTried, strategy.id]))
+                          }}
+                          style={{ backgroundColor: guideTried.includes(strategy.id) ? '#4CAF50' : 'transparent', color: '#F0EAD6', border: guideTried.includes(strategy.id) ? 'none' : '1px solid rgba(240,234,214,0.3)', padding: '8px 12px', borderRadius: '6px', fontFamily: 'Figtree, sans-serif', fontSize: '11px', fontWeight: 500, cursor: 'pointer' }}
+                        >
+                          {guideTried.includes(strategy.id) ? 'This worked ✓' : 'This worked'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* COACH CTA */}
+              <div style={{ padding: '12px 12px 20px', marginTop: '12px' }}>
+                <div style={{ backgroundColor: '#3E3228', borderRadius: '12px', padding: '12px 14px', border: '1px solid rgba(255,102,68,0.4)', textAlign: 'center' }}>
+                  <p style={{ fontFamily: 'Figtree, sans-serif', fontWeight: 400, fontSize: '12px', color: '#F0EAD6', margin: 0, marginBottom: '12px' }}>Want to talk through a strategy?</p>
+                  <button
+                    onClick={() => {
+                      setCheckinInput('I want to talk about a focus strategy')
+                      switchTab('checkin')
+                    }}
+                    style={{ backgroundColor: '#FF6644', color: '#F0EAD6', border: 'none', padding: '10px 16px', borderRadius: '6px', fontFamily: 'Figtree, sans-serif', fontSize: '12px', fontWeight: 500, cursor: 'pointer', width: '100%' }}
+                  >
+                    Ask your coach
+                  </button>
+                </div>
+              </div>
+
             </div>
           </TabErrorBoundary>
           )}
@@ -3135,231 +3564,220 @@ export default function Dashboard() {
           {/* ── SETTINGS ── */}
           {activeTab === 'settings' && (
           <TabErrorBoundary tabName="Settings">
-            <div className={styles.settingsView}>
-              <div className={styles.header}>
-                <h1 className={styles.greetingText}>Settings</h1>
-              </div>
+            <div className={styles.stgView}>
 
-              {/* Account */}
-              <div className={styles.settingsSection}>
-                <p className={styles.settingsSectionLabel}>Account</p>
-                <div className={styles.settingsCard}>
-                  <div className={styles.settingsRow}>
-                    <div className={styles.settingsRowLeft}>
-                      <span className={styles.settingsRowLabel}>Display name</span>
-                    </div>
-                    <div className={styles.settingsRowRight}>
-                      <input
-                        type="text" value={settingsName}
-                        onChange={e => setSettingsName(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && saveSettings()}
-                        className={styles.settingsNameInput}
-                        placeholder="Your name"
-                      />
-                      <button onClick={saveSettings} disabled={settingsSaving || !settingsName.trim()} className={styles.settingsSaveBtn}>
-                        {settingsSaving ? '···' : 'Save'}
-                      </button>
-                    </div>
+              {/* ── 1. COACHING BLEND ── */}
+              <div className={styles.stgSection}>
+                <p className={styles.stgLabel}>Coaching Blend</p>
+                <p className={styles.stgSublabel}>Pick up to 3 personas</p>
+                <div className={styles.stgCard}>
+                  <div className={styles.stgChips}>
+                    {PERSONAS_LIST.map(({ key, label }) => {
+                      const blend = profile?.persona_blend || []
+                      const selected = blend.includes(key)
+                      return (
+                        <button
+                          key={key}
+                          className={`${styles.stgChip} ${selected ? styles.stgChipActive : ''}`}
+                          onClick={async () => {
+                            const current = profile?.persona_blend || []
+                            let next
+                            if (current.includes(key)) {
+                              next = current.filter(k => k !== key)
+                            } else {
+                              if (current.length >= 3) return
+                              next = [...current, key]
+                            }
+                            setProfile(prev => ({ ...prev, persona_blend: next }))
+                            const ok = await patchSettings({ persona_blend: next })
+                            if (!ok) {
+                              // Roll back optimistic update on failure
+                              setProfile(prev => ({ ...prev, persona_blend: current }))
+                            }
+                          }}
+                        >
+                          {label}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
               </div>
 
-              {/* Appearance / Theme */}
-              <div className={styles.settingsSection}>
-                <p className={styles.settingsSectionLabel}>Theme</p>
-                <div className={styles.settingsCard}>
-                  <div className={styles.settingsRow}>
-                    <div className={styles.settingsRowLeft}>
-                      <span className={styles.settingsRowLabel}>Color theme</span>
-                      <span className={styles.settingsRowSub}>{activeTheme?.name || 'Classic'}</span>
-                    </div>
-                    <div className={styles.settingsRowRight}>
-                      <div className={styles.themeSwatches}>
-                        {THEMES.map(theme => {
-                          const swatchBg = theme.id === 'midnight' ? '#000000' : theme.accent
-                          return (
-                            <div key={theme.id} className={styles.swatchWrap}>
-                              <button title={theme.name}
-                                onClick={() => saveTheme(theme)}
-                                className={`${styles.accentSwatch} ${activeTheme?.id === theme.id ? styles.accentSwatchActive : ''}`}
-                                style={{ background: swatchBg }}
-                              />
-                              <span className={styles.swatchLabel}>{theme.name}</span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Persona */}
-              <div className={styles.settingsSection}>
-                <p className={styles.settingsSectionLabel}>AI Persona</p>
-                <div className={styles.settingsCard}>
-                  <div className={styles.settingsRow}>
-                    <div className={styles.settingsRowLeft}>
-                      <span className={styles.settingsRowLabel}>Coaching style</span>
-                      <span className={styles.settingsRowSub}>
-                        {profile?.persona_blend?.length
-                          ? profile.persona_blend.map(k => PERSONAS_LIST.find(p => p.key === k)?.label || k).join(' · ')
-                          : 'Not set'}
-                      </span>
-                    </div>
-                    <div className={styles.settingsRowRight}>
-                      <button onClick={openPersonaModal} className={styles.connectionBtn}>Edit</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Notification preferences */}
-              <div className={styles.settingsSection}>
-                <p className={styles.settingsSectionLabel}>Check-in notifications</p>
-                <div className={styles.settingsCard}>
+              {/* ── 2. CHECK-IN SCHEDULE ── */}
+              <div className={styles.stgSection}>
+                <p className={styles.stgLabel}>Check-in Schedule</p>
+                <div className={styles.stgCard}>
                   {[
-                    { key: 'morning', label: 'Morning check-in', sub: 'Daily at 8am', val: notifMorning, set: setNotifMorning },
-                    { key: 'midday', label: 'Midday check-in', sub: 'Daily at 12pm', val: notifMidday, set: setNotifMidday },
-                    { key: 'evening', label: 'Evening wrap-up', sub: 'Daily at 9pm', val: notifEvening, set: setNotifEvening },
-                  ].map(({ key, label, sub, val, set }) => (
-                    <div key={key} className={`${styles.settingsRow} ${notifPermission !== 'granted' ? styles.settingsRowDisabled : ''}`}>
-                      <div className={styles.settingsRowLeft}>
-                        <span className={styles.settingsRowLabel}>{label}</span>
-                        <span className={styles.settingsRowSub}>{sub}</span>
+                    { key: 'morning', label: 'Morning', toggle: notifMorning, setToggle: setNotifMorning, time: checkinMorningTime, setTime: setCheckinMorningTime },
+                    { key: 'midday', label: 'Midday', toggle: notifMidday, setToggle: setNotifMidday, time: checkinMiddayTime, setTime: setCheckinMiddayTime },
+                    { key: 'evening', label: 'Evening', toggle: notifEvening, setToggle: setNotifEvening, time: checkinEveningTime, setTime: setCheckinEveningTime },
+                  ].map(({ key, label, toggle, setToggle, time, setTime }) => (
+                    <div key={key} className={styles.stgRow}>
+                      <span className={styles.stgRowLabel}>{label}</span>
+                      <div className={styles.stgRowRight}>
+                        <input
+                          type="time"
+                          value={time}
+                          disabled={!toggle}
+                          className={`${styles.stgTimeInput} ${!toggle ? styles.stgTimeInputDisabled : ''}`}
+                          onChange={e => setTime(e.target.value)}
+                          onBlur={async e => {
+                            const newVal = e.target.value
+                            await patchSettings({
+                              morning_time: key === 'morning' ? newVal : checkinMorningTime,
+                              midday_time: key === 'midday' ? newVal : checkinMiddayTime,
+                              evening_time: key === 'evening' ? newVal : checkinEveningTime,
+                            })
+                          }}
+                        />
+                        <button
+                          className={`${styles.stgToggle} ${toggle ? styles.stgToggleOn : ''}`}
+                          onClick={() => setToggle(v => !v)}
+                        />
                       </div>
-                      <button onClick={() => notifPermission === 'granted' && (set(v => !v))}
-                        className={`${styles.notifToggle} ${val ? styles.notifToggleOn : ''}`} />
                     </div>
                   ))}
-                  {notifPermission !== 'granted' && (
-                    <p className={styles.notifDisabledNote}>Enable push notifications above to activate reminders</p>
-                  )}
-                  <div className={styles.settingsRow}>
-                    <div className={styles.settingsRowLeft}>
-                      <span className={styles.settingsRowLabel}>Push notifications</span>
-                      <span className={styles.settingsRowSub}>Required for alarms &amp; check-ins</span>
-                    </div>
+                </div>
+              </div>
+
+              {/* ── 3. NOTIFICATIONS ── */}
+              <div className={styles.stgSection}>
+                <p className={styles.stgLabel}>Notifications</p>
+                <div className={styles.stgCard}>
+                  <div className={styles.stgRow}>
+                    <span className={styles.stgRowLabel}>Push notifications</span>
                     {notifPermission === 'denied' ? (
-                      <span className={styles.notifDeniedMsg}>Blocked in browser settings</span>
+                      <span className={styles.stgNotifDeniedLabel}>Blocked</span>
                     ) : profile?.push_notifications_enabled ? (
-                      <button className={styles.notifEnabledBtn} onClick={handleDisablePush}>
-                        Enabled ✓
-                      </button>
+                      <button
+                        className={`${styles.stgToggle} ${styles.stgToggleOn}`}
+                        onClick={handleDisablePush}
+                      />
                     ) : (
-                      <button className={styles.connectionBtn} onClick={handleEnablePush}>
-                        Enable
-                      </button>
+                      <button
+                        className={styles.stgToggle}
+                        onClick={handleEnablePush}
+                      />
                     )}
                   </div>
+                  {notifPermission === 'denied' && (
+                    <p className={styles.stgNotifDeniedMsg}>Enable notifications in your browser settings</p>
+                  )}
                 </div>
               </div>
 
-              {/* Connections */}
-              <div className={styles.settingsSection}>
-                <p className={styles.settingsSectionLabel}>Connections</p>
-                <div className={styles.settingsCard}>
-                  {[
-                    { name: 'Google Calendar', sub: 'Sync events to calendar view' },
-                    { name: 'Spotify', sub: 'Play focus playlists' },
-                    { name: 'Apple Music', sub: 'Play focus playlists' },
-                    { name: 'Fitbit', sub: 'Track activity and sleep' },
-                    { name: 'Oura Ring', sub: 'Track readiness and sleep' },
-                  ].map(({ name, sub }) => (
-                    <div key={name} className={styles.connectionRow}>
-                      <div className={styles.connectionInfo}>
-                        <span className={styles.connectionName}>{name}</span>
-                        <span className={styles.connectionStatus}>{sub}</span>
-                      </div>
-                      <button className={styles.comingSoonBtn} disabled title="Integration coming in Phase 2">
-                        Coming soon
+              {/* ── 4. APPEARANCE ── */}
+              <div className={styles.stgSection}>
+                <p className={styles.stgLabel}>Appearance</p>
+                <div className={styles.stgCard}>
+                  <div className={styles.stgThemeChips}>
+                    {[
+                      { id: 'orange-bronze', label: 'Classic', locked: false },
+                      { id: 'midnight', label: 'Midnight', locked: true },
+                      { id: 'warm', label: 'Warm', locked: true },
+                    ].map(({ id, label, locked }) => {
+                      const isActive = activeTheme?.id === id
+                      return (
+                        <button
+                          key={id}
+                          className={`${styles.stgThemeChip} ${isActive ? styles.stgThemeChipActive : ''} ${locked ? styles.stgThemeChipLocked : ''}`}
+                          style={locked ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+                          onClick={locked ? undefined : () => {
+                            const theme = THEMES.find(t => t.id === id)
+                            if (theme) saveTheme(theme)
+                          }}
+                        >
+                          {label}
+                          {locked && <span className={styles.stgChipComingSoon}> Coming soon</span>}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* ── 5. ACCOUNT ── */}
+              <div className={styles.stgSection}>
+                <p className={styles.stgLabel}>Account</p>
+                <div className={styles.stgCard}>
+                  <div className={styles.stgRow}>
+                    <span className={styles.stgRowLabel}>Display name</span>
+                    <input
+                      type="text"
+                      className={styles.stgInlineInput}
+                      value={settingsName}
+                      placeholder="Your name"
+                      onChange={e => setSettingsName(e.target.value)}
+                      onBlur={saveSettings}
+                      onKeyDown={e => e.key === 'Enter' && e.target.blur()}
+                    />
+                  </div>
+                  <div className={styles.stgRow}>
+                    <span className={styles.stgRowLabel}>Email</span>
+                    <span className={styles.stgEmailDisplay}>{user?.email}</span>
+                  </div>
+                  <div className={`${styles.stgRow} ${styles.stgRowLast}`}>
+                    <span className={styles.stgRowLabel}>Data</span>
+                    <button className={styles.stgGhostBtn} disabled title="Coming soon">
+                      Export my data
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── 6. DANGER ZONE ── */}
+              <div className={styles.stgSection}>
+                <p className={styles.stgLabel}>Danger Zone</p>
+                <div className={styles.stgDangerCard}>
+                  {!deleteConfirm ? (
+                    <div className={styles.stgRow}>
+                      <span className={styles.stgDangerRowLabel}>Delete account</span>
+                      <button className={styles.stgDangerBtn} onClick={() => setDeleteConfirm(true)}>
+                        Delete account
                       </button>
                     </div>
-                  ))}
+                  ) : (
+                    <div className={styles.stgDeleteConfirm}>
+                      <p className={styles.stgDeleteMsg}>This is permanent. All your data will be deleted.</p>
+                      <div className={styles.stgDeleteActions}>
+                        <button
+                          className={styles.stgDeleteConfirmBtn}
+                          disabled={deletingAccount}
+                          onClick={async () => {
+                            setDeletingAccount(true)
+                            try {
+                              const res = await loggedFetch('/api/delete-account', { method: 'POST' })
+                              if (res.ok) {
+                                await supabase.auth.signOut()
+                                router.push('/login')
+                              }
+                            } catch {}
+                            setDeletingAccount(false)
+                          }}
+                        >
+                          {deletingAccount ? 'Deleting…' : 'Yes, delete everything'}
+                        </button>
+                        <button
+                          className={styles.stgDeleteCancelBtn}
+                          onClick={() => setDeleteConfirm(false)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Chore Cadence */}
-              <div className={styles.settingsSection}>
-                <p className={styles.settingsSectionLabel}>Chore Cadence</p>
-                {CHORE_PRESETS.map(preset => {
-                  const isActive = profile?.chore_preset === preset.id
-                  return (
-                    <div key={preset.id} className={`${styles.chorePresetCard} ${isActive ? styles.chorePresetCardActive : ''}`}>
-                      <div>
-                        <div className={styles.chorePresetName}>
-                          {preset.name}
-                          {isActive && <span className={styles.choreActiveBadge}>Active</span>}
-                        </div>
-                        <div className={styles.chorePresetDesc}>{preset.description}</div>
-                      </div>
-                      {isActive ? (
-                        <button className={styles.choreRemoveBtn} onClick={async () => {
-                          const { data: { session: choreSession } } = await supabase.auth.getSession()
-                          await loggedFetch('/api/chores', {
-                            method: 'DELETE',
-                            headers: choreSession ? { Authorization: `Bearer ${choreSession.access_token}` } : {},
-                          })
-                          setProfile(prev => ({ ...prev, chore_preset: null }))
-                          fetchTasks(user.id)
-                          showToast('Chore routine removed')
-                        }}>Remove</button>
-                      ) : (
-                        <button className={styles.choreSetupBtn} onClick={async () => {
-                          const chorePreset = getChoresByPreset(preset.id)
-                          if (!chorePreset) return
-                          const today = new Date()
-                          today.setHours(9, 0, 0, 0)
-                          let weekdayIndex = 0
-                          const choreTasks = chorePreset.chores.map(chore => {
-                            let scheduledFor
-                            if (chore.recurrence === 'daily') {
-                              scheduledFor = new Date(today)
-                            } else if (chore.recurrence === 'monthly') {
-                              scheduledFor = new Date(today)
-                              scheduledFor.setDate(scheduledFor.getDate() + 14)
-                            } else {
-                              // weekly, biweekly, twice-weekly → spread across next 7 days
-                              scheduledFor = new Date(today)
-                              scheduledFor.setDate(scheduledFor.getDate() + (weekdayIndex % 7))
-                              weekdayIndex++
-                            }
-                            return {
-                              user_id: user.id,
-                              title: chore.title,
-                              recurrence: chore.recurrence === 'daily' ? 'daily' : chore.recurrence === 'monthly' ? 'monthly' : 'weekly',
-                              consequence_level: 'self',
-                              completed: false,
-                              archived: false,
-                              rollover_count: 0,
-                              priority_score: 0,
-                              notes: null,
-                              due_time: null,
-                              scheduled_for: scheduledFor.toISOString(),
-                              created_at: new Date().toISOString(),
-                              starred: false,
-                              task_type: 'chore',
-                              estimated_minutes: chore.estimated_minutes || null,
-                            }
-                          })
-                          await supabase.from('tasks').insert(choreTasks)
-                          await supabase.from('profiles').update({ chore_preset: preset.id }).eq('id', user.id)
-                          setProfile(prev => ({ ...prev, chore_preset: preset.id }))
-                          fetchTasks(user.id)
-                          showToast('Chore routine added to your tasks')
-                        }}>Set up</button>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+              {/* ── 7. LOG OUT ── */}
+              <button
+                className={styles.stgSignOutBtn}
+                onClick={async () => { await supabase.auth.signOut(); router.push('/login') }}
+              >
+                Log out
+              </button>
 
-              {/* How to get the most out of Cinis */}
-              <div className={styles.settingsSection}>
-                <button className={styles.settingsTipsToggle} onClick={() => setShowGuideModal(true)}>
-                  How to get the most out of Cinis →
-                </button>
-              </div>
             </div>
           </TabErrorBoundary>
           )}
@@ -3705,10 +4123,276 @@ export default function Dashboard() {
           {/* ── HABITS ── */}
           {activeTab === 'habits' && (
           <TabErrorBoundary tabName="Habits">
-            <div className={styles.view}>
-              <h1 className={styles.viewTitle}>Habits</h1>
-              <p style={{ color: 'rgba(240,234,214,0.45)', fontSize: 14 }}>Habit tracking is coming soon.</p>
-            </div>
+            {(() => {
+              const todayDateStr = todayStr()
+
+              // Habit IDs completed today (date-only comparison against completed_at)
+              const completedTodayIds = new Set(
+                habitCompletions
+                  .filter(c => c.completed_at && c.completed_at.slice(0, 10) === todayDateStr)
+                  .map(c => c.habit_id)
+              )
+
+              // Did user make a journal entry today?
+              const journaledToday = journalEntries.some(
+                e => e.created_at && e.created_at.slice(0, 10) === todayDateStr
+              )
+
+              // Progress bar: (habits done today + journaled today) / (total habits + 1)
+              const progressNumer = completedTodayIds.size + (journaledToday ? 1 : 0)
+              const progressDenom = habits.length + 1
+              const progressPct = progressDenom > 0 ? Math.round((progressNumer / progressDenom) * 100) : 0
+
+              // 7-day heat strip helpers
+              const last7 = Array.from({ length: 7 }, (_, i) => {
+                const d = new Date()
+                d.setDate(d.getDate() - (6 - i))
+                return localDateStr(d)
+              })
+
+              function getHabitHeat(habitId) {
+                return last7.map(dateStr =>
+                  habitCompletions.some(c => c.habit_id === habitId && c.completed_at && c.completed_at.slice(0, 10) === dateStr)
+                )
+              }
+
+              function getHabitStreak(habitId) {
+                let streak = 0
+                for (let i = 0; i < 60; i++) {
+                  const d = new Date()
+                  d.setDate(d.getDate() - i)
+                  const dateStr = localDateStr(d)
+                  const done = habitCompletions.some(c => c.habit_id === habitId && c.completed_at && c.completed_at.slice(0, 10) === dateStr)
+                  if (done) { streak++ }
+                  else if (i > 0) break
+                }
+                return streak
+              }
+
+              const toggleHabit = async (habitId) => {
+                const isCompleted = completedTodayIds.has(habitId)
+                // Optimistic update
+                if (isCompleted) {
+                  setHabitCompletions(prev => prev.filter(c =>
+                    !(c.habit_id === habitId && c.completed_at && c.completed_at.slice(0, 10) === todayDateStr)
+                  ))
+                } else {
+                  setHabitCompletions(prev => [...prev, { habit_id: habitId, user_id: user.id, completed_at: new Date().toISOString() }])
+                }
+                try {
+                  await loggedFetch('/api/habits/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, habitId, date: todayDateStr })
+                  })
+                } catch {
+                  // Revert on error
+                  if (isCompleted) {
+                    setHabitCompletions(prev => [...prev, { habit_id: habitId, user_id: user.id, completed_at: new Date().toISOString() }])
+                  } else {
+                    setHabitCompletions(prev => prev.filter(c =>
+                      !(c.habit_id === habitId && c.completed_at && c.completed_at.slice(0, 10) === todayDateStr)
+                    ))
+                  }
+                }
+              }
+
+              const deleteHabit = async (habitId) => {
+                setHabits(prev => prev.filter(h => h.id !== habitId))
+                await loggedFetch(`/api/habits?userId=${user.id}&habitId=${habitId}`, { method: 'DELETE' })
+              }
+
+              const sendHabitJournal = async () => {
+                if (!habitJournalText.trim()) return
+                setHabitJournalSending(true)
+                try {
+                  const moodPrefix = habitJournalMood ? `Mood: ${habitJournalMood}\n\n` : ''
+                  const res = await loggedFetch('/api/journal', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      content: moodPrefix + habitJournalText.trim(),
+                      conversationHistory: [],
+                      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    })
+                  })
+                  const data = await res.json()
+                  if (data.message) {
+                    setHabitJournalAiReply(data.message)
+                    setHabitJournalText('')
+                    fetchJournalEntries(user.id)
+                  }
+                } catch {}
+                setHabitJournalSending(false)
+              }
+
+              const MOOD_EMOJIS = ['😤', '😔', '😐', '🙂', '😄']
+              const PROMPT_CHIPS = ["What's on my mind", 'What went well', 'What was hard', 'What I need tomorrow']
+
+              return (
+                <div className={styles.view}>
+                  {/* Header */}
+                  <div className={styles.habitsViewHeader}>
+                    <h1 className={styles.greetingText} style={{ marginBottom: 0 }}>Habits</h1>
+                    <button className={styles.habitsAddBtn} onClick={() => setShowAddHabitOverlay(true)}>+ Add</button>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className={styles.habitsProgressWrap}>
+                    <div className={styles.habitsProgressMeta}>
+                      <span className={styles.habitsProgressLabel}>Today&apos;s progress</span>
+                      <span className={styles.habitsProgressPct}>{progressPct}%</span>
+                    </div>
+                    <div className={styles.habitsProgressTrack}>
+                      <div className={styles.habitsProgressFill} style={{ width: `${progressPct}%` }} />
+                    </div>
+                  </div>
+
+                  {/* Journal card */}
+                  <div className={styles.habitsJournalCard}>
+                    <button
+                      className={styles.habitsJournalToggle}
+                      onClick={() => setHabitJournalExpanded(e => !e)}
+                    >
+                      <div className={styles.habitsJournalLeft}>
+                        <span className={styles.habitsJournalIcon}>📔</span>
+                        <div>
+                          <div className={styles.habitsJournalTitle}>Daily Journal</div>
+                          <div className={styles.habitsJournalSub}>
+                            {journaledToday ? 'Entry saved today ✓' : 'Write today\'s entry'}
+                          </div>
+                        </div>
+                      </div>
+                      <span className={styles.habitsJournalChevron} style={{ transform: habitJournalExpanded ? 'rotate(180deg)' : 'none' }}>▾</span>
+                    </button>
+
+                    {habitJournalExpanded && (
+                      <div className={styles.habitsJournalBody}>
+                        {/* Mood picker */}
+                        <div className={styles.habitsMoodRow}>
+                          {MOOD_EMOJIS.map(emoji => (
+                            <button
+                              key={emoji}
+                              className={`${styles.habitsMoodBtn} ${habitJournalMood === emoji ? styles.habitsMoodBtnActive : ''}`}
+                              onClick={() => setHabitJournalMood(m => m === emoji ? null : emoji)}
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Prompt chips — show only when textarea is empty */}
+                        {!habitJournalText && (
+                          <div className={styles.habitsPromptChips}>
+                            {PROMPT_CHIPS.map(p => (
+                              <button key={p} className={styles.habitsPromptChip} onClick={() => setHabitJournalText(p + ': ')}>
+                                {p}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Textarea */}
+                        <textarea
+                          className={styles.habitsJournalTextarea}
+                          placeholder="What's on your mind today?"
+                          value={habitJournalText}
+                          onChange={e => setHabitJournalText(e.target.value)}
+                          rows={3}
+                        />
+
+                        {/* AI reply */}
+                        {habitJournalAiReply && (
+                          <div className={styles.habitsJournalAiReply}>
+                            <span className={styles.habitsJournalAiIcon}>✦</span>
+                            <p>{habitJournalAiReply}</p>
+                          </div>
+                        )}
+
+                        <button
+                          className={styles.habitsJournalSendBtn}
+                          onClick={sendHabitJournal}
+                          disabled={habitJournalSending || !habitJournalText.trim()}
+                        >
+                          {habitJournalSending ? 'Thinking…' : 'Save entry'}
+                        </button>
+
+                        {/* Recent entries */}
+                        {journalEntries.length > 0 && (
+                          <div className={styles.habitsRecentEntries}>
+                            <div className={styles.habitsRecentLabel}>Recent entries</div>
+                            {journalEntries.slice(0, 3).map(entry => (
+                              <div key={entry.id} className={styles.habitsRecentEntry}>
+                                <span className={styles.habitsRecentDate}>
+                                  {new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                </span>
+                                {entry.mood && <span className={styles.habitsRecentMood}>{entry.mood}</span>}
+                                <span className={styles.habitsRecentSnippet}>
+                                  {(entry.content || '').slice(0, 80)}{(entry.content || '').length > 80 ? '…' : ''}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Habits list */}
+                  {habitsLoaded && habits.length === 0 ? (
+                    <div className={styles.habitsEmptyState}>
+                      <div className={styles.habitsEmptyIcon}>🌱</div>
+                      <p className={styles.habitsEmptyText}>No habits yet.</p>
+                      <p className={styles.habitsEmptySub}>Add a habit you want to build or break.</p>
+                      <button className={styles.habitsEmptyAddBtn} onClick={() => setShowAddHabitOverlay(true)}>
+                        Add first habit
+                      </button>
+                    </div>
+                  ) : (
+                    <div className={styles.habitsList}>
+                      {habits.map(habit => {
+                        const done = completedTodayIds.has(habit.id)
+                        const heat = getHabitHeat(habit.id)
+                        const streak = getHabitStreak(habit.id)
+                        const isBreak = habit.habit_type === 'break'
+                        return (
+                          <div key={habit.id} className={`${styles.habitCard} ${done ? styles.habitCardDone : ''}`}>
+                            <button
+                              className={`${styles.habitCheck} ${done ? styles.habitCheckDone : ''}`}
+                              onClick={() => toggleHabit(habit.id)}
+                              aria-label={done ? 'Mark incomplete' : 'Mark complete'}
+                            >
+                              {done && '✓'}
+                            </button>
+                            <div className={styles.habitInfo}>
+                              <div className={styles.habitNameRow}>
+                                <span className={styles.habitName}>{habit.name}</span>
+                                <span className={`${styles.habitTypeBadge} ${isBreak ? styles.habitTypeBadgeBreak : styles.habitTypeBadgeBuild}`}>
+                                  {isBreak ? 'break' : 'build'}
+                                </span>
+                              </div>
+                              <div className={styles.habitHeatRow}>
+                                {heat.map((filled, i) => (
+                                  <div key={i} className={`${styles.habitHeatDot} ${filled ? styles.habitHeatDotFilled : ''}`} />
+                                ))}
+                                {streak > 0 && (
+                                  <span className={styles.habitStreak}>🔥 {streak}</span>
+                                )}
+                              </div>
+                            </div>
+                            <button
+                              className={styles.habitDeleteBtn}
+                              onClick={() => deleteHabit(habit.id)}
+                              aria-label="Remove habit"
+                            >×</button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
           </TabErrorBoundary>
           )}
 
@@ -4023,6 +4707,88 @@ export default function Dashboard() {
                   )}
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* ADD HABIT OVERLAY */}
+        {showAddHabitOverlay && (
+          <div className={styles.habitsOverlayBg} onClick={e => e.target === e.currentTarget && setShowAddHabitOverlay(false)}>
+            <div className={styles.habitsOverlaySheet}>
+              <div className={styles.habitsOverlayHeader}>
+                <span className={styles.habitsOverlayTitle}>New Habit</span>
+                <button className={styles.habitsOverlayClose} onClick={() => setShowAddHabitOverlay(false)}>×</button>
+              </div>
+              <div className={styles.habitsOverlayBody}>
+                <div className={styles.habitsField}>
+                  <label className={styles.habitsFieldLabel}>Habit name</label>
+                  <input
+                    className={styles.habitsFieldInput}
+                    placeholder="e.g. Drink 8 glasses of water"
+                    value={newHabitName}
+                    onChange={e => setNewHabitName(e.target.value)}
+                    onKeyDown={async e => {
+                      if (e.key === 'Enter' && newHabitName.trim() && !addingHabit) {
+                        setAddingHabit(true)
+                        try {
+                          const res = await loggedFetch('/api/habits', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userId: user.id, name: newHabitName.trim(), habit_type: newHabitType })
+                          })
+                          const data = await res.json()
+                          if (data.habit) {
+                            setHabits(prev => [...prev, data.habit])
+                            setNewHabitName('')
+                            setNewHabitType('build')
+                            setShowAddHabitOverlay(false)
+                          }
+                        } catch {}
+                        setAddingHabit(false)
+                      }
+                    }}
+                    autoFocus
+                  />
+                </div>
+                <div className={styles.habitsField}>
+                  <label className={styles.habitsFieldLabel}>Type</label>
+                  <div className={styles.habitsTypeRow}>
+                    <button
+                      className={`${styles.habitsTypeBtn} ${newHabitType === 'build' ? styles.habitsTypeBtnBuildActive : ''}`}
+                      onClick={() => setNewHabitType('build')}
+                    >🌱 Build</button>
+                    <button
+                      className={`${styles.habitsTypeBtn} ${newHabitType === 'break' ? styles.habitsTypeBtnBreakActive : ''}`}
+                      onClick={() => setNewHabitType('break')}
+                    >⛔ Break</button>
+                  </div>
+                </div>
+                <button
+                  className={styles.habitsOverlaySubmit}
+                  disabled={addingHabit || !newHabitName.trim()}
+                  onClick={async () => {
+                    if (!newHabitName.trim() || addingHabit) return
+                    setAddingHabit(true)
+                    try {
+                      const res = await loggedFetch('/api/habits', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: user.id, name: newHabitName.trim(), habit_type: newHabitType })
+                      })
+                      const data = await res.json()
+                      if (data.habit) {
+                        setHabits(prev => [...prev, data.habit])
+                        setNewHabitName('')
+                        setNewHabitType('build')
+                        setShowAddHabitOverlay(false)
+                      }
+                    } catch {}
+                    setAddingHabit(false)
+                  }}
+                >
+                  {addingHabit ? 'Adding…' : 'Add habit'}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -4397,8 +5163,8 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* GUIDE MODAL */}
-        {showGuideModal && (
+        {/* GUIDE MODAL (disabled when Guide tab active) */}
+        {showGuideModal && activeTab !== 'guide' && (
           <div className={styles.modalOverlay} onClick={e => e.target === e.currentTarget && setShowGuideModal(false)}>
             <div className={styles.modal} style={{ maxWidth: '640px' }}>
               <div className={styles.modalHeader}>

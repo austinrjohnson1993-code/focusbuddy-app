@@ -1,6 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
+import withAuth from '../../lib/authGuard'
 
-const ALLOWED_FIELDS = ['display_name', 'full_name', 'accent_color', 'persona_blend', 'persona_voice', 'checkin_times']
+const ALLOWED_FIELDS = [
+  'display_name', 'full_name', 'accent_color', 'persona_blend', 'persona_voice',
+  'checkin_times', 'morning_time', 'midday_time', 'evening_time',
+  'push_notifications_enabled', 'push_subscription', 'theme_id',
+]
 
 function getAdminClient() {
   return createClient(
@@ -9,63 +14,11 @@ function getAdminClient() {
   )
 }
 
-// Parse all cookies from the Cookie header into a key→value map
-function parseCookies(cookieHeader = '') {
-  return Object.fromEntries(
-    cookieHeader.split(';').map(c => {
-      const [k, ...v] = c.trim().split('=')
-      return [k.trim(), v.join('=')]
-    }).filter(([k]) => k)
-  )
-}
-
-// Try to extract a Supabase access_token from cookies
-// Supabase v2 stores auth as sb-<ref>-auth-token = JSON { access_token, ... }
-function extractTokenFromCookies(cookieHeader) {
-  if (!cookieHeader) return null
-  const cookies = parseCookies(cookieHeader)
-  const sessionKey = Object.keys(cookies).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'))
-  if (!sessionKey) return null
-  try {
-    const decoded = decodeURIComponent(cookies[sessionKey])
-    const parsed = JSON.parse(decoded)
-    // handle both direct object and array-wrapped formats
-    const session = Array.isArray(parsed) ? parsed[0] : parsed
-    return session?.access_token ?? null
-  } catch {
-    return null
-  }
-}
-
-export default async function handler(req, res) {
+async function handler(req, res, userId) {
   if (!['POST', 'PATCH'].includes(req.method)) return res.status(405).json({ error: 'Method not allowed' })
 
   console.log('[settings] received:', req.method, JSON.stringify(req.body))
 
-  // Extract token from Authorization header first, fall back to cookie
-  let token = req.headers.authorization?.replace('Bearer ', '').trim() || null
-  if (!token) {
-    token = extractTokenFromCookies(req.headers.cookie)
-    if (token) console.log('[settings] auth: token extracted from cookie')
-  }
-
-  if (!token) {
-    console.error('[settings] no token in Authorization header or cookies')
-    return res.status(401).json({ error: 'No auth token provided' })
-  }
-
-  console.log('[settings] token received:', !!token)
-
-  // Use service role client to verify the token — more reliable than anon client
-  const supabaseAdmin = getAdminClient()
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
-  console.log('[settings] user resolved:', !!user)
-  if (authError || !user) {
-    console.error('[settings] auth.getUser failed:', JSON.stringify(authError))
-    return res.status(401).json({ error: 'Unauthorized' })
-  }
-
-  // Build update object from only allowed fields present in req.body
   const source = req.body.updates && typeof req.body.updates === 'object' ? req.body.updates : req.body
   const updateObject = {}
   for (const key of ALLOWED_FIELDS) {
@@ -76,16 +29,19 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'No valid fields to update' })
   }
 
+  const supabaseAdmin = getAdminClient()
   const { error } = await supabaseAdmin
     .from('profiles')
     .update(updateObject)
-    .eq('id', user.id)
+    .eq('id', userId)
 
   if (error) {
     console.error('[settings] update failed:', JSON.stringify(error))
     return res.status(500).json({ error: 'Failed to update profile' })
   }
 
-  console.log('[settings] updated profile for', user.id, '— fields:', Object.keys(updateObject).join(', '))
+  console.log('[settings] updated profile for', userId, '— fields:', Object.keys(updateObject).join(', '))
   return res.status(200).json({ success: true, updated: updateObject })
 }
+
+export default withAuth(handler)
