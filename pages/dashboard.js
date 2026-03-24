@@ -241,7 +241,7 @@ function getTaskDateLabel(task) {
   return `${days[date.getDay()].slice(0,3)} ${months[date.getMonth()]} ${date.getDate()}`
 }
 
-// Custom hook for live countdowns — only ticks for today's tasks
+// Custom hook for live countdowns — ticks every second for today's tasks
 function useCountdown(targetTime) {
   const [timeLeft, setTimeLeft] = useState('')
   useEffect(() => {
@@ -251,14 +251,15 @@ function useCountdown(targetTime) {
       const target = new Date(targetTime)
       if (target.toDateString() !== now.toDateString()) { setTimeLeft(''); return }
       const diff = target - now
-      if (diff <= 0) { setTimeLeft('Now'); return }
-      const hours = Math.floor(diff / (1000 * 60 * 60))
-      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-      if (hours > 0) setTimeLeft(`in ${hours}h ${mins}m`)
-      else setTimeLeft(`in ${mins}m`)
+      if (diff <= 0) { setTimeLeft('Due now'); return }
+      const totalSecs = Math.floor(diff / 1000)
+      const h = Math.floor(totalSecs / 3600)
+      const m = Math.floor((totalSecs % 3600) / 60)
+      const s = totalSecs % 60
+      setTimeLeft(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`)
     }
     update()
-    const interval = setInterval(update, 30000)
+    const interval = setInterval(update, 1000)
     return () => clearInterval(interval)
   }, [targetTime])
   return timeLeft
@@ -609,7 +610,7 @@ export default function Dashboard() {
   const [journalEntries, setJournalEntries] = useState([])
   const [journalEntriesLoaded, setJournalEntriesLoaded] = useState(false)
   const [journalExpandedEntry, setJournalExpandedEntry] = useState(null)
-  const [journalPendingTask, setJournalPendingTask] = useState(null)
+  const [journalPendingTasks, setJournalPendingTasks] = useState([])
   const journalEndRef = useRef(null)
 
   // Focus mode
@@ -1706,7 +1707,15 @@ export default function Dashboard() {
         })
         const userMsgCount = journalMessages.filter(m => m.role === 'user').length + 1
         if (!journalReminderShown && userMsgCount >= 3) { setJournalReminderShown(true); setShowJournalReminder(true) }
-        if (data.detectedTasks?.length > 0) setJournalPendingTask(data.detectedTasks[0])
+        if (data.detectedTasks?.length > 0) {
+          const existingTitles = tasks
+            .filter(t => !t.completed && !t.archived)
+            .map(t => t.title.toLowerCase())
+          const newPending = data.detectedTasks.filter(dt =>
+            !existingTitles.some(et => et.includes(dt.title.toLowerCase()) || dt.title.toLowerCase().includes(et))
+          )
+          if (newPending.length > 0) setJournalPendingTasks(newPending)
+        }
       }
     } catch {
       setJournalMessages(prev => [...prev, { role: 'assistant', content: "I'm here. Keep going." }])
@@ -1714,16 +1723,28 @@ export default function Dashboard() {
     setJournalLoading(false)
   }
 
-  const addJournalTask = async () => {
-    if (!journalPendingTask) return
-    await addTaskQuick(journalPendingTask)
-    setJournalPendingTask(null)
+  const addJournalDetectedTask = async (task) => {
+    if (!task || !user) return
+    const todayNoon = new Date(); todayNoon.setHours(12, 0, 0, 0)
+    const { data: inserted } = await supabase.from('tasks').insert({
+      user_id: user.id,
+      title: task.title,
+      task_type: task.task_type || 'task',
+      scheduled_for: task.scheduled_for || todayNoon.toISOString(),
+      completed: false,
+      archived: false,
+      rollover_count: 0,
+      starred: false,
+      sort_order: 0,
+    }).select().single()
+    if (inserted) setTasks(prev => [inserted, ...prev])
+    setJournalPendingTasks(prev => prev.filter(t => t.title !== task.title))
   }
 
   const newJournalEntry = async () => {
     // Save current conversation to DB (already saved per message by API, just clear UI)
     setJournalMessages([])
-    setJournalPendingTask(null)
+    setJournalPendingTasks([])
     setJournalInput('')
     fetchJournalEntries(user.id)
   }
@@ -2438,6 +2459,8 @@ export default function Dashboard() {
     : 'Next up'
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const topTaskCountdown = useCountdown(topTask?.due_time)
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const s17StarredCountdown = useCountdown(s17StarredTask?.due_time)
 
   // Progress calculations
   const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
@@ -3494,16 +3517,30 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* Task extraction banner */}
-              {journalPendingTask && (
-                <div className={styles.journalTaskBanner}>
-                  <span className={styles.journalTaskBannerText}>I noticed a task: <strong>{journalPendingTask}</strong></span>
-                  <div className={styles.journalTaskBannerBtns}>
-                    <button onClick={addJournalTask} className={styles.journalTaskYes}>Add it</button>
-                    <button onClick={() => setJournalPendingTask(null)} className={styles.journalTaskNo}>Skip</button>
+              {/* Task extraction cards — one per detected task, deduped */}
+              {journalPendingTasks.map((task, i) => {
+                const taskDate = task.scheduled_for ? new Date(task.scheduled_for) : null
+                const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0)
+                const tomorrowMidnight = new Date(todayMidnight); tomorrowMidnight.setDate(tomorrowMidnight.getDate() + 1)
+                let dateLabel = ''
+                if (taskDate) {
+                  const d = new Date(taskDate); d.setHours(0, 0, 0, 0)
+                  if (d.getTime() === todayMidnight.getTime()) dateLabel = ' · today'
+                  else if (d.getTime() === tomorrowMidnight.getTime()) dateLabel = ' · tomorrow'
+                  else dateLabel = ` · ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                }
+                return (
+                  <div key={i} className={styles.journalTaskBanner}>
+                    <span className={styles.journalTaskBannerText}>
+                      Task detected: <strong>{task.title}</strong>{dateLabel}
+                    </span>
+                    <div className={styles.journalTaskBannerBtns}>
+                      <button onClick={() => addJournalDetectedTask(task)} className={styles.journalTaskYes}>Add</button>
+                      <button onClick={() => setJournalPendingTasks(prev => prev.filter(t => t.title !== task.title))} className={styles.journalTaskNo}>Skip</button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )
+              })}
 
               {/* Input */}
               {journalMessages.length > 1 && (

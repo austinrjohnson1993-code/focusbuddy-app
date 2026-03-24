@@ -16,12 +16,20 @@ function getAdminClient() {
 
 const CLOSING_PHRASES = ['see you', 'glad it landed', 'take care', 'good luck', 'until next time']
 
-function parseExtractedTasks(text) {
+function parseExtractedTasks(text, todayStr) {
   const tasks = []
-  const regex = /\[TASK:\s*(.+?)\]/g
+  // Format: [TASK: title | YYYY-MM-DD] — date portion is optional for backwards compat
+  const regex = /\[TASK:\s*(.+?)(?:\s*\|\s*(\d{4}-\d{2}-\d{2}))?\]/g
   let match
   while ((match = regex.exec(text)) !== null) {
-    tasks.push({ title: match[1].trim(), task_type: 'task' })
+    const title = match[1].trim()
+    const dateStr = match[2] || todayStr
+    let scheduledFor = null
+    try {
+      const d = new Date(`${dateStr}T12:00:00`)
+      if (!isNaN(d.getTime())) scheduledFor = d.toISOString()
+    } catch {}
+    tasks.push({ title, task_type: 'task', scheduled_for: scheduledFor })
   }
   return tasks
 }
@@ -110,9 +118,9 @@ async function handler(req, res, userId) {
 You are in journal mode. The user is thinking out loud. Listen first. Reflect back one specific observation about what they said. Ask one good question. Keep it under 3 sentences total.
 
 If they mention something that sounds like a task or action item, add it on its own line at the very end in exactly this format:
-[TASK: task name here]
+[TASK: task name here | YYYY-MM-DD]
 
-Only include a [TASK: ...] line if something genuinely actionable was mentioned. Do not invent tasks.${dedupContext}${dateContext}`
+Use ${todayStr} as the date if no specific date is mentioned, ${tomorrowStr} if they say "tomorrow". Only include a [TASK: ...] line if something genuinely actionable was mentioned. Do not invent tasks.${dedupContext}${dateContext}`
 
   const baselineContext = profile?.baseline_profile ? `USER COACHING PROFILE:\n${profile.baseline_profile}\n\n` : ''
   const systemPrompt = baselineContext + buildPersonaPrompt(profile) + JOURNAL_MODE
@@ -131,45 +139,10 @@ Only include a [TASK: ...] line if something genuinely actionable was mentioned.
     })
 
     const aiText = response.content.find(b => b.type === 'text')?.text ?? ''
-    const detectedTasks = parseExtractedTasks(aiText)
+    // Parse tasks — includes scheduled_for from [TASK: title | YYYY-MM-DD] format
+    const detectedTasks = parseExtractedTasks(aiText, todayStr)
     const displayText = aiText.replace(/\[TASK:\s*.+?\]/g, '').trim()
     const sanitizedContent = sanitizeContent(content)
-
-    // FIX 2 + FIX 3 — insert extracted tasks with date normalization and reminder scheduling
-    for (const { title, task_type } of detectedTasks) {
-      let scheduledFor = null
-
-      if (isJournalReminder(title)) {
-        // FIX 3 — journal reminder scheduling
-        if (isDailyReminder(title)) {
-          // daily reminder → tomorrow at noon
-          const rawDate = new Date(tomorrowStr)
-          rawDate.setHours(12, 0, 0, 0)
-          scheduledFor = rawDate.toISOString()
-        }
-        // weekly → scheduledFor stays null, no due_time
-      } else {
-        // FIX 2 — default to today at noon
-        const rawDate = new Date(todayStr)
-        rawDate.setHours(12, 0, 0, 0)
-        scheduledFor = rawDate.toISOString()
-      }
-
-      const { error: taskErr } = await supabaseAdmin
-        .from('tasks')
-        .insert({
-          user_id: userId,
-          title,
-          task_type,
-          scheduled_for: scheduledFor,
-          completed: false,
-          archived: false,
-        })
-
-      if (taskErr) {
-        console.error('[journal] task insert error:', JSON.stringify(taskErr))
-      }
-    }
 
     // FIX 4 — auto-log full conversation on detected close
     if (isConversationEnd(displayText)) {
