@@ -55,7 +55,7 @@ function loadChatHistory(key) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null } catch { return null }
 }
 function saveChatHistory(key, messages) {
-  try { localStorage.setItem(key, JSON.stringify(messages.slice(-20))) } catch {}
+  try { localStorage.setItem(key, JSON.stringify(messages.slice(-50))) } catch {}
 }
 
 const NAV_ITEMS = [
