@@ -9,7 +9,7 @@ import { saveTaskOrder } from '../lib/taskOrder'
 import { isDueSoon as billIsDueSoon, formatBillAmount, getBillCategory, getNextDueDate } from '../lib/billUtils'
 import { CHORE_PRESETS, getChoresByPreset } from '../lib/chores'
 import { requestNotificationPermission, disablePushNotifications } from '../lib/pushNotifications'
-import { CheckSquare, ChatCircle, Target, CalendarBlank, Notebook, Wallet, ChartLineUp, Plus, Trash, Archive, Star, Gear, MagnifyingGlass, X, CaretLeft, CaretRight, CaretDown, Receipt, Scales, Books, Robot, List, Timer, ChartBar, Lightning, ArrowCounterClockwise, CheckCircle, Microphone, UsersThree } from '@phosphor-icons/react'
+import { CheckSquare, ChatCircle, Target, CalendarBlank, Notebook, Wallet, ChartLineUp, Plus, Trash, Archive, Star, Gear, MagnifyingGlass, X, CaretLeft, CaretRight, CaretDown, Receipt, Scales, Books, Robot, List, Timer, ChartBar, Lightning, ArrowCounterClockwise, CheckCircle, Microphone, UsersThree, Fire } from '@phosphor-icons/react'
 import { showToast as libShowToast, ToastContainer } from '../lib/toast.js'
 
 const THEMES = [
@@ -492,10 +492,10 @@ const CINIS_MARK_SVG = (
   </svg>
 )
 
-function EmptyState({ headline, subtext, ctaLabel, onCtaClick, useMarkIcon }) {
+function EmptyState({ headline, subtext, ctaLabel, onCtaClick, useMarkIcon, customIcon }) {
   return (
     <div className={styles.emptyState}>
-      {useMarkIcon && <div className={styles.emptyMarkIcon}>{CINIS_MARK_SVG}</div>}
+      {customIcon ? <div className={styles.emptyMarkIcon}>{customIcon}</div> : useMarkIcon && <div className={styles.emptyMarkIcon}>{CINIS_MARK_SVG}</div>}
       <p className={styles.emptyHeadline}>{headline}</p>
       {subtext && <p className={styles.emptySubtext}>{subtext}</p>}
       {ctaLabel && onCtaClick && (
@@ -556,6 +556,15 @@ export default function Dashboard() {
   const [ciAiRateLocal, setCiAiRateLocal] = useState(null)
   const [ciRateLimitMsg, setCiRateLimitMsg] = useState(null)
   const [ciError, setCiError] = useState(null)
+  const [dismissedProactiveBadge, setDismissedProactiveBadge] = useState(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      const key = `cinis_dismissed_badge_${user?.id}_${new Date().toLocaleDateString('en-CA')}`
+      return localStorage.getItem(key) === 'true'
+    } catch {
+      return false
+    }
+  })
 
   // Persona settings modal
   const [showPersonaModal, setShowPersonaModal] = useState(false)
@@ -2884,10 +2893,23 @@ export default function Dashboard() {
                 </div>
 
                 {/* 4 — Proactive check-in badge */}
-                {showProactiveBadge && (
+                {showProactiveBadge && !dismissedProactiveBadge && (
                   <div className={styles.ciCheckinBadge}>
                     <span className={styles.ciCheckinDot} />
                     {getCheckinType() === 'morning' ? 'Morning' : getCheckinType() === 'midday' ? 'Midday' : 'Evening'} check-in · {checkinTimeStr}
+                    <button
+                      onClick={() => {
+                        try {
+                          const key = `cinis_dismissed_badge_${user.id}_${new Date().toLocaleDateString('en-CA')}`
+                          localStorage.setItem(key, 'true')
+                        } catch {}
+                        setDismissedProactiveBadge(true)
+                      }}
+                      className={styles.ciCheckinBadgeClose}
+                      aria-label="Dismiss check-in badge"
+                    >
+                      ✕
+                    </button>
                   </div>
                 )}
 
@@ -2937,7 +2959,7 @@ export default function Dashboard() {
 
                 {/* 6 — Quick chips */}
                 <div className={styles.ciChips}>
-                  {["What's my next move?", "I'm stuck", "What did I miss?"].map(chip => (
+                  {["What's my next move?", "I'm stuck", "What did I miss?", "Hype me up"].map(chip => (
                     <button key={chip} className={styles.ciChip} onClick={() => sendCheckinMsg(chip)}>
                       {chip}
                     </button>
@@ -3616,22 +3638,21 @@ export default function Dashboard() {
 
                 {/* 2 — XP bar */}
                 <div className={styles.pgSection}>
-                  <div className={styles.pgXpHeader}>
-                    <p className={styles.pgSectionLabel}>XP</p>
-                    <span className={styles.pgXpValue}>{totalXp.toLocaleString()} XP</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px', gap: '12px' }}>
+                    <p className={styles.pgSectionLabel}>{totalXp.toLocaleString()} XP</p>
+                    {nextMilestone && (
+                      <span style={{ fontSize: '12px', color: 'rgba(240,234,214,0.6)', whiteSpace: 'nowrap' }}>
+                        Next: {nextMilestone.label}
+                      </span>
+                    )}
                   </div>
                   <div className={styles.pgXpBarTrack}>
                     <div className={styles.pgXpBarFill} style={{ width: `${xpBarPct}%` }} />
-                    {XP_MILESTONES.map(m => (
-                      <div key={m.xp} className={styles.pgXpMilestoneMarker}
-                        style={{ left: `${Math.min((m.xp / 25000) * 100, 100)}%` }}>
-                        <div className={styles.pgXpMilestoneTick} />
-                        <span className={styles.pgXpMilestoneLabel}>{m.label}</span>
-                      </div>
-                    ))}
                   </div>
                   {xpToNext && (
-                    <p className={styles.pgXpNextLabel}>{xpToNext} XP to {nextMilestone.label}</p>
+                    <p style={{ textAlign: 'center', fontSize: '11px', color: 'rgba(240,234,214,0.35)', marginTop: '6px' }}>
+                      {xpToNext} XP to {nextMilestone.label}
+                    </p>
                   )}
                 </div>
 
@@ -3702,8 +3723,8 @@ export default function Dashboard() {
                       </div>
                       {monthBestDay && (
                         <div className={styles.pgMonthStat}>
-                          <span className={styles.pgMonthStatNum} style={{ fontSize: '0.9rem' }}>{monthBestDay[0]}</span>
-                          <span className={styles.pgMonthStatLabel}>{monthBestDay[1]} tasks (best day)</span>
+                          <span className={styles.pgMonthStatNum}>{monthBestDay[0]}</span>
+                          <span className={styles.pgMonthStatLabel}>{monthBestDay[1]} tasks (best)</span>
                         </div>
                       )}
                       <div className={styles.pgMonthStat}>
@@ -4714,10 +4735,10 @@ export default function Dashboard() {
                   {/* Habits list */}
                   {habitsLoaded && habits.length === 0 ? (
                     <EmptyState
-                      useMarkIcon
-                      headline="No habits yet."
-                      subtext="Add a habit you want to build or break."
-                      ctaLabel="Add first habit"
+                      customIcon={<Fire size={32} weight="fill" color="#FF6644" />}
+                      headline="Build your first habit"
+                      subtext="Small streaks compound. Start with one."
+                      ctaLabel="+ Add habit"
                       onCtaClick={() => setShowAddHabitOverlay(true)}
                     />
                   ) : (

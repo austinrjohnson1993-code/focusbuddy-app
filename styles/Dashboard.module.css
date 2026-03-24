@@ -3759,6 +3759,20 @@
   background: #4CAF50;
   flex-shrink: 0;
 }
+.ciCheckinBadgeClose {
+  background: none;
+  border: none;
+  color: rgba(240,234,214,0.5);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  margin-left: 4px;
+  transition: color 0.15s ease;
+  flex-shrink: 0;
+}
+.ciCheckinBadgeClose:hover {
+  color: rgba(240,234,214,0.8);
+}
 
 /* ── Conversation area ── */
 .ciMessages {
@@ -4500,7 +4514,9 @@
 .pgMonthStat {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+  flex: 1;
+  min-width: 80px;
 }
 .pgMonthStatNum {
   font-family: 'Sora', sans-serif;
