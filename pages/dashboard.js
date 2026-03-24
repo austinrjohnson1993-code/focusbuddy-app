@@ -746,7 +746,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (activeTab === 'checkin' && !checkinInitialized && user) {
       setCheckinInitialized(true)
-      const historyKey = `focusbuddy_checkin_history_${user.id}`
+      const historyKey = `cinis_checkin_history_${user.id}`
       const saved = loadChatHistory(historyKey)
       if (saved && saved.length > 0) {
         setCheckinMessages(saved)
@@ -784,7 +784,7 @@ export default function Dashboard() {
     if (activeTab === 'journal' && user) {
       fetchJournalEntries(user.id)
       fetchJournalHistory(user.id)
-      const journalKey = `focusbuddy_journal_history_${user.id}`
+      const journalKey = `cinis_journal_history_${user.id}`
       const saved = loadChatHistory(journalKey)
       if (saved && saved.length > 0) setJournalMessages(saved)
     }
@@ -1103,7 +1103,7 @@ export default function Dashboard() {
     setActiveAlarmBanner(alarm)
     // Browser notification
     if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      new Notification(alarm.title, { body: 'FocusBuddy reminder', icon: '/favicon.ico' })
+      new Notification(alarm.title, { body: 'Cinis reminder', icon: '/favicon.ico' })
     }
     // Web Audio beep
     try {
@@ -1273,7 +1273,7 @@ export default function Dashboard() {
   const sendCheckinMessage = async (e) => {
     e.preventDefault()
     if (!checkinInput.trim() || checkinLoading) return
-    const historyKey = `focusbuddy_checkin_history_${user.id}`
+    const historyKey = `cinis_checkin_history_${user.id}`
     const userMsg = { role: 'user', content: checkinInput.trim() }
     const updated = [...checkinMessages, userMsg]
     setCheckinMessages(updated); setCheckinInput(''); setCheckinLoading(true)
@@ -1306,7 +1306,7 @@ export default function Dashboard() {
   const sendJournalMessage = async (e) => {
     e.preventDefault()
     if (!journalInput.trim() || journalLoading) return
-    const journalKey = `focusbuddy_journal_history_${user.id}`
+    const journalKey = `cinis_journal_history_${user.id}`
     const content = journalInput.trim()
     const newMsg = { role: 'user', content }
     setJournalMessages(prev => [...prev, newMsg])
@@ -2099,19 +2099,33 @@ export default function Dashboard() {
 
   if (loading) return (
     <div className={styles.loadingPage}>
-      <span className="brand"><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
+      <span style={{ fontFamily: "'Sora', sans-serif", fontWeight: 600, fontSize: '1.3rem', letterSpacing: '0.16em', color: '#F0EAD6' }}>CINIS</span>
     </div>
   )
 
   return (
     <>
-      <Head><title>Dashboard — FocusBuddy</title></Head>
+      <Head><title>Dashboard — Cinis</title></Head>
       <div className={styles.appShell}>
 
         {/* SIDEBAR */}
         <aside className={styles.sidebar}>
           <div className={styles.sidebarLogo}>
-            <span className="brand" style={{ color: 'var(--logo-color, var(--accent))' }}><span className="focus">Focus</span><span className="buddy">Buddy</span></span>
+            <svg width="24" height="24" viewBox="0 0 64 64" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+              <polygon points="32,2 56,15 56,43 32,56 8,43 8,15" fill="none" stroke="#FF6644" strokeWidth="1.1" opacity="0.45"/>
+              <polygon points="32,4 54,16 54,42 32,54 10,42 10,16" fill="#FF6644"/>
+              <polygon points="32,7 51,18 51,40 32,52 13,40 13,18" fill="#120704"/>
+              <polygon points="32,14 46,22 46,40 32,48 18,40 18,22" fill="#5A1005"/>
+              <polygon points="32,20 42,26 42,40 32,45 22,40 22,26" fill="#A82010"/>
+              <polygon points="32,26 38,29 38,40 32,43 26,40 26,29" fill="#E8321A"/>
+              <polygon points="32,29 45,40 40,43 32,47 24,43 19,40" fill="#FF6644" opacity="0.92"/>
+              <polygon points="32,33 41,40 38,42 32,45 26,42 23,40" fill="#FFD0C0" opacity="0.76"/>
+              <polygon points="32,36 37,40 36,41 32,43 28,41 27,40" fill="#FFF0EB" opacity="0.60"/>
+            </svg>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontFamily: "'Sora', sans-serif", fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.16em', color: '#F0EAD6' }}>CINIS</span>
+              <span style={{ fontFamily: "'Figtree', sans-serif", fontSize: '0.62rem', color: 'rgba(240,234,214,0.3)', letterSpacing: '0.01em', lineHeight: 1 }}>Where start meets finished.</span>
+            </div>
           </div>
           <nav className={styles.sidebarNav}>
             {NAV_ITEMS.map(item => (
@@ -2429,7 +2443,7 @@ export default function Dashboard() {
                 </div>
                 {checkinMessages.length > 1 && (
                   <button className={styles.clearHistoryBtn} onClick={() => {
-                    try { localStorage.removeItem(`focusbuddy_checkin_history_${user.id}`) } catch {}
+                    try { localStorage.removeItem(`cinis_checkin_history_${user.id}`) } catch {}
                     setCheckinMessages([])
                     setCheckinInitialized(false)
                   }}>Clear history</button>
@@ -2535,7 +2549,7 @@ export default function Dashboard() {
                       )}
                       {focusPhase === 'stuck' && (
                         <div className={styles.focusStuck}>
-                          <p className={styles.focusStuckLabel}>FocusBuddy</p>
+                          <p className={styles.focusStuckLabel}>Cinis</p>
                           {focusAiLoading ? <div className={styles.focusStuckBubble}><span className={styles.checkinTyping}>···</span></div>
                             : <div className={styles.focusStuckBubble}>{focusAiResponse}</div>}
                           <div className={styles.focusStuckActions}>
@@ -2917,7 +2931,7 @@ export default function Dashboard() {
               {/* Input */}
               {journalMessages.length > 1 && (
                 <button className={styles.clearHistoryBtn} onClick={() => {
-                  try { localStorage.removeItem(`focusbuddy_journal_history_${user.id}`) } catch {}
+                  try { localStorage.removeItem(`cinis_journal_history_${user.id}`) } catch {}
                   setJournalMessages([])
                 }}>Clear history</button>
               )}
@@ -3340,10 +3354,10 @@ export default function Dashboard() {
                 })}
               </div>
 
-              {/* How to get the most out of FocusBuddy */}
+              {/* How to get the most out of Cinis */}
               <div className={styles.settingsSection}>
                 <button className={styles.settingsTipsToggle} onClick={() => setShowGuideModal(true)}>
-                  How to get the most out of FocusBuddy →
+                  How to get the most out of Cinis →
                 </button>
               </div>
             </div>
@@ -4388,17 +4402,17 @@ export default function Dashboard() {
           <div className={styles.modalOverlay} onClick={e => e.target === e.currentTarget && setShowGuideModal(false)}>
             <div className={styles.modal} style={{ maxWidth: '640px' }}>
               <div className={styles.modalHeader}>
-                <h2 className={styles.modalTitle}>FocusBuddy Guide</h2>
+                <h2 className={styles.modalTitle}>Cinis Guide</h2>
                 <button onClick={() => setShowGuideModal(false)} className={styles.modalClose}>×</button>
               </div>
               <div className={styles.guideContent}>
                 {[
-                  { title: 'What is FocusBuddy?', body: "FocusBuddy is a personal productivity coach that works like a smart friend, not a corporate app. It knows your tasks, understands how you work, and checks in with you to keep things moving — morning, midday, and evening.\n\nIt's built for people who struggle with task initiation, time blindness, or just need accountability that doesn't feel like a burden." },
-                  { title: 'The Check-in', body: "Three times a day, FocusBuddy reaches out — morning to set your priority, midday to check on progress, evening to wrap up. Each check-in is a real conversation. Tell it what happened, what's blocked, or what moved. It adjusts your task list automatically." },
+                  { title: 'What is Cinis?', body: "Cinis is a personal productivity coach that works like a smart friend, not a corporate app. It knows your tasks, understands how you work, and checks in with you to keep things moving — morning, midday, and evening.\n\nIt's built for people who struggle with task initiation, time blindness, or just need accountability that doesn't feel like a burden." },
+                  { title: 'The Check-in', body: "Three times a day, Cinis reaches out — morning to set your priority, midday to check on progress, evening to wrap up. Each check-in is a real conversation. Tell it what happened, what's blocked, or what moved. It adjusts your task list automatically." },
                   { title: 'Your Task Deck', body: 'Tasks are ranked by priority score — external commitments, overdue items, and rolled-over tasks rise to the top. You can drag to reorder. Add tasks by typing or by speaking (tap the mic). Voice input understands natural language like "dentist appointment Friday at 3pm".' },
-                  { title: 'Focus Sessions', body: 'The Focus tab starts a countdown timer for your top task — 15, 25, or 45 minutes. When it ends, you report how it went. "Nailed it" marks the task complete. "Made progress" keeps it active. "Got stuck" routes you to a coaching response from FocusBuddy.' },
+                  { title: 'Focus Sessions', body: 'The Focus tab starts a countdown timer for your top task — 15, 25, or 45 minutes. When it ends, you report how it went. "Nailed it" marks the task complete. "Made progress" keeps it active. "Got stuck" routes you to a coaching response from Cinis.' },
                   { title: 'The Journal', body: 'Journal is a private space to think out loud. The AI listens, reflects back what it notices, and asks one good question. If you mention something that sounds like a task, it offers to add it. Your past entries are saved below each session.' },
-                  { title: 'Your Persona', body: 'FocusBuddy has 6 coaching styles: Drill Sergeant (blunt, direct), Coach (warm, strategic), Thinking Partner (asks questions), Hype Person (celebrates every win), Strategist (systems and logic), and The Empath (emotionally attuned, meets you where you are). Mix up to 3 — your first choice is dominant.' },
+                  { title: 'Your Persona', body: 'Cinis has 6 coaching styles: Drill Sergeant (blunt, direct), Coach (warm, strategic), Thinking Partner (asks questions), Hype Person (celebrates every win), Strategist (systems and logic), and The Empath (emotionally attuned, meets you where you are). Mix up to 3 — your first choice is dominant.' },
                   { title: 'Finance Tracker', body: 'Track your recurring bills, see your monthly burn rate, and get a breakdown by category. Voice input understands "Netflix $15 on the 5th of every month". Bill due dates show as teal dots on the calendar.' },
                   { title: 'Coming Soon', body: '• SMS check-ins — daily texts without opening the app\n• Wearable integrations — Fitbit and Oura readiness scores in your check-in\n• Calendar sync — two-way Google Calendar integration\n• Spotify / Apple Music — curated focus playlists in the Focus tab' },
                 ].map(({ title, body }) => (
@@ -4416,9 +4430,9 @@ export default function Dashboard() {
         {showTutorial && (() => {
           const TUTORIAL_STEPS = [
             { icon: '☑️', title: 'Your Task Deck', body: 'Add tasks by typing or tapping the mic. Star a task to set it as your priority focus. Drag to reorder. Tap any task to edit details, set a due time, or add notes.' },
-            { icon: '💬', title: 'Your AI Coach Checks In', body: 'Three times a day — morning, midday, and evening — FocusBuddy reaches out. It knows your task list and coaches you in your style. The more you engage, the smarter it gets.' },
-            { icon: '🎯', title: 'Lock In With Focus Mode', body: 'Pick a task, pick a duration (5 to 60 minutes), and go. When time\'s up, tell FocusBuddy how it went. Nailed it, made progress, or got stuck — each response shapes what happens next.' },
-            { icon: '📓', title: 'Think Out Loud', body: 'The journal is your private space. FocusBuddy listens, reflects back what it notices, and asks one good question. If you mention something that sounds like a task, it offers to add it. Entries are saved automatically.' },
+            { icon: '💬', title: 'Your AI Coach Checks In', body: 'Three times a day — morning, midday, and evening — Cinis reaches out. It knows your task list and coaches you in your style. The more you engage, the smarter it gets.' },
+            { icon: '🎯', title: 'Lock In With Focus Mode', body: 'Pick a task, pick a duration (5 to 60 minutes), and go. When time\'s up, tell Cinis how it went. Nailed it, made progress, or got stuck — each response shapes what happens next.' },
+            { icon: '📓', title: 'Think Out Loud', body: 'The journal is your private space. Cinis listens, reflects back what it notices, and asks one good question. If you mention something that sounds like a task, it offers to add it. Entries are saved automatically.' },
           ]
           const step = TUTORIAL_STEPS[tutorialStep]
           const isLast = tutorialStep === TUTORIAL_STEPS.length - 1
