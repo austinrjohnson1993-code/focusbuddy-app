@@ -106,7 +106,7 @@ const TOOLS = [
       type: 'object',
       properties: {
         title: { type: 'string', description: 'The task title' },
-        due_time: { type: 'string', description: "Optional time string like '6:00 PM'" },
+        due_time: { type: 'string', description: 'ISO datetime string for the due time (e.g. 2026-03-24T18:00:00.000Z). Combine scheduled_for date with the time the user specified.' },
         scheduled_for: { type: 'string', description: 'ISO date string for when to schedule it, defaults to today' }
       },
       required: ['title']
@@ -323,12 +323,31 @@ async function executeTool(toolName, input, supabaseAdmin, userId) {
     const normalized = new Date(rawDate)
     normalized.setHours(12, 0, 0, 0)
     const scheduledFor = normalized.toISOString()
+
+    // Normalize due_time: must be a valid ISO datetime for the DB timestamptz column.
+    // If AI sends a human-readable time like "6:00 PM", convert it using scheduled_for
+    // as the date base. If it still can't be parsed, fall back to null.
+    let dueTimeISO = null
+    if (input.due_time) {
+      const parsed = new Date(input.due_time)
+      if (!isNaN(parsed.getTime())) {
+        dueTimeISO = parsed.toISOString()
+      } else {
+        // Looks like a bare time string — combine with scheduled_for date
+        try {
+          const dateBase = scheduledFor.slice(0, 10) // YYYY-MM-DD
+          const combined = new Date(`${dateBase} ${input.due_time}`)
+          if (!isNaN(combined.getTime())) dueTimeISO = combined.toISOString()
+        } catch {}
+      }
+    }
+
     const { data, error } = await supabaseAdmin
       .from('tasks')
       .insert({
         user_id: userId,
         title: input.title,
-        due_time: input.due_time || null,
+        due_time: dueTimeISO,
         scheduled_for: scheduledFor,
         completed: false,
         archived: false
