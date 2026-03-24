@@ -5,6 +5,7 @@ const ALLOWED_FIELDS = [
   'full_name', 'accent_color', 'persona_blend', 'persona_voice',
   'checkin_times', 'morning_time', 'midday_time', 'evening_time',
   'push_notifications_enabled', 'push_subscription', 'theme_id',
+  'monthly_income', 'income_frequency',
 ]
 
 function getAdminClient() {

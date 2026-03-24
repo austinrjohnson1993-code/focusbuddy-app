@@ -2124,6 +2124,50 @@
   padding: 32px 0;
 }
 
+/* Income setup card */
+.budgetSetupCard {
+  background: rgba(255, 102, 68, 0.08);
+  border: 1px solid rgba(255, 102, 68, 0.15);
+  border-radius: 12px;
+  padding: 16px 14px;
+  margin-bottom: 16px;
+}
+
+.budgetSetupLabel {
+  font-family: 'Figtree', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #F0EAD6;
+  margin-bottom: 12px;
+}
+
+.incomeInputRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.incomeInput {
+  background: rgba(34, 22, 8, 0.8);
+  border: 1px solid rgba(255, 200, 120, 0.12);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #F0EAD6;
+  flex: 1;
+  max-width: 200px;
+}
+
+.incomeInput:focus {
+  outline: none;
+  border-color: rgba(255, 102, 68, 0.3);
+  background: rgba(34, 22, 8, 1);
+}
+
+.incomeInput::placeholder {
+  color: rgba(240, 234, 214, 0.25);
+}
+
 /* ════════════════════════════════════════════
    FINANCE — LEARN TAB
    ════════════════════════════════════════════ */

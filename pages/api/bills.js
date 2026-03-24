@@ -101,6 +101,47 @@ export default async function handler(req, res) {
     }
 
     console.log(`[bills:POST] Created bill "${data.name}" for ${userId}`)
+
+    // Auto-create task if auto_task is true
+    if (data.auto_task && data.due_day) {
+      const now = new Date()
+      const currentMonth = now.getMonth()
+      const currentYear = now.getFullYear()
+      const billDueDate = new Date(currentYear, currentMonth, data.due_day)
+
+      // If due date has already passed this month, schedule for next month
+      if (billDueDate < now) {
+        billDueDate.setMonth(billDueDate.getMonth() + 1)
+      }
+
+      const scheduledFor = billDueDate.toISOString().split('T')[0]
+
+      const taskObj = {
+        user_id: userId,
+        title: `Pay ${data.name}`,
+        scheduled_for: scheduledFor,
+        completed: false,
+        archived: false,
+        task_type: 'bill',
+        notes: `$${data.amount.toFixed(2)} due`,
+      }
+
+      console.log('[bills:POST] Creating auto task:', JSON.stringify(taskObj))
+
+      const { data: taskData, error: taskError } = await supabaseAdmin
+        .from('tasks')
+        .insert(taskObj)
+        .select()
+        .single()
+
+      if (taskError) {
+        console.error('[bills:POST] auto-task creation error:', JSON.stringify(taskError))
+        // Don't fail the bill creation if task creation fails
+      } else {
+        console.log(`[bills:POST] Created auto-task for bill "${data.name}"`)
+      }
+    }
+
     return res.status(200).json({ success: true, bill: data })
   }
 

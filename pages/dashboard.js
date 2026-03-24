@@ -4504,6 +4504,60 @@ export default function Dashboard() {
                     </div>
                     <button onClick={() => setShowAddBillModal(true)} className={styles.addTaskBtn}>+ Add bill</button>
                   </div>
+
+                  {/* Income setup card - shows when monthly_income is null */}
+                  {!profile?.monthly_income && (
+                    <div className={styles.budgetSetupCard}>
+                      <p className={styles.budgetSetupLabel}>What's your monthly take-home pay?</p>
+                      <div className={styles.incomeInputRow}>
+                        <span style={{ fontFamily: 'Sora, sans-serif', fontSize: '12px', color: 'rgba(240,234,214,0.4)' }}>$</span>
+                        <input
+                          type="number"
+                          placeholder="0"
+                          min="0"
+                          step="1"
+                          value={monthlyIncomeInput}
+                          onChange={e => setMonthlyIncomeInput(e.target.value)}
+                          style={{ fontFamily: 'Sora, sans-serif', fontSize: '18px', color: '#F0EAD6' }}
+                          className={styles.incomeInput}
+                        />
+                      </div>
+                      <div className={styles.toggleRow} style={{ marginTop: '14px', marginBottom: '14px' }}>
+                        {[['weekly','Weekly'],['biweekly','Bi-weekly'],['bimonthly','Twice/mo'],['monthly','Monthly']].map(([val, lbl]) => (
+                          <button key={val} type="button" onClick={() => setIncomeFrequency(val)}
+                            className={`${styles.toggleBtn} ${incomeFrequency === val ? styles.toggleBtnActive : ''}`}>
+                            {lbl}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        className={styles.addTaskBtn}
+                        onClick={async () => {
+                          const val = parseFloat(monthlyIncomeInput) || 0
+                          if (val > 0 && user) {
+                            try {
+                              const res = await loggedFetch('/api/settings', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ monthly_income: val, income_frequency: incomeFrequency })
+                              })
+                              if (res.ok) {
+                                setProfile(prev => ({ ...prev, monthly_income: val, income_frequency: incomeFrequency }))
+                                setMonthlyIncomeInput('')
+                                showToast('Income saved')
+                              }
+                            } catch (err) {
+                              console.error('Income save failed:', err)
+                              showToast('Failed to save income')
+                            }
+                          }
+                        }}
+                      >
+                        Save
+                      </button>
+                    </div>
+                  )}
+
                   <>
                       {/* Bills by category */}
                       {Object.entries(billsByCategory).map(([cat, catBills]) => (
