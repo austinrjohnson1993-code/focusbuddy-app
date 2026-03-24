@@ -27,6 +27,14 @@ EMPATH: "Really glad you got the dentist call done — that one takes courage. T
 
 If the user's primary persona is drill_sergeant, write like the DRILL_SERGEANT example. Do not soften. Do not add warmth unless coach is in the blend. Commit fully to the voice.`
 
+const TOOL_USE_RULES = `TOOL USE RULES — CRITICAL:
+When the user confirms a time, date, or scheduling decision during conversation, you MUST immediately call the appropriate tool — do not just acknowledge it conversationally. Examples:
+- User says "let's do 6pm" → call reschedule_task with due_time = 6pm today
+- User says "add that to my list" → call create_task immediately
+- User says "mark that done" → call complete_task immediately
+- User says "push it to tomorrow" → call reschedule_task with tomorrow's date
+Never say "I'll add that" or "I've scheduled that" without actually calling the tool. Talk is not action. Use the tool.`
+
 const TOOLS = [
   {
     name: 'reschedule_task',
@@ -564,7 +572,7 @@ export default async function handler(req, res) {
   const personaPriority = isDrillSergeant
     ? `PRIMARY PERSONA: DRILL SERGEANT. HARD RULES — NO EXCEPTIONS:\n- NEVER open with praise, "nice work", "good job", or any positive affirmation\n- NEVER end with a question — give a command instead\n- Use SHORT sentences. Maximum 8 words per sentence.\n- ALWAYS start with the task status or next action, not acknowledgment\n- WRONG: "Nice work on the dentist call. What's next?"\n- RIGHT: "Dentist done. Insurance call is overdue. Make it now."\n\n`
     : `The user's PRIMARY persona is ${personaBlend[0]} — this voice must dominate. Secondary personas add subtle flavor only.\n\n`
-  const systemPrompt = baselineContext + liveContext + memoryContext + personaPriority + PERSONA_VOICE_INSTRUCTION + '\n\n' + buildPersonaPrompt(profile)
+  const systemPrompt = baselineContext + liveContext + memoryContext + personaPriority + PERSONA_VOICE_INSTRUCTION + '\n\n' + TOOL_USE_RULES + '\n\n' + buildPersonaPrompt(profile)
 
   console.log('[checkin:systemPrompt]', systemPrompt.slice(0, 1000))
 
