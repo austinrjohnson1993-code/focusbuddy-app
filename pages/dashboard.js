@@ -736,6 +736,21 @@ export default function Dashboard() {
   const [billType, setBillType] = useState('bill')
   const [billInterestRate, setBillInterestRate] = useState('')
 
+  // Finance Budget sub-tab
+  const [spendLog, setSpendLog] = useState([])
+  const [todaySpendTotal, setTodaySpendTotal] = useState(0)
+  const [spendLoaded, setSpendLoaded] = useState(false)
+  const [spendInput, setSpendInput] = useState('')
+  const [spendAmount, setSpendAmount] = useState('')
+  const [spendCategory, setSpendCategory] = useState('')
+  const [spendImpulse, setSpendImpulse] = useState(false)
+  const [spendLogging, setSpendLogging] = useState(false)
+  const [paydayDay, setPaydayDay] = useState(0)
+  const [paydayDayInput, setPaydayDayInput] = useState('')
+  // Finance Plans sub-tab (calculators)
+  const [expandedPlanCalc, setExpandedPlanCalc] = useState(null)
+  const [planCalcInputs, setPlanCalcInputs] = useState({})
+
   // Journal history (up to 20 past entries)
   const [journalHistory, setJournalHistory] = useState([])
 
@@ -1086,6 +1101,13 @@ export default function Dashboard() {
     }
   }, [activeTab, user])
 
+  // Finance: load spend log when budget or insights sub-tab activates
+  useEffect(() => {
+    if (activeTab === 'finance' && (financeSub === 'budget' || financeSub === 'insights') && user && !spendLoaded) {
+      fetchSpendLog()
+    }
+  }, [activeTab, financeSub, user])
+
   // Cleanup focus timer on unmount
   useEffect(() => {
     return () => clearInterval(focusIntervalRef.current)
@@ -1135,6 +1157,9 @@ export default function Dashboard() {
       setMonthlyIncomeInput(saved > 0 ? String(saved) : '')
       const freq = localStorage.getItem('fb_income_frequency') || 'monthly'
       setIncomeFrequency(freq)
+      const pd = parseInt(localStorage.getItem('fb_payday_day') || '0') || 0
+      setPaydayDay(pd)
+      setPaydayDayInput(pd > 0 ? String(pd) : '')
     }
   }, [])
 
@@ -2028,6 +2053,45 @@ export default function Dashboard() {
   const deleteBill = async (id) => {
     await supabase.from('bills').delete().eq('id', id)
     setBills(prev => prev.filter(b => b.id !== id))
+  }
+
+  const fetchSpendLog = async () => {
+    setSpendLoaded(true)
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Chicago'
+      const res = await loggedFetch(`/api/finance/spend?timezone=${encodeURIComponent(tz)}`)
+      if (!res.ok) return
+      const data = await res.json()
+      setSpendLog(data.entries || [])
+      setTodaySpendTotal(data.today_total || 0)
+    } catch {}
+  }
+
+  const logSpend = async (e) => {
+    e.preventDefault()
+    if (!spendAmount || !user) return
+    setSpendLogging(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) return
+      const res = await loggedFetch('/api/finance/spend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ amount: parseFloat(spendAmount), category: spendCategory || null, description: spendInput || null, impulse: spendImpulse }),
+      })
+      if (!res.ok) { showToast('Failed to log spend'); return }
+      const data = await res.json()
+      if (data.entry) {
+        setSpendLog(prev => [data.entry, ...prev])
+        setTodaySpendTotal(prev => prev + parseFloat(data.entry.amount))
+        setSpendAmount('')
+        setSpendInput('')
+        setSpendCategory('')
+        setSpendImpulse(false)
+        showToast('Spend logged')
+      }
+    } catch { showToast('Failed to log spend') }
+    setSpendLogging(false)
   }
 
   const patchSettings = async (updates) => {
@@ -4457,7 +4521,7 @@ export default function Dashboard() {
 
               {/* Sub-tab nav */}
               <div className={styles.financeSubTabs}>
-                {[['bills',<Receipt size={18} />,'Bills'],['plans',<Scales size={18} />,'Plans'],['knowledge',<Books size={18} />,'Knowledge'],['insights',<Robot size={18} />,'Insights']].map(([id, icon, label]) => (
+                {[['bills',<Receipt size={18} />,'Bills'],['budget',<Wallet size={18} />,'Budget'],['plans',<Scales size={18} />,'Plans'],['insights',<ChartLineUp size={18} />,'Insights']].map(([id, icon, label]) => (
                   <button key={id} onClick={() => setFinanceSub(id)}
                     className={`${styles.financeSubTab} ${financeSub === id ? styles.financeSubTabActive : ''}`}>
                     <span className={styles.subTabIcon}>{icon}</span>
@@ -4624,47 +4688,119 @@ export default function Dashboard() {
               )}
 
               {/* ── BUDGET ── */}
-              {financeSub === 'plans' && (() => {
+              {financeSub === 'budget' && (() => {
                 const freqMultiplier = { weekly: 4.33, biweekly: 2.17, bimonthly: 2, monthly: 1 }[incomeFrequency] || 1
                 const normalizedIncome = monthlyIncome * freqMultiplier
+                const surplus = normalizedIncome - monthlyTotal
+                // Daily number
+                let daysLeft = 30
+                if (paydayDay) {
+                  const today = new Date()
+                  let nextPayday = new Date(today.getFullYear(), today.getMonth(), paydayDay)
+                  if (nextPayday <= today) nextPayday = new Date(today.getFullYear(), today.getMonth() + 1, paydayDay)
+                  daysLeft = Math.max(1, Math.ceil((nextPayday - today) / (1000 * 60 * 60 * 24)))
+                }
+                const dailyNumber = surplus > 0 && normalizedIncome > 0 ? surplus / daysLeft : 0
+                const remaining = dailyNumber - todaySpendTotal
                 return (
-                <div className={styles.budgetPanel}>
-                  {/* Learn referral callout */}
-                  {learnReferral && (
-                    <div className={styles.learnReferralBanner}>
-                      <button className={styles.learnReferralClose} onClick={() => setLearnReferral(null)}>×</button>
-                      {learnReferral === '50-30-20' && (normalizedIncome > 0
-                        ? <p>Based on 50/30/20 — Your needs budget is <strong>{fmtMoney(normalizedIncome * 0.5)}</strong>, wants <strong>{fmtMoney(normalizedIncome * 0.3)}</strong>, savings <strong>{fmtMoney(normalizedIncome * 0.2)}</strong>. Your fixed bills of <strong>{fmtMoney(monthlyTotal)}</strong> fit within your needs allocation.</p>
-                        : <p>Add your income above to see this calculation.</p>
-                      )}
-                      {learnReferral === 'debt-avalanche' && (() => {
-                        const debts = bills.filter(b => b.bill_type === 'loan' || b.bill_type === 'credit_card').filter(b => b.interest_rate > 0).sort((a, b) => b.interest_rate - a.interest_rate)
-                        if (debts.length === 0) return <p>Add interest rates to your loans and debts in the Bills tab to see your payoff order.</p>
-                        return <p>Debt Avalanche order: {debts.map(d => d.name).join(' → ')}. Pay minimums on all, attack <strong>{debts[0].name}</strong> first.</p>
-                      })()}
-                      {learnReferral === 'emergency-fund' && (
-                        <p>Your 3-month emergency fund target: <strong>{fmtMoney(monthlyTotal * 3)}</strong>. Start with <strong>{fmtMoney(monthlyTotal * 0.5)}/month</strong> to build it in 6 months.</p>
-                      )}
-                      {!['50-30-20','debt-avalanche','emergency-fund'].includes(learnReferral) && (
-                        <p>Your fixed bills are <strong>{fmtMoney(monthlyTotal)}/mo</strong>. Use this concept to improve how you allocate the rest.</p>
-                      )}
-                    </div>
-                  )}
+                  <div className={styles.budgetPanel}>
+                    {/* Daily Number hero */}
+                    {normalizedIncome > 0 ? (
+                      <div className={styles.dailyHero}>
+                        <div className={styles.dailyHeroLabel}>Daily number</div>
+                        <div className={styles.dailyHeroAmount}>{fmtMoney(dailyNumber)}</div>
+                        <div className={styles.dailyHeroSub}>{fmtMoney(surplus)}/mo surplus ÷ {daysLeft} days</div>
+                        <div className={styles.dailyStats}>
+                          <div className={styles.dailyStat}>
+                            <span className={styles.dailyStatLabel}>Spent today</span>
+                            <span className={styles.dailyStatAmt}>{fmtMoney(todaySpendTotal)}</span>
+                          </div>
+                          <div className={styles.dailyStatDivider} />
+                          <div className={styles.dailyStat}>
+                            <span className={styles.dailyStatLabel}>Remaining</span>
+                            <span className={`${styles.dailyStatAmt} ${remaining < 0 ? styles.dailyStatNeg : ''}`}>
+                              {remaining < 0 ? '-' : ''}{fmtMoney(Math.abs(remaining))}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={styles.dailyHeroEmpty}>
+                        <p className={styles.dailyHeroEmptyText}>Set your income below to unlock your daily number.</p>
+                      </div>
+                    )}
 
-                  {/* Income input */}
-                  <div className={styles.fieldGroup}>
-                    <label className={styles.fieldLabel}>Take-home income</label>
-                    <div className={styles.quickRow}>
-                      <input
-                        type="number" placeholder="e.g. 3,500" min="0" step="1"
-                        value={monthlyIncomeInput}
-                        onChange={e => setMonthlyIncomeInput(e.target.value)}
-                        className={styles.fieldInput}
-                        style={{ maxWidth: '160px' }}
-                      />
-                      <button
-                        className={styles.addTaskBtn}
-                        onClick={() => {
+                    {/* Quick spend log */}
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>Log a spend</label>
+                      <form onSubmit={logSpend} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <input
+                            type="number" placeholder="Amount" min="0" step="0.01"
+                            value={spendAmount}
+                            onChange={e => setSpendAmount(e.target.value)}
+                            className={styles.fieldInput}
+                            style={{ maxWidth: '120px' }}
+                          />
+                          <input
+                            type="text" placeholder="What was it? (optional)"
+                            value={spendInput}
+                            onChange={e => setSpendInput(e.target.value)}
+                            className={styles.fieldInput}
+                          />
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                          <div className={styles.toggleRow} style={{ flex: 1 }}>
+                            {['Food','Transport','Fun','Other'].map(c => (
+                              <button key={c} type="button" onClick={() => setSpendCategory(c === spendCategory ? '' : c)}
+                                className={`${styles.toggleBtn} ${spendCategory === c ? styles.toggleBtnActive : ''}`}
+                                style={{ fontSize: '0.78rem', padding: '5px 10px' }}>
+                                {c}
+                              </button>
+                            ))}
+                          </div>
+                          <button type="button" onClick={() => setSpendImpulse(v => !v)}
+                            className={`${styles.toggleBtn} ${spendImpulse ? styles.toggleBtnActive : ''}`}
+                            style={{ borderColor: spendImpulse ? '#E8321A' : undefined, color: spendImpulse ? '#E8321A' : undefined, fontSize: '0.78rem', padding: '5px 10px' }}>
+                            Impulse?
+                          </button>
+                        </div>
+                        <button type="submit" className={styles.addTaskBtn} disabled={!spendAmount || spendLogging}
+                          style={{ alignSelf: 'flex-start', opacity: (!spendAmount || spendLogging) ? 0.5 : 1 }}>
+                          {spendLogging ? 'Logging…' : 'Log spend'}
+                        </button>
+                      </form>
+                    </div>
+
+                    {/* Today's spend entries */}
+                    {spendLog.length > 0 && (
+                      <div style={{ marginBottom: 20 }}>
+                        <div className={styles.ttSectionLabel}>Today · {fmtMoney(todaySpendTotal)}</div>
+                        {spendLog.map((entry, i) => (
+                          <div key={entry.id || i} className={styles.spendEntry}>
+                            <div className={styles.spendEntryLeft}>
+                              {entry.impulse && <span className={styles.spendImpulseBadge}>Impulse</span>}
+                              <span className={styles.spendEntryDesc}>{entry.description || entry.category || 'Spend'}</span>
+                              {entry.category && entry.description && <span className={styles.billCatLabel}>{entry.category}</span>}
+                            </div>
+                            <span className={styles.spendEntryAmt}>{fmtMoney(entry.amount)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Income input */}
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>Take-home income</label>
+                      <div className={styles.quickRow}>
+                        <input
+                          type="number" placeholder="e.g. 3,500" min="0" step="1"
+                          value={monthlyIncomeInput}
+                          onChange={e => setMonthlyIncomeInput(e.target.value)}
+                          className={styles.fieldInput}
+                          style={{ maxWidth: '160px' }}
+                        />
+                        <button className={styles.addTaskBtn} onClick={() => {
                           const val = parseFloat(monthlyIncomeInput) || 0
                           setMonthlyIncome(val)
                           if (typeof localStorage !== 'undefined') {
@@ -4672,170 +4808,192 @@ export default function Dashboard() {
                             localStorage.setItem('fb_income_frequency', incomeFrequency)
                           }
                           showToast('Income saved')
-                        }}
-                      >
-                        Save
-                      </button>
+                        }}>Save</button>
+                      </div>
+                      <div className={styles.toggleRow} style={{ marginTop: '10px' }}>
+                        {[['weekly','Weekly'],['biweekly','Biweekly'],['bimonthly','Bimonthly'],['monthly','Monthly']].map(([val, lbl]) => (
+                          <button key={val} type="button" onClick={() => {
+                            setIncomeFrequency(val)
+                            if (typeof localStorage !== 'undefined') localStorage.setItem('fb_income_frequency', val)
+                          }}
+                            className={`${styles.toggleBtn} ${incomeFrequency === val ? styles.toggleBtnActive : ''}`}>
+                            {lbl}
+                          </button>
+                        ))}
+                      </div>
+                      {incomeFrequency !== 'monthly' && monthlyIncome > 0 && (
+                        <p style={{ fontSize: '12px', color: 'rgba(240,234,214,0.35)', marginTop: '6px' }}>= {fmtMoney(normalizedIncome)}/mo</p>
+                      )}
                     </div>
-                    {/* Income frequency selector */}
-                    <div className={styles.toggleRow} style={{ marginTop: '10px' }}>
-                      {[['weekly','Weekly'],['biweekly','Biweekly'],['bimonthly','Bimonthly'],['monthly','Monthly']].map(([val, lbl]) => (
-                        <button key={val} type="button" onClick={() => {
-                          setIncomeFrequency(val)
-                          if (typeof localStorage !== 'undefined') localStorage.setItem('fb_income_frequency', val)
-                        }}
-                          className={`${styles.toggleBtn} ${incomeFrequency === val ? styles.toggleBtnActive : ''}`}>
-                          {lbl}
-                        </button>
-                      ))}
+
+                    {/* Payday day */}
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>Payday <span className={styles.fieldLabelOptional}>— day of month</span></label>
+                      <div className={styles.quickRow}>
+                        <input type="number" placeholder="e.g. 15" min="1" max="31"
+                          value={paydayDayInput}
+                          onChange={e => setPaydayDayInput(e.target.value)}
+                          className={styles.fieldInput}
+                          style={{ maxWidth: '100px' }}
+                        />
+                        <button className={styles.addTaskBtn} onClick={() => {
+                          const v = parseInt(paydayDayInput) || 0
+                          setPaydayDay(v)
+                          if (typeof localStorage !== 'undefined') localStorage.setItem('fb_payday_day', String(v))
+                          showToast('Payday saved')
+                        }}>Save</button>
+                      </div>
                     </div>
-                    {incomeFrequency !== 'monthly' && monthlyIncome > 0 && (
-                      <p style={{ fontSize: '12px', color: 'rgba(240,234,214,0.35)', marginTop: '6px' }}>
-                        = {fmtMoney(normalizedIncome)}/mo
-                      </p>
+
+                    {normalizedIncome > 0 && (
+                      <>
+                        <div className={styles.budgetCard}>
+                          <p className={styles.financeBreakdownLabel}>50 / 30 / 20 breakdown</p>
+                          {[
+                            { label: 'Needs', pct: 50, desc: 'Rent, groceries, bills' },
+                            { label: 'Wants', pct: 30, desc: 'Dining, subscriptions, fun' },
+                            { label: 'Savings', pct: 20, desc: 'Emergency fund, investments' },
+                          ].map(({ label, pct, desc }) => (
+                            <div key={label} className={styles.budgetRow}>
+                              <div>
+                                <span className={styles.budgetRowLabel}>{label} <span className={styles.budgetRowPct}>({pct}%)</span></span>
+                                <span className={styles.budgetRowDesc}>{desc}</span>
+                              </div>
+                              <span className={styles.budgetRowAmt}>{fmtMoney(normalizedIncome * pct / 100)}</span>
+                            </div>
+                          ))}
+                          <div className={styles.budgetRow}>
+                            <div>
+                              <span className={styles.budgetRowLabel}>Fixed bills</span>
+                              <span className={styles.budgetRowDesc}>Tracked in Bills tab</span>
+                            </div>
+                            <span className={styles.budgetRowAmt}>{fmtMoney(monthlyTotal)}<span className={styles.financeTotalSub}>/mo</span></span>
+                          </div>
+                        </div>
+                        {(() => {
+                          const diff = normalizedIncome - monthlyTotal
+                          return (
+                            <div className={styles.budgetCard}>
+                              <div className={styles.budgetRow} style={{ borderBottom: 'none' }}>
+                                <span className={styles.budgetRowLabel}>{diff >= 0 ? 'Surplus' : 'Deficit'} after fixed bills</span>
+                                <span className={diff >= 0 ? styles.surplusPositive : styles.surplusNegative}>
+                                  {diff >= 0 ? '+' : ''}{fmtMoney(diff)}
+                                </span>
+                              </div>
+                            </div>
+                          )
+                        })()}
+                      </>
                     )}
                   </div>
-
-                  {normalizedIncome > 0 ? (
-                    <>
-                      {/* 50/30/20 breakdown */}
-                      <div className={styles.budgetCard}>
-                        <p className={styles.financeBreakdownLabel}>50 / 30 / 20 breakdown</p>
-                        {[
-                          { label: 'Needs', pct: 50, desc: 'Rent, groceries, bills' },
-                          { label: 'Wants', pct: 30, desc: 'Dining, subscriptions, fun' },
-                          { label: 'Savings', pct: 20, desc: 'Emergency fund, investments' },
-                        ].map(({ label, pct, desc }) => (
-                          <div key={label} className={styles.budgetRow}>
-                            <div>
-                              <span className={styles.budgetRowLabel}>{label} <span className={styles.budgetRowPct}>({pct}%)</span></span>
-                              <span className={styles.budgetRowDesc}>{desc}</span>
-                            </div>
-                            <span className={styles.budgetRowAmt}>{fmtMoney(normalizedIncome * pct / 100)}</span>
-                          </div>
-                        ))}
-                        <div className={styles.budgetRow}>
-                          <div>
-                            <span className={styles.budgetRowLabel}>Your fixed bills</span>
-                            <span className={styles.budgetRowDesc}>Tracked in Bills tab</span>
-                          </div>
-                          <span className={styles.budgetRowAmt}>{fmtMoney(monthlyTotal)}<span className={styles.financeTotalSub}>/mo</span></span>
-                        </div>
-                      </div>
-
-                      {/* Surplus / Deficit */}
-                      {(() => {
-                        const diff = normalizedIncome - monthlyTotal
-                        return (
-                          <div className={styles.budgetCard}>
-                            <div className={styles.budgetRow} style={{ borderBottom: 'none' }}>
-                              <span className={styles.budgetRowLabel}>{diff >= 0 ? 'Surplus' : 'Deficit'} after fixed bills</span>
-                              <span className={diff >= 0 ? styles.surplusPositive : styles.surplusNegative}>
-                                {diff >= 0 ? '+' : ''}{fmtMoney(diff)}
-                              </span>
-                            </div>
-                          </div>
-                        )
-                      })()}
-                    </>
-                  ) : (
-                    <p className={styles.budgetEmptyNote}>Enter your take-home income above to see your breakdown.</p>
-                  )}
-                </div>
                 )
               })()}
 
-              {/* ── KNOWLEDGE ── */}
-              {financeSub === 'knowledge' && (
-                <div>
+              {/* ── PLANS ── */}
+              {financeSub === 'plans' && (
+                <div style={{ padding: '12px 14px 80px' }}>
                   {[
                     {
-                      key: '50-30-20', icon: '💰', title: 'The 50/30/20 Rule',
-                      body: 'Split your take-home pay: 50% to needs (rent, groceries, bills), 30% to wants (dining, subscriptions, fun), 20% to savings or debt payoff. It\'s not a strict rule — it\'s a starting point.',
-                      tag: 'Most people have no idea where their money goes. This gives it somewhere to go.',
-                      impl: '1. Find your monthly take-home pay. 2. Multiply by 0.5 — that\'s your needs ceiling. 3. Multiply by 0.3 — that\'s your wants budget. 4. The remaining 20% goes to savings or debt before you spend anything else. 5. Track for one month without judging — just observe.',
+                      key: 'debt', icon: '💳', title: 'Debt payoff',
+                      fields: [
+                        { key: 'debtBal', label: 'Balance ($)', placeholder: '5000' },
+                        { key: 'debtRate', label: 'APR (%)', placeholder: '18.9' },
+                        { key: 'debtPmt', label: 'Monthly payment ($)', placeholder: '200' },
+                      ],
+                      compute: (v) => {
+                        const balance = parseFloat(v.debtBal) || 0
+                        const rate = (parseFloat(v.debtRate) || 0) / 100 / 12
+                        const payment = parseFloat(v.debtPmt) || 0
+                        if (!balance || !payment) return null
+                        if (rate === 0) return { result: `${Math.ceil(balance / payment)} months`, sub: `${fmtMoney(balance)} total` }
+                        if (payment <= balance * rate) return { result: 'Payment too low', sub: 'Increase payment above interest' }
+                        const months = Math.ceil(-Math.log(1 - (balance * rate) / payment) / Math.log(1 + rate))
+                        const interest = payment * months - balance
+                        return { result: `${months} months`, sub: `${fmtMoney(interest)} in interest` }
+                      },
                     },
                     {
-                      key: 'debt-avalanche', icon: '🔥', title: 'The Debt Avalanche',
-                      body: 'List your debts by interest rate, highest first. Pay minimums on everything, then throw every extra dollar at the highest-rate debt. Once it\'s gone, roll that payment to the next one.',
-                      tag: 'This method saves the most money in interest over time.',
-                      impl: '1. List every debt with its balance and interest rate. 2. Set up minimum autopay on all of them. 3. Put every extra dollar toward the highest-rate debt. 4. When that debt hits zero, add its payment to the next highest. 5. Repeat until clear.',
+                      key: 'ef', icon: '⛄', title: 'Emergency fund',
+                      fields: [
+                        { key: 'efExp', label: 'Monthly expenses ($)', placeholder: '3000' },
+                        { key: 'efMonths', label: 'Months of coverage', placeholder: '3' },
+                      ],
+                      compute: (v) => {
+                        const exp = parseFloat(v.efExp) || 0
+                        const months = parseFloat(v.efMonths) || 3
+                        if (!exp) return null
+                        const goal = exp * months
+                        return { result: fmtMoney(goal), sub: `Save ${fmtMoney(goal / 12)}/mo to reach in 1 year` }
+                      },
                     },
                     {
-                      key: 'emergency-fund', icon: '⛄', title: 'The Emergency Fund',
-                      body: "Keep 3-6 months of expenses in a separate, boring savings account you don't touch. Not for opportunities — only for actual emergencies.",
-                      tag: 'Without one, any surprise expense becomes debt.',
-                      impl: "1. Open a separate savings account — label it 'Emergency Only'. 2. Calculate 3 months of your essential expenses. 3. Set up a small automatic transfer each payday — even $25 counts. 4. Build to 1 month first, then 3, then 6. 5. Do not touch it for non-emergencies.",
+                      key: 'sub', icon: '🔄', title: 'Subscription cost',
+                      fields: [
+                        { key: 'subMo', label: 'Monthly cost ($)', placeholder: '15.99' },
+                      ],
+                      compute: (v) => {
+                        const mo = parseFloat(v.subMo) || 0
+                        if (!mo) return null
+                        return { result: `${fmtMoney(mo * 12)}/year`, sub: `${fmtMoney(mo * 120)} over 10 years` }
+                      },
                     },
                     {
-                      key: 'compound', icon: '📈', title: 'Compound Interest',
-                      body: 'When your money earns interest, and that interest earns interest, growth accelerates over time. Starting at 25 vs 35 can mean hundreds of thousands of dollars by retirement.',
-                      tag: 'Time in the market beats timing the market.',
-                      impl: '1. Open a retirement account (401k if employer offers match — take the full match first). 2. Then open a Roth IRA if eligible. 3. Invest in a low-cost index fund (e.g. S&P 500 index). 4. Set up automatic contributions. 5. Don\'t check it daily — let time do the work.',
+                      key: 'ci', icon: '📈', title: 'Compound interest',
+                      fields: [
+                        { key: 'ciPrincipal', label: 'Principal ($)', placeholder: '5000' },
+                        { key: 'ciRate', label: 'Annual rate (%)', placeholder: '7' },
+                        { key: 'ciYears', label: 'Years', placeholder: '20' },
+                      ],
+                      compute: (v) => {
+                        const p = parseFloat(v.ciPrincipal) || 0
+                        const r = (parseFloat(v.ciRate) || 0) / 100
+                        const t = parseFloat(v.ciYears) || 0
+                        if (!p || !r || !t) return null
+                        const final = p * Math.pow(1 + r, t)
+                        return { result: fmtMoney(final), sub: `${fmtMoney(final - p)} gained on ${fmtMoney(p)}` }
+                      },
                     },
                     {
-                      key: 'fixed-variable', icon: '🧾', title: 'Fixed vs Variable Expenses',
-                      body: 'Fixed expenses are the same every month — rent, subscriptions, loan payments. Variable expenses change — food, gas, entertainment. Cutting fixed costs has a bigger long-term impact.',
-                      tag: 'Knowing the difference shows you where you actually have room to move.',
-                      impl: '1. List every expense from last month. 2. Mark each F (fixed) or V (variable). 3. Total both columns. 4. To cut fixed costs: negotiate bills, cancel unused subscriptions, shop insurance annually. 5. Variable costs are easier to cut short-term but fixed cuts compound over years.',
+                      key: 'ab', icon: '🎯', title: 'Auto-budget (50/30/20)',
+                      fields: [
+                        { key: 'abIncome', label: 'Monthly income ($)', placeholder: '4000' },
+                      ],
+                      compute: (v) => {
+                        const inc = parseFloat(v.abIncome) || 0
+                        if (!inc) return null
+                        return { result: `Needs: ${fmtMoney(inc * 0.5)}`, sub: `Wants: ${fmtMoney(inc * 0.3)} · Savings: ${fmtMoney(inc * 0.2)}` }
+                      },
                     },
-                    {
-                      key: 'pay-yourself-first', icon: '🏦', title: 'Pay Yourself First',
-                      body: "Before paying any bill or buying anything, transfer a set amount to savings the moment your paycheck lands. Treat saving like a bill you owe yourself.",
-                      tag: "If you wait until the end of the month to save what's left, there's never anything left.",
-                      impl: "1. Decide a savings amount — even 5% of income to start. 2. Set an automatic transfer for payday, the moment money lands. 3. Transfer to a separate account you don't see daily. 4. Treat it like rent — not optional. 5. Increase by 1% every 3 months.",
-                    },
-                    {
-                      key: 'savings-accounts', icon: '💳', title: 'Types of Savings Accounts',
-                      body: 'High-yield savings accounts (HYSA) currently offer 4–5% APY, compared to 0.5% at standard savings accounts. The difference matters. $10,000 earning 4.5% vs 0.5% yields $400 more per year.',
-                      tag: 'Free money — pick the right account and your savings earn while you sleep.',
-                      impl: '1. Research HYSA options (Ally, Marcus, Wealthfront). 2. Open one — most have no minimum balance and no fees. 3. Link it to your checking account for easy transfers. 4. Keep your emergency fund here (3–6 months of expenses). 5. Keep regular bills and spending in your checking account.',
-                    },
-                    {
-                      key: 'roth-ira', icon: '📈', title: 'Roth IRA vs Traditional IRA',
-                      body: 'Roth IRA: You contribute after-tax dollars, they grow tax-free, and you withdraw tax-free in retirement. Traditional IRA: You contribute pre-tax (tax deduction now), they grow tax-deferred, and you pay taxes on withdrawal. 2026 contribution limit: $7,000.',
-                      tag: 'If you expect to be in a higher tax bracket in retirement, Roth is usually the better choice for younger savers.',
-                      impl: '1. Open a Roth IRA at a brokerage (Fidelity, Vanguard, Charles Schwab). 2. Contribute up to $7,000 per year (adjust for your income limits). 3. Invest in a low-cost index fund (S&P 500, total market, or target-date fund). 4. Set up auto-contributions if possible. 5. Don\'t withdraw early — let it compound for decades.',
-                    },
-                    {
-                      key: '401k-basics', icon: '🎯', title: '401k Basics',
-                      body: 'An employer-sponsored retirement account. Your contributions come from your paycheck pre-tax. Many employers match a percentage of what you contribute — that\'s free money. 2026 contribution limit: $23,500.',
-                      tag: 'Always contribute enough to get the full employer match. It\'s an instant return on investment.',
-                      impl: '1. If your employer offers a 401k, enroll immediately. 2. Set your contribution to at least match the employer contribution percentage (often 3–6%). 3. If you can afford more, increase by 1% every raise. 4. Choose an investment option — usually a target-date fund matching your retirement year. 5. After maxing the 401k match, max your Roth IRA, then increase 401k contributions.',
-                    },
-                    {
-                      key: 'index-funds', icon: '📊', title: 'Index Funds vs Actively Managed',
-                      body: 'Index funds track the whole market (e.g., S&P 500) with low fees (0.03–0.20%). Actively managed funds try to beat the market, charge higher fees (0.5–2%), and usually fail. Over 10+ years, 80–90% of active funds underperform their index.',
-                      tag: 'Why pay more for a worse outcome? Index funds are boring, and that\'s the point.',
-                      impl: '1. For long-term retirement accounts, choose low-cost index funds. 2. Good options: VOO (Vanguard S&P 500), VTI (Vanguard Total Stock Market), SPLG (SPDR S&P 500). 3. Avoid funds with expense ratios above 0.25%. 4. Set and forget — rebalance once a year. 5. Don\'t chase trends or try to time the market.',
-                    },
-                  ].map(({ key, icon, title, body, tag, impl }) => {
-                    const isOpen = expandedLearnCard === title
+                  ].map(card => {
+                    const isOpen = expandedPlanCalc === card.key
+                    const vals = planCalcInputs[card.key] || {}
+                    const result = isOpen ? card.compute(vals) : null
                     return (
-                      <div key={title} className={`${styles.learnCard} ${isOpen ? styles.learnCardExpanded : ''}`}>
-                        <div className={styles.learnCardHeader} onClick={() => setExpandedLearnCard(isOpen ? null : title)}>
-                          <span className={styles.learnCardIcon}>{icon}</span>
-                          <span className={styles.learnCardTitle}>{title}</span>
+                      <div key={card.key} className={`${styles.learnCard} ${isOpen ? styles.learnCardExpanded : ''}`}>
+                        <div className={styles.learnCardHeader} onClick={() => setExpandedPlanCalc(isOpen ? null : card.key)}>
+                          <span className={styles.learnCardIcon}>{card.icon}</span>
+                          <span className={styles.learnCardTitle}>{card.title}</span>
                           <span className={styles.learnCardChevron}>▼</span>
                         </div>
                         {isOpen && (
                           <div className={styles.learnCardContent}>
-                            <div className={styles.learnCardBody}>{body}</div>
-                            <div className={styles.learnCardTag}>Why it matters: {tag}</div>
-                            <div className={styles.learnCardImplement}>
-                              <div className={styles.learnCardImplementTitle}>How to implement this</div>
-                              <div className={styles.learnCardImplementSteps}>{impl}</div>
-                              <button
-                                className={styles.learnCardApplyBtn}
-                                onClick={() => {
-                                  setLearnReferral(key)
-                                  setFinanceSub('plans')
-                                  window.scrollTo({ top: 0, behavior: 'smooth' })
-                                }}
-                              >
-                                See this applied to my budget →
-                              </button>
-                            </div>
+                            {card.fields.map(f => (
+                              <div key={f.key} className={styles.fieldGroup} style={{ marginBottom: 10 }}>
+                                <label className={styles.fieldLabel}>{f.label}</label>
+                                <input
+                                  type="number" placeholder={f.placeholder}
+                                  value={vals[f.key] || ''}
+                                  onChange={e => setPlanCalcInputs(prev => ({ ...prev, [card.key]: { ...(prev[card.key] || {}), [f.key]: e.target.value } }))}
+                                  className={styles.fieldInput}
+                                />
+                              </div>
+                            ))}
+                            {result && (
+                              <div className={styles.planCalcResult}>
+                                <div className={styles.planCalcResultMain}>{result.result}</div>
+                                {result.sub && <div className={styles.planCalcResultSub}>{result.sub}</div>}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -4845,22 +5003,74 @@ export default function Dashboard() {
               )}
 
               {/* ── INSIGHTS ── */}
-              {financeSub === 'insights' && (
-                <div className={styles.insightsPlaceholder}>
-                  <span style={{ fontSize: '2.5rem' }}>🤖</span>
-                  <p className={styles.greetingText} style={{ fontSize: '1.15rem' }}>Financial Insights</p>
-                  <p className={styles.headerSub} style={{ maxWidth: '360px', textAlign: 'center' }}>
-                    {bills.length === 0
-                      ? 'Add bills in the Bills tab to unlock spending insights.'
-                      : monthlyIncome === 0
-                        ? 'Add your income in Plans to see your full picture.'
-                        : 'Your first insight is on its way...'}
-                  </p>
-                  <button className={styles.addTaskBtn} onClick={() => setFinanceSub(bills.length === 0 ? 'bills' : 'plans')}>
-                    {bills.length === 0 ? 'Add a bill →' : 'Set up my budget →'}
-                  </button>
-                </div>
-              )}
+              {financeSub === 'insights' && (() => {
+                const totalBills = bills.length
+                const autoPayBills = bills.filter(b => b.autopay).length
+                const autopayCoverage = totalBills > 0 ? (autoPayBills / totalBills) * 25 : 0
+                const billTracking = totalBills > 0 ? 25 : 0
+                const budgetSet = monthlyIncome > 0 ? 25 : 0
+                const spendLogged = spendLog.length > 0 ? 25 : 0
+                const score = Math.round(autopayCoverage + billTracking + budgetSet + spendLogged)
+                const scoreColor = score <= 40 ? '#E8321A' : score <= 70 ? '#FFB800' : '#4CAF50'
+                const circumference = 2 * Math.PI * 40
+                const strokeDash = (score / 100) * circumference
+
+                const tips = []
+                if (budgetSet === 0) tips.push({ icon: '💰', title: 'Set your income', body: 'Add your take-home income in Budget to unlock your daily number and 50/30/20 breakdown.' })
+                if (billTracking === 0) tips.push({ icon: '🧾', title: 'Track your bills', body: 'Add recurring bills to see your full monthly picture and find savings opportunities.' })
+                if (autopayCoverage < 25 && totalBills > 0) tips.push({ icon: '⚡', title: 'Automate more bills', body: `${autoPayBills} of ${totalBills} bills on autopay. Automating prevents late fees and stress.` })
+                if (spendLogged === 0) tips.push({ icon: '📊', title: 'Start logging spends', body: 'Log daily spending in Budget. Even 3 days of data reveals patterns you can act on.' })
+                if (tips.length === 0) tips.push({ icon: '🏆', title: 'Solid foundation', body: 'Income set, bills tracked, autopay on, spending logged. You\'re ahead of most.' })
+                return (
+                  <div style={{ padding: '12px 14px 80px' }}>
+                    <div className={styles.insightScoreBlock}>
+                      <svg width="100" height="100" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(240,234,214,0.08)" strokeWidth="8" />
+                        <circle cx="50" cy="50" r="40" fill="none" stroke={scoreColor} strokeWidth="8"
+                          strokeDasharray={`${strokeDash} ${circumference}`}
+                          strokeDashoffset={circumference * 0.25}
+                          strokeLinecap="round"
+                          style={{ transition: 'stroke-dasharray 0.5s ease' }}
+                        />
+                        <text x="50" y="50" textAnchor="middle" dominantBaseline="central"
+                          fill={scoreColor} fontSize="20" fontWeight="700" fontFamily="Sora, sans-serif">
+                          {score}
+                        </text>
+                      </svg>
+                      <div>
+                        <div className={styles.insightScoreLabel}>Financial health</div>
+                        <div className={styles.insightScoreSub}>
+                          {score <= 40 ? 'Getting started' : score <= 70 ? 'On track' : 'Strong foundation'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={styles.budgetCard} style={{ marginBottom: 20 }}>
+                      {[
+                        { label: 'Bill tracking', pts: billTracking, max: 25 },
+                        { label: 'Budget set', pts: budgetSet, max: 25 },
+                        { label: 'Autopay coverage', pts: Math.round(autopayCoverage), max: 25 },
+                        { label: 'Spend logged', pts: spendLogged, max: 25 },
+                      ].map(({ label, pts, max }) => (
+                        <div key={label} className={styles.budgetRow}>
+                          <span className={styles.budgetRowLabel}>{label}</span>
+                          <span className={pts === max ? styles.surplusPositive : styles.budgetRowAmt}>{pts}/{max} pts</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {tips.slice(0, 3).map((tip, i) => (
+                      <div key={i} className={styles.financeInsightCard}>
+                        <span className={styles.financeInsightCardIcon}>{tip.icon}</span>
+                        <div>
+                          <div className={styles.financeInsightCardTitle}>{tip.title}</div>
+                          <div className={styles.financeInsightCardBody}>{tip.body}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
 
             </div>
           </TabErrorBoundary>
