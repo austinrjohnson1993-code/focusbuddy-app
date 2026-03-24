@@ -135,7 +135,7 @@ async function callClaude(messages, systemPrompt, useTools = true) {
   const response = await anthropic.messages.create(config)
   const text = response.content.find(b => b.type === 'text')?.text ?? ''
   const toolUses = useTools ? response.content.filter(b => b.type === 'tool_use') : []
-  return { text, toolUses }
+  return { text, toolUses, rawContent: response.content }
 }
 
 // ── Tool execution ───────────────────────────────────────────────────────────
@@ -600,11 +600,29 @@ export default async function handler(req, res) {
   // ── Continuing conversation ────────────────────────────────────────────────
   if (messages && messages.length > 0) {
     try {
-      const { text, toolUses } = await callClaude(messages, systemPrompt)
+      let { text, toolUses, rawContent } = await callClaude(messages, systemPrompt)
       if (toolUses.length > 0) console.log('[checkin] continuation tools:', toolUses.map(t => `${t.name}(${JSON.stringify(t.input)})`).join(', '))
       const actions = await Promise.all(
         toolUses.map(tu => executeTool(tu.name, tu.input, supabaseAdmin, userId))
       )
+      // Two-step tool_use: get confirmation text after tool execution
+      if (toolUses.length > 0) {
+        const followUpMessages = [
+          ...messages,
+          { role: 'assistant', content: rawContent },
+          {
+            role: 'user',
+            content: toolUses.map((tu, i) => ({
+              type: 'tool_result',
+              tool_use_id: tu.id,
+              content: JSON.stringify(actions[i] || { result: 'ok' })
+            }))
+          }
+        ]
+        const { text: confirmText } = await callClaude(followUpMessages, systemPrompt, false)
+        if (confirmText) text = confirmText
+        console.log('[checkin] tool follow-up text:', confirmText?.slice(0, 100))
+      }
       // Log user message if it exists
       if (userMessage) {
         logCheckinMessage(supabaseAdmin, userId, 'user', userMessage, null).catch(() => {})
@@ -669,15 +687,30 @@ export default async function handler(req, res) {
   const noTools = type === 'focus' || type === 'weekly_summary'
 
   try {
-    const { text, toolUses } = await callClaude(
-      [{ role: 'user', content: contextPrompt }],
-      systemPrompt,
-      !noTools
-    )
+    const openingMessages = [{ role: 'user', content: contextPrompt }]
+    let { text, toolUses, rawContent } = await callClaude(openingMessages, systemPrompt, !noTools)
     if (toolUses.length > 0) console.log('[checkin] tools called by AI:', toolUses.map(t => `${t.name}(${JSON.stringify(t.input)})`).join(', '))
     const toolActions = await Promise.all(
       toolUses.map(tu => executeTool(tu.name, tu.input, supabaseAdmin, userId))
     )
+    // Two-step tool_use: get confirmation text after tool execution
+    if (toolUses.length > 0) {
+      const followUpMessages = [
+        ...openingMessages,
+        { role: 'assistant', content: rawContent },
+        {
+          role: 'user',
+          content: toolUses.map((tu, i) => ({
+            type: 'tool_result',
+            tool_use_id: tu.id,
+            content: JSON.stringify(toolActions[i] || { result: 'ok' })
+          }))
+        }
+      ]
+      const { text: confirmText } = await callClaude(followUpMessages, systemPrompt, false)
+      if (confirmText) text = confirmText
+      console.log('[checkin] opening tool follow-up text:', confirmText?.slice(0, 100))
+    }
     console.log(`[checkin] ${type} for ${userId}: ${toolActions.length + actionsExecuted.length} actions executed`)
     // Log AI response for opening messages
     logCheckinMessage(supabaseAdmin, userId, 'assistant', text, personaBlend).catch(() => {})
