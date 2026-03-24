@@ -869,7 +869,9 @@ export default function Dashboard() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
         hasSession.current = true
+        setUser(session.user)
         fetchProfile(session.user.id)
+        fetchTasks(session.user.id)
       } else if (event === 'SIGNED_OUT' && hasSession.current) {
         router.push('/login')
       }
