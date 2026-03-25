@@ -842,6 +842,7 @@ export default function Dashboard() {
   const [checkinEveningTime, setCheckinEveningTime] = useState('21:00')
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
+  const [nutrSubTab, setNutrSubTab] = useState('log')
 
   // Bill voice input
   const [billListening, setBillListening] = useState(false)
@@ -3889,8 +3890,6 @@ export default function Dashboard() {
           {activeTab === 'nutrition' && (
           <TabErrorBoundary tabName="Nutrition">
           {(() => {
-            const [nutrSubTab, setNutrSubTab] = useState('log')
-
             return (
               <div style={{ paddingBottom: '80px', background: '#0D0705', minHeight: '100vh' }}>
                 {/* Underline sub-tab nav */}
