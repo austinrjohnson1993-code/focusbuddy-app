@@ -74,7 +74,7 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
 
       {/* Macro rings */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 16 }}>
-        <MacroRing value={1840} target={2400} label="Calories" color={COL.hot} unit="kcal" />
+        <MacroRing value={1840} target={2400} label="Calories" color={COL.ember} unit="kcal" />
         <MacroRing value={128} target={180} label="Protein" color={COL.ember} unit="g" />
         <MacroRing value={195} target={280} label="Carbs" color={COL.gold} unit="g" />
         <MacroRing value={52} target={80} label="Fat" color={COL.blue} unit="g" />
