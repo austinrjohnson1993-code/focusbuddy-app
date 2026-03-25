@@ -110,21 +110,24 @@ export default async function handler(req, res) {
 
   // ── monthly ───────────────────────────────────────────────────────────────
   if (type === 'monthly') {
-    // Pull exactly 30 days of snapshots (rolling window, not calendar month-to-date)
+    // Calendar month-to-date (1st of current month through today)
     const now = new Date()
-    const monthName = now.toLocaleString('en-US', { month: 'long', year: 'numeric' })
     const currentMonth = now.toLocaleString('en-US', { month: 'long' }) // e.g. "March"
     const currentYear = now.getFullYear()
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0]
+    const monthStart = new Date(currentYear, now.getMonth(), 1).toISOString().split('T')[0]
+    const todayStr = now.toISOString().split('T')[0]
+
+    // Days remaining in the month (including today)
+    const lastDayOfMonth = new Date(currentYear, now.getMonth() + 1, 0).getDate()
+    const daysRemaining = lastDayOfMonth - now.getDate()
 
     const [{ data: snapshots, error: snapErr }, { data: profile }, { count: allTimeCount }] = await Promise.all([
       supabaseAdmin
         .from('progress_snapshots')
-        .select('snapshot_date, tasks_completed')
+        .select('snapshot_date, tasks_completed, focus_minutes, journal_entries')
         .eq('user_id', userId)
-        .gte('snapshot_date', thirtyDaysAgoStr),
+        .gte('snapshot_date', monthStart)
+        .lte('snapshot_date', todayStr),
       supabaseAdmin.from('profiles').select('persona_blend').eq('id', userId).single(),
       supabaseAdmin.from('tasks').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('completed', true)
     ])
@@ -132,20 +135,27 @@ export default async function handler(req, res) {
     if (snapErr) return res.status(500).json({ error: 'Failed to fetch snapshots' })
 
     if ((allTimeCount ?? 0) === 0) {
-      return res.status(200).json({ type: 'monthly', insight: NEW_USER_INSIGHT, totalTasks: 0, bestDay: null })
+      return res.status(200).json({ type: 'monthly', insight: NEW_USER_INSIGHT, totalTasks: 0, totalFocusMinutes: 0, bestDay: null, daysRemaining })
     }
 
     const totalTasks = (snapshots || []).reduce((sum, s) => sum + (s.tasks_completed || 0), 0)
+    const totalFocusMinutes = (snapshots || []).reduce((sum, s) => sum + (s.focus_minutes || 0), 0)
+    const totalJournalEntries = (snapshots || []).reduce((sum, s) => sum + (s.journal_entries || 0), 0)
     const best = (snapshots || []).slice().sort((a, b) => b.tasks_completed - a.tasks_completed)[0]
-    const bestDay = best ? { date: best.snapshot_date, count: best.tasks_completed } : null
+    const bestDay = best && best.tasks_completed > 0 ? { date: best.snapshot_date, count: best.tasks_completed } : null
 
     const persona = profile?.persona_blend?.join(', ') || 'coach'
-    // T2-D: explicitly different from weekly — 30-day scope, trend/pattern, month name required, no "this week"
-    const prompt = `Respond with a SINGLE sentence only. No headers, no bullet points, no markdown, no line breaks. One sentence maximum. Do not label by persona. In one persona-voiced sentence, give an encouraging monthly summary for this month (${currentMonth}). This is a 30-day rolling window summary, NOT a weekly one. Identify a meaningful trend or pattern. Persona: ${persona}. Total tasks completed this month: ${totalTasks}. Best day: ${bestDay?.date ?? 'none'} with ${bestDay?.count ?? 0} tasks. Be specific.`
-    const raw = await callHaiku(prompt)
-    const insight = sanitizeInsight(raw) ?? `You completed ${totalTasks} tasks in ${currentMonth}.`
+    const bestDayStr = bestDay
+      ? `${bestDay.date} (${bestDay.count} tasks)`
+      : 'no standout day yet'
+    const focusStr = totalFocusMinutes > 0 ? `${totalFocusMinutes} focus minutes logged` : 'no focus sessions yet'
 
-    return res.status(200).json({ type: 'monthly', insight, totalTasks, bestDay })
+    // Monthly prompt is explicitly scoped to calendar month, distinct from weekly
+    const prompt = `Respond with a SINGLE sentence only. No headers, no bullet points, no markdown, no line breaks. One sentence maximum. Do not label by persona. In one persona-voiced sentence, give a forward-looking monthly summary for ${currentMonth} ${currentYear}. This is a MONTHLY summary — do NOT say "this week". Persona: ${persona}. Tasks completed in ${currentMonth}: ${totalTasks}. Best day: ${bestDayStr}. Focus: ${focusStr}. Journal entries: ${totalJournalEntries}. Days remaining in ${currentMonth}: ${daysRemaining}. Reference the month name and days remaining. Be specific.`
+    const raw = await callHaiku(prompt)
+    const insight = sanitizeInsight(raw) ?? `${totalTasks} tasks done in ${currentMonth} — ${daysRemaining} days left to build on it.`
+
+    return res.status(200).json({ type: 'monthly', insight, totalTasks, totalFocusMinutes, bestDay, daysRemaining })
   }
 
   // ── weekly (default) ──────────────────────────────────────────────────────
