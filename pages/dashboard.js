@@ -4979,20 +4979,13 @@ export default function Dashboard() {
                         className={styles.addTaskBtn}
                         onClick={async () => {
                           const val = parseFloat(monthlyIncomeInput) || 0
-                          if (val > 0 && user) {
-                            try {
-                              const res = await loggedFetch('/api/settings', {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ monthly_income: val, income_frequency: incomeFrequency })
-                              })
-                              if (res.ok) {
-                                setProfile(prev => ({ ...prev, monthly_income: val, income_frequency: incomeFrequency }))
-                                setMonthlyIncomeInput('')
-                                showToast('Income saved')
-                              }
-                            } catch (err) {
-                              console.error('Income save failed:', err)
+                          if (val > 0) {
+                            const ok = await patchSettings({ monthly_income: val, income_frequency: incomeFrequency })
+                            if (ok) {
+                              setProfile(prev => ({ ...prev, monthly_income: val, income_frequency: incomeFrequency }))
+                              setMonthlyIncomeInput('')
+                              showToast('Income saved')
+                            } else {
                               showToast('Failed to save income')
                             }
                           }
@@ -5086,7 +5079,6 @@ export default function Dashboard() {
                       <div className={styles.dailyHero}>
                         <div className={styles.dailyHeroLabel}>Daily number</div>
                         <div className={styles.dailyHeroAmount}>{fmtMoney(dailyNumber)}</div>
-                        <div className={styles.dailyHeroSub}>left to spend today</div>
                         <div className={styles.dailyStats}>
                           <div className={styles.dailyStat}>
                             <span className={styles.dailyStatLabel}>Spent today</span>

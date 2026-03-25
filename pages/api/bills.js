@@ -14,7 +14,7 @@ const VALID_CATEGORIES = ['housing', 'utilities', 'subscriptions', 'insurance', 
 const VALID_BILL_TYPES = ['bill', 'loan', 'credit_card']
 
 const BILL_FIELDS = [
-  'name', 'amount', 'due_day', 'frequency', 'category',
+  'name', 'amount', 'due_day', 'first_date', 'second_date', 'frequency', 'category',
   'autopay', 'is_variable', 'account', 'notes', 'url', 'remind_days',
   'auto_task', 'interest_rate', 'bill_type'
 ]
@@ -22,7 +22,7 @@ const BILL_FIELDS = [
 async function handler(req, res, userId) {
   const supabaseAdmin = getAdminClient()
 
-  // GET — all bills ordered by due_day
+  // GET — all bills ordered by due_day; bimonthly bills expand into two entries
   if (req.method === 'GET') {
     const { data: bills, error } = await supabaseAdmin
       .from('bills')
@@ -35,7 +35,20 @@ async function handler(req, res, userId) {
       return res.status(500).json({ error: 'Failed to fetch bills' })
     }
 
-    return res.status(200).json({ bills })
+    // Expand bimonthly bills with both dates into two separate display entries
+    const expanded = []
+    for (const bill of bills || []) {
+      if (bill.frequency === 'bimonthly' && bill.first_date && bill.second_date) {
+        expanded.push({ ...bill, due_day: bill.first_date,  _bimonthly_slot: 1 })
+        expanded.push({ ...bill, due_day: bill.second_date, _bimonthly_slot: 2 })
+      } else {
+        expanded.push(bill)
+      }
+    }
+    // Re-sort after expansion so both dates appear in correct order
+    expanded.sort((a, b) => (a.due_day ?? 99) - (b.due_day ?? 99))
+
+    return res.status(200).json({ bills: expanded })
   }
 
   // POST — create bill + optional auto-task
@@ -74,6 +87,8 @@ async function handler(req, res, userId) {
         name: cleanName,
         amount: body.amount || 0,
         due_day: body.due_day || null,
+        first_date: body.first_date ? parseInt(body.first_date) : null,
+        second_date: body.second_date ? parseInt(body.second_date) : null,
         frequency: body.frequency || 'monthly',
         category: body.category || 'other',
         auto_task: body.auto_task || false,
