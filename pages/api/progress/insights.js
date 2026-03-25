@@ -177,10 +177,10 @@ Return ONLY a JSON array, no other text. Example format:
       // non-fatal — still return cards
     }
 
-    return res.status(200).json({ cards })
+    return res.status(200).json({ insights: cards })
   } catch (err) {
     console.error('[insights] fatal error:', err.message)
-    return res.status(200).json({ cards: FALLBACK_CARDS })
+    return res.status(200).json({ insights: FALLBACK_CARDS })
   }
 }
 

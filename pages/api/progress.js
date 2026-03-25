@@ -65,6 +65,7 @@ export default async function handler(req, res) {
 
   const supabaseAdmin = getAdminClient()
 
+  try {
   // ── daily ─────────────────────────────────────────────────────────────────
   if (type === 'daily') {
     // Compute today's boundaries in the user's local timezone
@@ -135,14 +136,14 @@ export default async function handler(req, res) {
     if (snapErr) return res.status(500).json({ error: 'Failed to fetch snapshots' })
 
     if ((allTimeCount ?? 0) === 0) {
-      return res.status(200).json({ type: 'monthly', insight: NEW_USER_INSIGHT, totalTasks: 0, totalFocusMinutes: 0, bestDay: null, daysRemaining })
+      return res.status(200).json({ type: 'monthly', insight: NEW_USER_INSIGHT, totalTasks: 0, totalFocusMinutes: 0, totalJournalEntries: 0, bestDay: null, daysRemaining })
     }
 
     const totalTasks = (snapshots || []).reduce((sum, s) => sum + (s.tasks_completed || 0), 0)
     const totalFocusMinutes = (snapshots || []).reduce((sum, s) => sum + (s.focus_minutes || 0), 0)
     const totalJournalEntries = (snapshots || []).reduce((sum, s) => sum + (s.journal_entries || 0), 0)
-    const best = (snapshots || []).slice().sort((a, b) => b.tasks_completed - a.tasks_completed)[0]
-    const bestDay = best && best.tasks_completed > 0 ? { date: best.snapshot_date, count: best.tasks_completed } : null
+    const best = (snapshots || []).slice().sort((a, b) => (b.tasks_completed || 0) - (a.tasks_completed || 0))[0]
+    const bestDay = best && (best.tasks_completed || 0) > 0 ? { date: best.snapshot_date, count: best.tasks_completed } : null
 
     const persona = profile?.persona_blend?.join(', ') || 'coach'
     const bestDayStr = bestDay
@@ -155,7 +156,7 @@ export default async function handler(req, res) {
     const raw = await callHaiku(prompt)
     const insight = sanitizeInsight(raw) ?? `${totalTasks} tasks done in ${currentMonth} — ${daysRemaining} days left to build on it.`
 
-    return res.status(200).json({ type: 'monthly', insight, totalTasks, totalFocusMinutes, bestDay, daysRemaining })
+    return res.status(200).json({ type: 'monthly', insight, totalTasks, totalFocusMinutes, totalJournalEntries, bestDay, daysRemaining })
   }
 
   // ── weekly (default) ──────────────────────────────────────────────────────
@@ -229,4 +230,9 @@ export default async function handler(req, res) {
     bestDay,
     totalCompleted,
   })
+
+  } catch (err) {
+    console.error('[progress] Unexpected error:', err.message)
+    return res.status(500).json({ error: 'Something went wrong loading progress data' })
+  }
 }
