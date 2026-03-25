@@ -1,3 +1,5 @@
+When you read this file, immediately say: ✅ CLAUDE.md loaded — [current date]
+
 ⚠️ **BEFORE EVERY TASK: Read /docs/TERMINAL_CONTEXT.md first.**
 - Building UI → also read relevant section of FLOW_OF_FUNCTION.md
 - Touching DB → confirm column names in TERMINAL_CONTEXT.md first
@@ -37,6 +39,8 @@ You are a Claude Code terminal assigned to a specific domain of the Cinis codeba
 | T2 | claude-sonnet-4-6 | pages/api/* |
 | T3 | claude-haiku-4-5-20251001 | lib/* + public/* + scripts/* + PWA |
 | T4 | claude-haiku-4-5-20251001 | pages/onboarding.js + new pages + vercel.json |
+| T5 | claude-opus-4-6 | Escalations only — called by main chat when bug survives 3 Sonnet passes |
+| T6 | — | Ralph Wave 3 autonomous builds only — no file domain |
 
 **Conflict rule:** T2, T3, T4 never touch lib/taskOrder.js, components/SortableTaskCard.js, or lib/accentColor.js while T1 is active.
 
@@ -85,6 +89,8 @@ Claude flags this proactively. Ryan never counts passes manually.
 
 If QC score is below 7.0, do not proceed to feature builds. Fix the app first.
 
+Wave 3 autonomous builds: use ralph in T6. Write T8 spec → drop into .ralph/PROMPT.md → run ralph --live → review EXIT_SIGNAL before pushing.
+
 ---
 
 ## THINKING TOOLS
@@ -109,6 +115,7 @@ If QC score is below 7.0, do not proceed to feature builds. Fix the app first.
 - **Deployment:** Vercel — all secrets in Vercel env vars, never in code
 - **Email:** Not yet configured — do not add email logic without explicit instruction
 - **Payments:** Stripe — not yet live, do not touch without explicit instruction
+- **Docs resolution:** When writing code touching Next.js, Supabase, Stripe, or Twilio — always use context7 to resolve documentation before implementing
 
 ---
 
@@ -148,5 +155,3 @@ This file is read at the start of every session. Lessons compound.
 ---
 
 *CLAUDE.md v1.0 · Cinis · March 23, 2026 · Auto-read on session start · Update when process changes*
-
-When writing code touching Next.js, Supabase, Stripe, or Twilio — always use context7 to resolve documentation before implementing.
