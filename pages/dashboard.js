@@ -9,7 +9,7 @@ import { saveTaskOrder } from '../lib/taskOrder'
 import { isDueSoon as billIsDueSoon, formatBillAmount, getBillCategory, getNextDueDate } from '../lib/billUtils'
 import { CHORE_PRESETS, getChoresByPreset } from '../lib/chores'
 import { requestNotificationPermission, disablePushNotifications } from '../lib/pushNotifications'
-import { CheckSquare, ChatCircle, Target, CalendarBlank, Notebook, Wallet, ChartLineUp, Plus, Trash, Archive, Star, Gear, MagnifyingGlass, X, CaretLeft, CaretRight, CaretDown, Receipt, Scales, Books, Robot, List, Timer, ChartBar, Lightning, ArrowCounterClockwise, CheckCircle, Microphone, UsersThree, Fire, Apple } from '@phosphor-icons/react'
+import { CheckSquare, ChatCircle, Target, CalendarBlank, Notebook, Wallet, ChartLineUp, Plus, Trash, Archive, Star, Gear, MagnifyingGlass, X, CaretLeft, CaretRight, CaretDown, Receipt, Scales, Books, Robot, List, Timer, ChartBar, Lightning, ArrowCounterClockwise, CheckCircle, Microphone, UsersThree, Fire, BowlFood } from '@phosphor-icons/react'
 import { showToast as libShowToast, ToastContainer } from '../lib/toast.js'
 
 const THEMES = [
@@ -66,7 +66,7 @@ const NAV_ITEMS = [
   { id: 'habits', label: 'Habits', icon: <ArrowCounterClockwise size={22} /> },
   { id: 'tagteam', label: 'Tag Team', icon: <UsersThree size={22} /> },
   { id: 'finance', label: 'Finance', icon: <Wallet size={22} /> },
-  { id: 'nutrition', label: 'Nutrition', icon: <Apple size={22} /> },
+  { id: 'nutrition', label: 'Nutrition', icon: <BowlFood size={22} /> },
   { id: 'progress', label: 'Progress', icon: <ChartLineUp size={22} /> },
   { id: 'guide', label: 'Guide', icon: <Books size={22} /> },
   { id: 'settings', label: 'Settings', icon: <Gear size={22} /> },
