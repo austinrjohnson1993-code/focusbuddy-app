@@ -8,7 +8,7 @@ function getAdminClient() {
   )
 }
 
-const FROM_ADDRESS = 'Cinis <noreply@getcinis.com>'
+const FROM_ADDRESS = 'Cinis <noreply@getcinis.app>'
 
 const CONFIRMATION_HTML = `
 <div style="background:#211A14;color:#F5F0E3;padding:32px;font-family:sans-serif;border-radius:12px;max-width:480px">
