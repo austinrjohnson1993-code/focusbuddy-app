@@ -15,7 +15,7 @@
 // BUG-025: In persona edit modal (Settings tab), pre-select the user's current
 //   persona_blend so they can see their active selection when the modal opens.
 
-import withAuth from '../../lib/authGuard'
+import { withAuthGuard } from '../../lib/authGuard'
 
 async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
@@ -23,4 +23,4 @@ async function handler(req, res) {
   return res.status(200).json({ connections: {} })
 }
 
-export default withAuth(handler)
+export default withAuthGuard(handler)

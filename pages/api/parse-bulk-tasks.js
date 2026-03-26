@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
-import withAuth from '../../lib/authGuard'
+import { withAuthGuard } from '../../lib/authGuard'
 
 const client = new Anthropic()
 
@@ -48,4 +48,4 @@ Return ONLY valid JSON — a bare array, no markdown, no explanation.`,
   }
 }
 
-export default withAuth(handler)
+export default withAuthGuard(handler)

@@ -1,4 +1,4 @@
-import withAuth from '../../lib/authGuard'
+import { withAuthGuard } from '../../lib/authGuard'
 
 async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -96,4 +96,4 @@ Rules:
   return res.status(200).json(result)
 }
 
-export default withAuth(handler)
+export default withAuthGuard(handler)

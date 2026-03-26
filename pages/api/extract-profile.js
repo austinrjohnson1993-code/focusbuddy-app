@@ -1,5 +1,5 @@
 import { lightweightMessage } from '../../lib/anthropic';
-import withAuth from '../../lib/authGuard';
+import { withAuthGuard } from '../../lib/authGuard';
 
 async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -55,4 +55,4 @@ Return ONLY valid JSON, no other text:
   }
 }
 
-export default withAuth(handler);
+export default withAuthGuard(handler);

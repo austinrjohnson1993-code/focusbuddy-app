@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { buildChoreTasks, CHORE_PRESETS } from '../../lib/chores'
-import withAuth from '../../lib/authGuard'
+import { withAuthGuard } from '../../lib/authGuard'
 
 function getAdminClient() {
   return createClient(
@@ -110,4 +110,4 @@ async function handler(req, res, userId) {
   return res.status(405).json({ error: 'Method not allowed' })
 }
 
-export default withAuth(handler)
+export default withAuthGuard(handler)

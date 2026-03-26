@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import withAuth from '../../lib/authGuard'
+import { withAuthGuard } from '../../lib/authGuard'
 
 function getAdminClient() {
   return createClient(
@@ -69,4 +69,4 @@ Write exactly 3 sentences: one specific win using a real task name, one pattern 
   return res.status(200).json({ summary })
 }
 
-export default withAuth(handler)
+export default withAuthGuard(handler)

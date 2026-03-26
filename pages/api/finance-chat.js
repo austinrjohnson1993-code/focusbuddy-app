@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { coachingMessage } from '../../lib/anthropic'
-import withAuth from '../../lib/authGuard'
+import { withAuthGuard } from '../../lib/authGuard'
 
 function getAdminClient() {
   return createClient(
@@ -52,4 +52,4 @@ async function handler(req, res, userId) {
   }
 }
 
-export default withAuth(handler)
+export default withAuthGuard(handler)

@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { checkDailyRateLimit, rateLimitErrorResponse } from '../../lib/rateLimit'
-import withAuth from '../../lib/authGuard'
+import { withAuthGuard } from '../../lib/authGuard'
 
 function getAdminClient() {
   return createClient(
@@ -91,4 +91,4 @@ async function handler(req, res, userId) {
   return res.status(200).json({ success: true, profile: generatedText })
 }
 
-export default withAuth(handler)
+export default withAuthGuard(handler)
