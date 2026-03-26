@@ -95,7 +95,7 @@ export default function TabCheckin({ user, profile, tasks = [], showToast, logge
                 {m.tasks && m.tasks.map((t, ti) => (
                   <div key={ti} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 11px', background: '#FF664406', border: '1px solid #FF664415', borderRadius: 8, marginTop: 4 }}>
                     <span style={{ fontSize: 11, color: '#F5F0E3', fontFamily: "'Figtree',sans-serif", flex: 1 }}>{t}</span>
-                    <div style={{ padding: '4px 12px', background: '#FF6644', borderRadius: 6, fontSize: 9, color: '#F5F0E3', fontFamily: "'Figtree',sans-serif", cursor: 'pointer', fontWeight: 500 }}>Add</div>
+                    <div style={{ padding: '10px 12px', background: '#FF6644', borderRadius: 6, fontSize: 13, color: '#F5F0E3', fontFamily: "'Figtree',sans-serif", cursor: 'pointer', fontWeight: 500 }}>Add</div>
                   </div>
                 ))}
                 <div style={{ fontSize: 9, color: '#F5F0E338', fontFamily: "'Figtree',sans-serif", marginTop: 5, paddingLeft: 2 }}>{m.time}</div>
@@ -127,14 +127,14 @@ export default function TabCheckin({ user, profile, tasks = [], showToast, logge
       <div style={{ padding: '8px 14px 14px', borderTop: '.5px solid #F5F0E318', flexShrink: 0 }}>
         <div style={{ display: 'flex', gap: 4, marginBottom: 8, overflowX: 'auto' }}>
           {chips.map((ch, i) => (
-            <div key={i} onClick={() => send(ch)} style={{ padding: '6px 12px', background: '#3E3228', border: '1px solid #F5F0E31E', borderRadius: 20, fontSize: 10, color: '#F5F0E390', fontFamily: "'Figtree',sans-serif", cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>{ch}</div>
+            <div key={i} onClick={() => send(ch)} style={{ padding: '10px 12px', background: '#3E3228', border: '1px solid #F5F0E31E', borderRadius: 20, fontSize: 13, color: '#F5F0E390', fontFamily: "'Figtree',sans-serif", cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>{ch}</div>
           ))}
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <div style={{ flex: 1, background: '#3E3228', borderRadius: 12, padding: '0 14px', border: '1px solid #F5F0E31E' }}>
             <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send(input)} placeholder="Message..." style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', color: '#F5F0E3', fontSize: 13, fontFamily: "'Figtree',sans-serif", padding: '11px 0' }} />
           </div>
-          <div onClick={() => send(input)} style={{ width: 40, height: 40, borderRadius: 12, background: input.trim() ? '#FF6644' : '#F5F0E306', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+          <div onClick={() => send(input)} style={{ width: 44, height: 44, borderRadius: 12, background: input.trim() ? '#FF6644' : '#F5F0E306', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F5F0E3" strokeWidth="2" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
           </div>
         </div>

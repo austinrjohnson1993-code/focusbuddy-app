@@ -45,7 +45,7 @@ export default function TabTasks({ user, profile, tasks = [], setTasks, showToas
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <div style={{ fontSize: 11, color: '#F5F0E350', fontFamily: "'Figtree',sans-serif" }}>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', background: '#FF664412', border: '1px solid #FF664425', borderRadius: 6, cursor: 'pointer' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '10px 12px', background: '#FF664412', border: '1px solid #FF664425', borderRadius: 6, cursor: 'pointer' }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF6644" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
           <span style={{ fontSize: 10, color: '#FF6644', fontFamily: "'Figtree',sans-serif", fontWeight: 500 }}>Add</span>
         </div>
@@ -71,8 +71,8 @@ export default function TabTasks({ user, profile, tasks = [], setTasks, showToas
           <div style={{ fontSize: 14, fontWeight: 600, color: '#F5F0E3', fontFamily: "'Figtree',sans-serif" }}>{p.title}</div>
           {p.scheduled_for && <div style={{ fontSize: 10, color: '#F5F0E350', fontFamily: "'Figtree',sans-serif", marginTop: 3 }}>{new Date(p.scheduled_for).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div>}
           <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-            <div onClick={() => switchTab && switchTab('focus')} style={{ padding: '6px 14px', background: '#E8321A', borderRadius: 8, fontSize: 11, fontWeight: 500, color: '#F5F0E3', fontFamily: "'Figtree',sans-serif", cursor: 'pointer' }}>Start timer</div>
-            <div style={{ padding: '6px 12px', background: '#F5F0E308', border: '1px solid #F5F0E318', borderRadius: 8, fontSize: 11, color: '#F5F0E350', fontFamily: "'Figtree',sans-serif", cursor: 'pointer' }}>Tomorrow</div>
+            <div onClick={() => switchTab && switchTab('focus')} style={{ padding: '6px 14px', background: '#E8321A', borderRadius: 8, fontSize: 14, fontWeight: 500, color: '#F5F0E3', fontFamily: "'Figtree',sans-serif", cursor: 'pointer' }}>Start timer</div>
+            <div style={{ padding: '6px 12px', background: '#F5F0E308', border: '1px solid #F5F0E318', borderRadius: 8, fontSize: 14, color: '#F5F0E350', fontFamily: "'Figtree',sans-serif", cursor: 'pointer' }}>Tomorrow</div>
           </div>
         </div>
       ); })()}
@@ -84,7 +84,7 @@ export default function TabTasks({ user, profile, tasks = [], setTasks, showToas
       <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em', color: '#F5F0E350', fontFamily: "'Figtree',sans-serif", fontWeight: 500, padding: '8px 0 4px' }}>Up next ({active.length})</div>
       {active.map(t => (
         <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 10px', background: '#3E3228', borderRadius: 8, marginBottom: 5, position: 'relative' }}>
-          <div onClick={() => toggle(t.id)} style={{ width: 17, height: 17, borderRadius: '50%', border: '1.5px solid #F5F0E350', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }} />
+          <div onClick={() => toggle(t.id)} style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}><div style={{ width: 17, height: 17, borderRadius: '50%', border: '1.5px solid #F5F0E350', background: 'transparent' }} /></div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 500, color: '#F5F0E3', fontFamily: "'Figtree',sans-serif", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.title}</div>
             {t.scheduled_for && <div style={{ fontSize: 10, color: '#F5F0E350', fontFamily: "'Figtree',sans-serif", marginTop: 2 }}>{new Date(t.scheduled_for).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div>}
@@ -101,8 +101,10 @@ export default function TabTasks({ user, profile, tasks = [], setTasks, showToas
         <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.08em', color: '#F5F0E350', fontFamily: "'Figtree',sans-serif", fontWeight: 500, padding: '8px 0 4px' }}>Completed ({done.length})</div>
         {done.map(t => (
           <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 10px', background: '#3E3228', borderRadius: 8, marginBottom: 5, opacity: 0.45 }}>
-            <div onClick={() => toggle(t.id)} style={{ width: 17, height: 17, borderRadius: '50%', background: '#4CAF50', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><path d="M5 12l5 5L19 7" /></svg>
+            <div onClick={() => toggle(t.id)} style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
+              <div style={{ width: 17, height: 17, borderRadius: '50%', background: '#4CAF50', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><path d="M5 12l5 5L19 7" /></svg>
+              </div>
             </div>
             <span style={{ fontSize: 13, color: '#F5F0E350', fontFamily: "'Figtree',sans-serif", textDecoration: 'line-through' }}>{t.title}</span>
           </div>

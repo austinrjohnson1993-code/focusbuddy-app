@@ -83,9 +83,9 @@ export default function TabGuide({ user, profile, showToast, switchTab, setCheck
           {forYouCards.map(card => (
             <div key={card.id} style={{ width: 190, minWidth: 190, flexShrink: 0, background: '#3E3228', borderRadius: 10, padding: '11px 12px', borderTop: '2px solid #FF6644' }}>
               <span style={{ fontSize: 15 }}>{card.icon}</span>
-              <p style={{ fontFamily: "'Figtree', sans-serif", fontWeight: 600, fontSize: 11, color: '#F5F0E3', margin: '4px 0 4px' }}>{card.title}</p>
+              <p style={{ fontFamily: "'Figtree', sans-serif", fontWeight: 600, fontSize: 14, color: '#F5F0E3', margin: '4px 0 4px' }}>{card.title}</p>
               <p style={{ fontFamily: "'Figtree', sans-serif", fontSize: 9, color: 'rgba(245,240,227,0.32)', margin: '0 0 8px', lineHeight: 1.5 }}>{card.preview}</p>
-              <button onClick={() => switchTab(card.action)} style={{ background: '#FF6644', border: 'none', color: '#F5F0E3', fontFamily: "'Figtree', sans-serif", fontSize: 9, fontWeight: 500, cursor: 'pointer', textAlign: 'center', padding: '5px 0', borderRadius: 6, width: '100%' }}>{card.cta}</button>
+              <button onClick={() => switchTab(card.action)} style={{ background: '#FF6644', border: 'none', color: '#F5F0E3', fontFamily: "'Figtree', sans-serif", fontSize: 13, fontWeight: 500, cursor: 'pointer', textAlign: 'center', padding: '10px 0', borderRadius: 6, width: '100%' }}>{card.cta}</button>
             </div>
           ))}
         </div>
@@ -127,7 +127,7 @@ export default function TabGuide({ user, profile, showToast, switchTab, setCheck
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                       <span style={{ fontFamily: "'Figtree', sans-serif", fontWeight: 500, fontSize: 12, color: '#F5F0E3' }}>{strategy.title}</span>
-                      <span style={{ fontSize: 6, fontWeight: 600, background: `${tagColor}26`, color: tagColor, padding: '1px 5px', borderRadius: 3, fontFamily: "'Figtree', sans-serif", textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>{strategy.tag}</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, background: `${tagColor}26`, color: tagColor, padding: '4px 8px', borderRadius: 3, fontFamily: "'Figtree', sans-serif", textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>{strategy.tag}</span>
                     </div>
                     {!isExpanded && <p style={{ fontFamily: "'Figtree', sans-serif", fontSize: 10, color: 'rgba(245,240,227,0.32)', margin: 0, lineHeight: 1.4 }}>{strategy.preview}</p>}
                   </div>
@@ -142,11 +142,11 @@ export default function TabGuide({ user, profile, showToast, switchTab, setCheck
                     <p style={{ fontFamily: "'Figtree', sans-serif", fontSize: 11, color: 'rgba(245,240,227,0.56)', lineHeight: 1.65, margin: '10px 0 12px' }}>{strategy.body}</p>
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button onClick={() => switchTab(strategy.tag === 'FINANCE' ? 'finance' : strategy.tag === 'NUTRITION' ? 'nutrition' : 'tasks')}
-                        style={{ background: '#FF6644', color: '#F5F0E3', border: 'none', padding: '6px 14px', borderRadius: 6, fontFamily: "'Figtree', sans-serif", fontSize: 10, fontWeight: 500, cursor: 'pointer' }}>
+                        style={{ background: '#FF6644', color: '#F5F0E3', border: 'none', padding: '10px 14px', borderRadius: 6, fontFamily: "'Figtree', sans-serif", fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
                         Try it
                       </button>
                       <button onClick={() => handleTriedToggle(strategy.id)}
-                        style={{ background: isTried ? '#4CAF50' : 'rgba(245,240,227,0.06)', color: '#F5F0E3', border: 'none', padding: '6px 14px', borderRadius: 6, fontFamily: "'Figtree', sans-serif", fontSize: 10, fontWeight: 500, cursor: 'pointer' }}>
+                        style={{ background: isTried ? '#4CAF50' : 'rgba(245,240,227,0.06)', color: '#F5F0E3', border: 'none', padding: '10px 14px', borderRadius: 6, fontFamily: "'Figtree', sans-serif", fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
                         {isTried ? 'This worked ✓' : 'This worked'}
                       </button>
                     </div>

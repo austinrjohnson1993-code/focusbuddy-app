@@ -188,13 +188,15 @@ export default function TabHabits({ user, profile, showToast, loggedFetch }) {
 
   // ── BigCheck ─────────────────────────────────────────────────────────────
   const BigCheck = ({ done, color, onClick }) => (
-    <div onClick={onClick} style={{
-      width: 28, height: 28, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
-      border: done ? 'none' : `2px solid ${color}50`,
-      background: done ? color : 'transparent',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>
-      {done && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><path d="M5 12l5 5L19 7" /></svg>}
+    <div onClick={onClick} style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
+      <div style={{
+        width: 28, height: 28, borderRadius: '50%',
+        border: done ? 'none' : `2px solid ${color}50`,
+        background: done ? color : 'transparent',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {done && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><path d="M5 12l5 5L19 7" /></svg>}
+      </div>
     </div>
   )
 
@@ -209,7 +211,7 @@ export default function TabHabits({ user, profile, showToast, loggedFetch }) {
             <div style={{ fontSize: 9, color: '#F5F0E350', fontFamily: ff }}>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</div>
           </div>
           <div onClick={() => setShowAddHabitOverlay(true)} style={{
-            display: 'flex', alignItems: 'center', gap: 3, padding: '5px 12px',
+            display: 'flex', alignItems: 'center', gap: 3, padding: '10px 12px',
             background: '#FF664412', border: '1px solid #FF664425', borderRadius: 6, cursor: 'pointer'
           }}>
             <span style={{ fontSize: 10, color: '#FF6644', fontFamily: ff, fontWeight: 500 }}>+ Add</span>
@@ -262,7 +264,7 @@ export default function TabHabits({ user, profile, showToast, loggedFetch }) {
               <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
                 {['today', 'write'].map(v => (
                   <div key={v} onClick={() => setJournalView(v)} style={{
-                    padding: '5px 12px', borderRadius: 6, fontSize: 10, fontFamily: ff, cursor: 'pointer',
+                    padding: '10px 12px', borderRadius: 6, fontSize: 14, fontFamily: ff, cursor: 'pointer',
                     background: journalView === v ? '#211A14' : 'transparent',
                     color: journalView === v ? '#F5F0E3' : '#F5F0E350',
                   }}>{v === 'today' ? "Today's entry" : 'Write new'}</div>
@@ -299,7 +301,7 @@ export default function TabHabits({ user, profile, showToast, loggedFetch }) {
                   <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
                     {['Personal', 'Work', 'Reflect'].map(cat => (
                       <div key={cat} onClick={() => setJournalCategory(journalCategory === cat ? null : cat)} style={{
-                        padding: '5px 12px', borderRadius: 6, fontSize: 10, fontFamily: ff, cursor: 'pointer',
+                        padding: '10px 12px', borderRadius: 6, fontSize: 14, fontFamily: ff, cursor: 'pointer',
                         background: journalCategory === cat ? '#FF664420' : 'transparent',
                         color: journalCategory === cat ? '#FF6644' : '#F5F0E350',
                         border: journalCategory === cat ? '1px solid #FF664430' : '1px solid #F5F0E312'
@@ -339,7 +341,7 @@ export default function TabHabits({ user, profile, showToast, loggedFetch }) {
                   <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                     {MOOD_EMOJIS.map(emoji => (
                       <div key={emoji} onClick={() => setHabitJournalMood(m => m === emoji ? null : emoji)} style={{
-                        width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: 44, height: 44, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 16, cursor: 'pointer',
                         border: habitJournalMood === emoji ? '1.5px solid #FF6644' : '1.5px solid transparent',
                         background: habitJournalMood === emoji ? '#FF664412' : 'transparent',
