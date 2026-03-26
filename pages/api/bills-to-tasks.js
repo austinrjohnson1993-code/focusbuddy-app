@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { withAuthGuard } from '../../lib/authGuard'
 
 function getAdminClient() {
   return createClient(
@@ -72,11 +73,8 @@ export async function runBillsToTasks(userId) {
   return { created: created.length, bills: created }
 }
 
-export default async function handler(req, res) {
+async function handler(req, res, userId) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
-
-  const { userId } = req.body
-  if (!userId) return res.status(400).json({ error: 'userId required' })
 
   try {
     const result = await runBillsToTasks(userId)
@@ -86,3 +84,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: err.message })
   }
 }
+
+export default withAuthGuard(handler)
