@@ -428,7 +428,8 @@
 @media (max-width: 768px) {
   .sidebar { display: none; }
   .main { margin-left: 0; padding-bottom: 80px; }
-  .view { padding: 28px 16px 24px; }
+  .view { padding: 28px 16px 80px; }
+  .voiceFab { display: none; }
   .viewHeader { flex-direction: row; align-items: center; margin-bottom: 28px; }
   .greetingText { font-size: 1.6rem; }
 
@@ -461,6 +462,12 @@
   .bottomNavItemActive { color: var(--accent) !important; }
   .bottomNavIcon { display: flex; align-items: center; }
   .bottomNavLabel { line-height: 1; }
+  .bottomNavCenter {
+    flex: 1.4; display: flex; align-items: center; justify-content: center;
+    background: transparent; border: none; cursor: pointer; padding: 4px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .bottomNavCenterRecording { opacity: 0.7; }
 
   /* Modal: cap height, prevent overflow taller than viewport */
   .modal {
