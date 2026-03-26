@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { buildPersonaPrompt } from '../../../lib/persona'
 import { coachingMessage } from '../../../lib/anthropic'
-import { sendPushNotification } from '../../../lib/sendPush'
+const { sendPushToUsers } = require('../../../lib/push')
 
 function getAdminClient() {
   return createClient(
@@ -77,23 +77,24 @@ export default async function handler(req, res) {
 
       pregenerated++
       console.log(`[morning-checkin] Pre-generated for ${name}`)
-
-      if (profile.push_notifications_enabled && profile.push_subscription) {
-        try {
-          await sendPushNotification(
-            profile.push_subscription,
-            `Good morning, ${name}`,
-            message.length > 120 ? message.slice(0, 117) + '…' : message
-          )
-          console.log(`[morning-checkin] Push sent to ${name}`)
-        } catch (pushErr) {
-          console.error(`[morning-checkin] Push failed for ${profile.id}:`, pushErr.message)
-        }
-      }
     } catch (err) {
       console.error(`[morning-checkin] Pre-gen failed for ${profile.id}:`, err.message)
     }
   }))
+
+  // Send push notifications to all eligible morning users
+  const userIds = profiles.map(p => p.id)
+  try {
+    await sendPushToUsers(supabaseAdmin, userIds, {
+      title: 'Good morning, Cinis.',
+      body: "Your day is ready. What's the move?",
+      tag: 'cinis-morning',
+      url: '/dashboard'
+    })
+    console.log(`[morning-checkin] Push sent to ${userIds.length} users`)
+  } catch (pushErr) {
+    console.error('[morning-checkin] Batch push error:', pushErr.message)
+  }
 
   return res.status(200).json({ success: true, pregenerated })
 }

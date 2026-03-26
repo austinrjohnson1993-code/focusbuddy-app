@@ -4,7 +4,7 @@ import { runBillsToTasks } from '../bills-to-tasks'
 import { runProgressSnapshot } from '../progress-snapshot'
 import { buildPersonaPrompt } from '../../../lib/persona'
 import { coachingMessage } from '../../../lib/anthropic'
-import { sendPushNotification } from '../../../lib/sendPush'
+const { sendPushToUsers } = require('../../../lib/push')
 
 function getAdminClient() {
   return createClient(
@@ -78,19 +78,6 @@ export default async function handler(req, res) {
       pregenerated++
       console.log(`[evening-checkin] Pre-generated for ${name}`)
 
-      if (profile.push_notifications_enabled && profile.push_subscription) {
-        try {
-          await sendPushNotification(
-            profile.push_subscription,
-            `Evening check-in, ${name}`,
-            message.length > 120 ? message.slice(0, 117) + '…' : message
-          )
-          console.log(`[evening-checkin] Push sent to ${name}`)
-        } catch (pushErr) {
-          console.error(`[evening-checkin] Push failed for ${profile.id}:`, pushErr.message)
-        }
-      }
-
       // 3. Create bill tasks due today or tomorrow
       try {
         const billResult = await runBillsToTasks(profile.id)
@@ -111,6 +98,20 @@ export default async function handler(req, res) {
       console.error(`[evening-checkin] Pre-gen failed for ${profile.id}:`, err.message)
     }
   }))
+
+  // Send push notifications to all eligible evening users
+  const userIds = profiles.map(p => p.id)
+  try {
+    await sendPushToUsers(supabaseAdmin, userIds, {
+      title: 'End of day.',
+      body: "How'd it go? Take 2 minutes.",
+      tag: 'cinis-evening',
+      url: '/dashboard'
+    })
+    console.log(`[evening-checkin] Push sent to ${userIds.length} users`)
+  } catch (pushErr) {
+    console.error('[evening-checkin] Batch push error:', pushErr.message)
+  }
 
   return res.status(200).json({ success: true, rolled: rolloverResult.rolled, pregenerated })
 }
