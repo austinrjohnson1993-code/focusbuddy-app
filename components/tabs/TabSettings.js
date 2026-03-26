@@ -2,8 +2,16 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import styles from '../../styles/Dashboard.module.css'
 import { supabase } from '../../lib/supabase'
-import { requestNotificationPermission } from '../../lib/pushNotifications'
 import { THEMES, applyTheme, PERSONAS_LIST, TabErrorBoundary } from './shared'
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = window.atob(base64)
+  const outputArray = new Uint8Array(rawData.length)
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i)
+  return outputArray
+}
 
 export default function TabSettings({ user, profile, setProfile, showToast, loggedFetch, activeTheme, setActiveTheme }) {
   const router = useRouter()
@@ -22,6 +30,8 @@ export default function TabSettings({ user, profile, setProfile, showToast, logg
   const [checkinMorningTime, setCheckinMorningTime] = useState('08:00')
   const [checkinMiddayTime, setCheckinMiddayTime] = useState('12:00')
   const [checkinEveningTime, setCheckinEveningTime] = useState('21:00')
+  const [pushLoading, setPushLoading] = useState(false)
+  const [testNotifLoading, setTestNotifLoading] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
 
@@ -129,43 +139,89 @@ export default function TabSettings({ user, profile, setProfile, showToast, logg
     }
   }
 
-  const handleEnablePush = async () => {
-    try {
-      const sub = await requestNotificationPermission()
-      if (sub) {
-        await patchSettings({
-          push_notifications_enabled: true,
-          push_subscription: sub.toJSON(),
-        })
-        try { localStorage.setItem('fb_push_enabled', 'true') } catch {}
-        setProfile(prev => ({ ...prev, push_notifications_enabled: true }))
-        setNotifPermission('granted')
-        showToast('Push notifications enabled')
-      } else {
-        setNotifPermission('denied')
-        showToast('Notifications blocked in browser settings')
-      }
-    } catch (err) {
-      console.error('[push] enable error:', err)
-      showToast('Could not enable notifications')
+  async function subscribeToPush() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      return { error: 'Push notifications not supported in this browser.' }
     }
+    const permission = await Notification.requestPermission()
+    if (permission !== 'granted') {
+      return { error: 'Notification permission denied.' }
+    }
+    const registration = await navigator.serviceWorker.ready
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY)
+    })
+    return { subscription: subscription.toJSON() }
   }
 
-  const handleDisablePush = async () => {
+  const handleTogglePush = async () => {
+    if (pushLoading) return
+    setPushLoading(true)
+    const isCurrentlyEnabled = profile?.push_notifications_enabled
+
     try {
-      if ('serviceWorker' in navigator) {
-        const reg = await navigator.serviceWorker.ready
-        const existingSub = await reg.pushManager.getSubscription()
-        if (existingSub) await existingSub.unsubscribe()
+      if (isCurrentlyEnabled) {
+        // Turning OFF
+        if ('serviceWorker' in navigator) {
+          const reg = await navigator.serviceWorker.ready
+          const existingSub = await reg.pushManager.getSubscription()
+          if (existingSub) await existingSub.unsubscribe()
+        }
+        const res = await loggedFetch('/api/notifications/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id, enabled: false }),
+        })
+        if (!res.ok) throw new Error('Failed to disable notifications')
+        setProfile(prev => ({ ...prev, push_notifications_enabled: false }))
+        try { localStorage.removeItem('fb_push_enabled') } catch {}
+        showToast('Push notifications disabled')
+      } else {
+        // Turning ON
+        const result = await subscribeToPush()
+        if (result.error) {
+          if (result.error.includes('denied')) setNotifPermission('denied')
+          showToast(result.error)
+          setPushLoading(false)
+          return
+        }
+        const res = await loggedFetch('/api/notifications/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id, subscription: result.subscription, enabled: true }),
+        })
+        if (!res.ok) throw new Error('Failed to save subscription')
+        setProfile(prev => ({ ...prev, push_notifications_enabled: true }))
+        setNotifPermission('granted')
+        try { localStorage.setItem('fb_push_enabled', 'true') } catch {}
+        showToast('Push notifications enabled')
       }
-      await patchSettings({ push_notifications_enabled: false, push_subscription: null })
-      setProfile(prev => ({ ...prev, push_notifications_enabled: false }))
-      try { localStorage.removeItem('fb_push_enabled') } catch {}
-      showToast('Push notifications disabled')
     } catch (err) {
-      console.error('[push] disable error:', err)
-      showToast('Could not disable notifications')
+      console.error('[push] toggle error:', err)
+      showToast('Could not update notifications')
     }
+    setPushLoading(false)
+  }
+
+  const handleSendTestNotification = async () => {
+    if (testNotifLoading) return
+    setTestNotifLoading(true)
+    try {
+      const res = await loggedFetch('/api/notifications/send-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to send test notification')
+      }
+      showToast('Notification sent — check your device')
+    } catch (err) {
+      showToast(err.message || 'Could not send test notification')
+    }
+    setTestNotifLoading(false)
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -263,20 +319,30 @@ export default function TabSettings({ user, profile, setProfile, showToast, logg
               <span className={styles.stgRowLabel}>Push notifications</span>
               {notifPermission === 'denied' ? (
                 <span className={styles.stgNotifDeniedLabel}>Blocked</span>
-              ) : profile?.push_notifications_enabled ? (
-                <button
-                  className={`${styles.stgToggle} ${styles.stgToggleOn}`}
-                  onClick={handleDisablePush}
-                />
               ) : (
                 <button
-                  className={styles.stgToggle}
-                  onClick={handleEnablePush}
+                  className={`${styles.stgToggle} ${profile?.push_notifications_enabled ? styles.stgToggleOn : ''}`}
+                  onClick={handleTogglePush}
+                  disabled={pushLoading}
+                  style={pushLoading ? { opacity: 0.5, cursor: 'wait' } : undefined}
                 />
               )}
             </div>
             {notifPermission === 'denied' && (
               <p className={styles.stgNotifDeniedMsg}>Enable notifications in your browser settings</p>
+            )}
+            {profile?.push_notifications_enabled && notifPermission !== 'denied' && (
+              <div className={styles.stgRow} style={{ borderTop: '0.5px solid rgba(245,240,227,0.08)', paddingTop: 8 }}>
+                <span className={styles.stgRowLabel} style={{ fontSize: 12 }}>Test notification</span>
+                <button
+                  className={styles.stgGhostBtn}
+                  onClick={handleSendTestNotification}
+                  disabled={testNotifLoading}
+                  style={{ opacity: testNotifLoading ? 0.6 : 1 }}
+                >
+                  {testNotifLoading ? 'Sending…' : 'Send test'}
+                </button>
+              </div>
             )}
           </div>
         </div>
