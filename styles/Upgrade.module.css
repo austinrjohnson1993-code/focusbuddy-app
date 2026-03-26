@@ -1,6 +1,11 @@
 @keyframes interstitialPulse {
   0%, 100% { transform: scale(1.0); }
-  50% { transform: scale(1.05); }
+  50% { transform: scale(1.08); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1.0); }
+  50% { transform: scale(1.08); }
 }
 
 @keyframes dotPulse {
@@ -108,4 +113,219 @@
 
 .retryBtn:active {
   transform: scale(0.98);
+}
+
+/* Pricing card styles */
+.card {
+  background: #2A1810;
+  border: 1px solid rgba(255, 200, 120, 0.12);
+  border-radius: 16px;
+  padding: 40px 28px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.markWrapper {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mark {
+  animation: pulse 2s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.proBadge {
+  display: inline-block;
+  background: #FFB800;
+  color: #0D0705;
+  font-family: 'Sora', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+}
+
+.priceSection {
+  margin-top: 16px;
+  margin-bottom: 24px;
+}
+
+.monthlyPrice {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.priceAmount {
+  font-family: 'Sora', sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: #FF6644;
+}
+
+.pricePeriod {
+  font-family: 'Figtree', sans-serif;
+  font-size: 14px;
+  color: rgba(240, 234, 214, 0.5);
+}
+
+.yearlyPrice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.yearlyAmount {
+  font-family: 'Figtree', sans-serif;
+  font-size: 13px;
+  color: #F0EAD680;
+  opacity: 0.6;
+}
+
+.saveBadge {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+  font-family: 'Figtree', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.features {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0 24px 0;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.features li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Figtree', sans-serif;
+  font-size: 14px;
+  color: #F0EAD6;
+}
+
+.checkmark {
+  color: #FF6644;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.upgradeBtn {
+  width: 100%;
+  background: #FF6644;
+  color: #F0EAD6;
+  border: none;
+  border-radius: 10px;
+  padding: 14px 20px;
+  font-family: 'Figtree', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 24px;
+  margin-bottom: 0;
+}
+
+.upgradeBtn:hover:not(:disabled) {
+  background: #FF7755;
+  transform: scale(1.02);
+}
+
+.upgradeBtn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.upgradeBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.maybeBtn {
+  background: none;
+  border: none;
+  color: rgba(240, 234, 214, 0.4);
+  font-family: 'Figtree', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  padding: 0;
+  margin-top: 12px;
+}
+
+.maybeBtn:hover:not(:disabled) {
+  color: #F0EAD6;
+}
+
+.maybeBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.alreadyProSection {
+  text-align: center;
+}
+
+.alreadyProTitle {
+  font-family: 'Figtree', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #F0EAD6;
+  margin: 0 0 8px 0;
+}
+
+.alreadyProSub {
+  font-family: 'Figtree', sans-serif;
+  font-size: 14px;
+  color: rgba(240, 234, 214, 0.6);
+  margin: 0 0 24px 0;
+}
+
+.backBtn {
+  background: rgba(255, 102, 68, 0.12);
+  border: 1px solid rgba(255, 102, 68, 0.28);
+  color: #FF6644;
+  font-family: 'Figtree', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 12px 24px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.backBtn:hover {
+  background: rgba(255, 102, 68, 0.2);
+}
+
+.loading {
+  font-family: 'Figtree', sans-serif;
+  font-size: 14px;
+  color: #F0EAD6;
 }

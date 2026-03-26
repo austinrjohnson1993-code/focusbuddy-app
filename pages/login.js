@@ -1,13 +1,16 @@
 import { useState } from 'react'
+import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabase'
 import Head from 'next/head'
 import styles from '../styles/Auth.module.css'
 
 export default function Login() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [leaving, setLeaving] = useState(false)
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -17,14 +20,16 @@ export default function Login() {
     if (error) {
       setError(error.message)
       setLoading(false)
+    } else {
+      setLeaving(true)
+      // Supabase auth state change handles the redirect after fade
     }
-    // On success Supabase sets the session; dashboard will pick it up
   }
 
   const handleGoogle = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/dashboard` }
+      options: { redirectTo: 'https://cinis.app/dashboard' }
     })
   }
 
@@ -34,13 +39,19 @@ export default function Login() {
         <title>Sign In — Cinis</title>
       </Head>
       <div className={styles.page}>
-        <div className={styles.card}>
+        <div className={`${styles.card} ${leaving ? styles.cardLeaving : ''}`}>
 
           <a href="/" className={styles.logoWrap}>
-            <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true" className={styles.mark}>
-              <rect width="30" height="30" rx="8" fill="#FF6644"/>
-              <path d="M15 7s-6 5-6 9.5a6 6 0 0012 0C21 12 15 7 15 7z" fill="#211A14"/>
-              <circle cx="15" cy="18" r="2.2" fill="#FF6644"/>
+            <svg width="30" height="30" viewBox="0 0 64 64" fill="none" aria-hidden="true" className={styles.mark}>
+              <defs>
+                <linearGradient id="logogradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#FF6644"/>
+                  <stop offset="100%" stopColor="#E8321A"/>
+                </linearGradient>
+              </defs>
+              <path d="M 12 8 Q 8 8 8 12 L 8 52 Q 8 56 12 56 L 52 56 Q 56 56 56 52 L 56 12 Q 56 8 52 8 L 12 8" fill="url(#logogradient)" stroke="none"/>
+              <path d="M32 18 Q26 23 26 28 Q26 36 32 40 Q38 36 38 28 Q38 23 32 18" fill="#211A14"/>
+              <circle cx="32" cy="34" r="3" fill="#FF6644"/>
             </svg>
             <span className={styles.wordmark}>CINIS</span>
           </a>
@@ -49,6 +60,12 @@ export default function Login() {
 
           <h1 className={styles.heading}>Welcome back.</h1>
           <p className={styles.sub}>Sign in to your account.</p>
+
+          {router.query.verified && (
+            <div style={{ background: 'rgba(255, 102, 68, 0.08)', border: '1px solid rgba(255, 102, 68, 0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', fontSize: '0.88rem', fontFamily: "'Figtree', sans-serif", color: '#FF6644', textAlign: 'center' }}>
+              Check your email to confirm your account.
+            </div>
+          )}
 
           <button onClick={handleGoogle} className={styles.googleBtn}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
