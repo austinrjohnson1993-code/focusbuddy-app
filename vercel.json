@@ -2,6 +2,7 @@
   "crons": [
     { "path": "/api/cron/evening-checkin", "schedule": "0 20 * * *" },
     { "path": "/api/cron/morning-checkin", "schedule": "0 8 * * *" },
+    { "path": "/api/cron/midday-checkin", "schedule": "0 17 * * *" },
     { "path": "/api/cron/progress-snapshot", "schedule": "0 0 * * *" }
   ],
   "redirects": [
