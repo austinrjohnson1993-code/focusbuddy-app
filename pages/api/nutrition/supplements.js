@@ -67,7 +67,6 @@ async function handler(req, res, userId) {
       return res.status(500).json({ error: 'Failed to add supplement' })
     }
 
-    console.log(`[nutrition/supplements:POST] added "${cleanName}" for ${userId}`)
     return res.status(200).json({ supplement })
   }
 
@@ -97,7 +96,6 @@ async function handler(req, res, userId) {
       return res.status(500).json({ error: 'Failed to delete supplement' })
     }
 
-    console.log(`[nutrition/supplements:DELETE] deleted ${id} for ${userId}`)
     return res.status(200).json({ success: true })
   }
 

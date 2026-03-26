@@ -45,7 +45,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Failed to save signup' })
   }
 
-  console.log(`[waitlist] new signup: ${cleanEmail}`)
 
   // Send confirmation email — non-blocking, don't fail signup on email error
   try {
@@ -56,7 +55,6 @@ export default async function handler(req, res) {
       subject: "You're on the Cinis waitlist 🔥",
       html:    CONFIRMATION_HTML,
     })
-    console.log(`[waitlist] confirmation sent to ${cleanEmail}`)
   } catch (emailErr) {
     console.error('[waitlist] resend error:', emailErr.message)
   }

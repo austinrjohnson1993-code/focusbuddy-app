@@ -77,7 +77,6 @@ export default async function handler(req, res) {
       }).eq('id', profile.id)
 
       pregenerated++
-      console.log(`[midday-checkin] Pre-generated for ${name}`)
     } catch (err) {
       console.error(`[midday-checkin] Pre-gen failed for ${profile.id}:`, err.message)
     }
@@ -92,7 +91,6 @@ export default async function handler(req, res) {
       tag: 'cinis-midday',
       url: '/dashboard'
     })
-    console.log(`[midday-checkin] Push sent to ${userIds.length} users`)
   } catch (pushErr) {
     console.error('[midday-checkin] Batch push error:', pushErr.message)
   }

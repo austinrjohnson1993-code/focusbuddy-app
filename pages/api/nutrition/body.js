@@ -62,7 +62,6 @@ async function handler(req, res, userId) {
       return res.status(500).json({ error: 'Failed to log body metrics' })
     }
 
-    console.log(`[nutrition/body:POST] logged weight:${parsedWeight} bf:${parsedBodyFat}% for ${userId}`)
     return res.status(200).json({ entry })
   }
 

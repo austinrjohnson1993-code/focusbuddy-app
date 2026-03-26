@@ -74,7 +74,6 @@ export default async function handler(req, res) {
 
       for (const sub of subscriptions.data) {
         await stripe.subscriptions.cancel(sub.id)
-        console.log(`[delete-account] Cancelled Stripe subscription ${sub.id} for user ${userId}`)
       }
     } catch (stripeErr) {
       console.error(`[delete-account] Stripe cancellation failed for user ${userId}:`, stripeErr.message)
@@ -100,6 +99,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Failed to delete account' })
   }
 
-  console.log(`[delete-account] Account deleted for user ${userId}`)
   return res.status(200).json({ success: true })
 }

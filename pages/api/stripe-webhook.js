@@ -36,7 +36,6 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid JSON' })
   }
 
-  console.log('[stripe-webhook] received event:', event.type, event.id)
 
   // TODO: verify Stripe signature before trusting event
   // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)

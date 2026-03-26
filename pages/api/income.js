@@ -73,7 +73,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Failed to update income' })
     }
 
-    console.log(`[income:POST] Updated income for ${user.id}:`, updates)
     return res.status(200).json({ success: true })
   }
 

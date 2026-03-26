@@ -109,7 +109,6 @@ async function handler(req, res, userId) {
       return res.status(400).json({ error: error.message, hint: error.hint })
     }
 
-    console.log(`[bills:POST] Created bill "${bill.name}" for ${userId}`)
 
     if (bill.auto_task && bill.due_day) {
       const now = new Date()
@@ -129,7 +128,6 @@ async function handler(req, res, userId) {
       if (taskErr) {
         console.error('[bills:POST] auto-task error:', JSON.stringify(taskErr))
       } else {
-        console.log(`[bills:POST] Auto-task created for "${bill.name}"`)
       }
     }
 
@@ -175,7 +173,6 @@ async function handler(req, res, userId) {
     }
     if (!bill) return res.status(404).json({ error: 'Bill not found' })
 
-    console.log(`[bills:PATCH] Updated bill ${id} — fields: ${Object.keys(updates).join(', ')}`)
     return res.status(200).json({ bill })
   }
 
@@ -216,7 +213,6 @@ async function handler(req, res, userId) {
       console.error('[bills:DELETE] task cleanup error:', JSON.stringify(taskCleanErr))
     }
 
-    console.log(`[bills:DELETE] Deleted bill "${bill.name}" (${id}) for ${userId}`)
     return res.status(200).json({ success: true })
   }
 

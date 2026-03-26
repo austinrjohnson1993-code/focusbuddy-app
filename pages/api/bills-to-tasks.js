@@ -39,7 +39,6 @@ export async function runBillsToTasks(userId) {
       .limit(1)
 
     if (existing && existing.length > 0) {
-      console.log(`[bills-to-tasks] Task already exists for bill "${bill.name}", skipping`)
       continue
     }
 
@@ -66,7 +65,6 @@ export async function runBillsToTasks(userId) {
     if (insertErr) {
       console.error(`[bills-to-tasks] Failed to create task for "${bill.name}":`, JSON.stringify(insertErr))
     } else {
-      console.log(`[bills-to-tasks] Created task: "${title}"`)
       created.push(bill.name)
     }
   }

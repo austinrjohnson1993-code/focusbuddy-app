@@ -15,6 +15,5 @@ export default async function handler(req, res) {
   // const session = await stripe.checkout.sessions.create({ ... })
   // return res.status(200).json({ url: session.url })
 
-  console.log(`[stripe-checkout] Stub called — userId: ${userId}, plan: ${plan}`)
   return res.status(200).json({ url: 'https://buy.stripe.com/placeholder' })
 }

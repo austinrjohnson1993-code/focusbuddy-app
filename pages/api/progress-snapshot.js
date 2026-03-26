@@ -110,7 +110,6 @@ export async function runProgressSnapshot(userId) {
 
   if (upsertErr) throw new Error(upsertErr.message)
 
-  console.log(`[progress-snapshot] Saved snapshot for ${userId} on ${snapshotDate}`)
   return snapshot
 }
 

@@ -33,7 +33,6 @@ Rules:
 - Extract recurrence if they say "every day", "daily", "every week", "weekly"
 - notes = anything that would help them start the task (policy numbers, names, context)`
 
-  console.log('[parse-task] Received transcript:', transcript)
 
   let data
   try {
@@ -64,7 +63,6 @@ Rules:
   }
 
   const rawText = data?.content?.[0]?.text?.trim() ?? ''
-  console.log('[parse-task] Raw Claude response:', rawText)
 
   // Strip markdown fences in case Claude adds them despite instructions
   const cleaned = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
@@ -86,6 +84,5 @@ Rules:
     recurrence: ['none', 'daily', 'weekly'].includes(parsed.recurrence) ? parsed.recurrence : 'none',
   }
 
-  console.log('[parse-task] Normalized result:', JSON.stringify(result))
   return res.status(200).json(result)
 }

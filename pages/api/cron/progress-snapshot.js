@@ -37,7 +37,6 @@ export default async function handler(req, res) {
     try {
       await runProgressSnapshot(profile.id)
       succeeded++
-      console.log(`[cron/progress-snapshot] Saved for ${profile.id}`)
     } catch (err) {
       failed++
       console.error(`[cron/progress-snapshot] Failed for ${profile.id}:`, err.message)

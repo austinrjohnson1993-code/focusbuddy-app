@@ -33,7 +33,6 @@ Rules:
 - account = bank or card name if mentioned, otherwise null
 - remind_days = days before due_day to remind; default 3 unless user specifies`
 
-  console.log('[parse-bill] Received transcript:', transcript)
 
   let data
   try {
@@ -64,7 +63,6 @@ Rules:
   }
 
   const rawText = data?.content?.[0]?.text?.trim() ?? ''
-  console.log('[parse-bill] Raw Claude response:', rawText)
 
   const cleaned = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
 
@@ -93,6 +91,5 @@ Rules:
     remind_days: typeof parsed.remind_days === 'number' ? parsed.remind_days : 3,
   }
 
-  console.log('[parse-bill] Normalized result:', JSON.stringify(result))
   return res.status(200).json(result)
 }

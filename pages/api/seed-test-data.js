@@ -165,6 +165,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Failed to seed progress snapshot', detail: progressErr.message })
   }
 
-  console.log(`[seed-test-data] Seeded QC data for ${userId}`)
   return res.status(200).json({ success: true, seeded: { tasks: 5, bills: 3, journal: 1, progress: 1 } })
 }

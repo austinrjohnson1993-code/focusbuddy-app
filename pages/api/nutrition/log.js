@@ -119,7 +119,6 @@ async function handler(req, res, userId) {
       return res.status(500).json({ error: 'Failed to log meal' })
     }
 
-    console.log(`[nutrition/log:POST] logged "${cleanName}" ${parsedCalories}cal for ${userId}`)
     return res.status(200).json({ entry })
   }
 

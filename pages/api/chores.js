@@ -94,7 +94,6 @@ export default async function handler(req, res) {
       // Non-fatal — tasks are created, just log it
     }
 
-    console.log(`[chores:POST] Applied "${preset.name}" for ${user.id} — ${tasks.length} tasks`)
     return res.status(200).json({ success: true, tasksCreated: tasks.length, preset: preset.name })
   }
 
@@ -120,7 +119,6 @@ export default async function handler(req, res) {
       console.error('[chores:DELETE] profile update error:', JSON.stringify(profileErr))
     }
 
-    console.log(`[chores:DELETE] Cleared chore tasks and preset for ${user.id}`)
     return res.status(200).json({ success: true })
   }
 

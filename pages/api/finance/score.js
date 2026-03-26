@@ -72,7 +72,6 @@ async function handler(req, res, userId) {
 
   const score = autopay + budget + spending + emergency + impulse + autosave + needs
 
-  console.log(`[finance/score] ${userId} score:${score} autopay:${autopay} budget:${budget} spending:${spending} emergency:${emergency} impulse:${impulse} autosave:${autosave}`)
 
   return res.status(200).json({
     score,

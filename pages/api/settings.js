@@ -18,7 +18,6 @@ function getAdminClient() {
 async function handler(req, res, userId) {
   if (!['POST', 'PATCH'].includes(req.method)) return res.status(405).json({ error: 'Method not allowed' })
 
-  console.log('[settings] received:', req.method, JSON.stringify(req.body))
 
   const source = req.body.updates && typeof req.body.updates === 'object' ? req.body.updates : req.body
   const updateObject = {}
@@ -41,7 +40,6 @@ async function handler(req, res, userId) {
     return res.status(500).json({ error: 'Failed to update profile' })
   }
 
-  console.log('[settings] updated profile for', userId, '— fields:', Object.keys(updateObject).join(', '))
   return res.status(200).json({ success: true, updated: updateObject })
 }
 

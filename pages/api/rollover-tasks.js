@@ -51,7 +51,6 @@ export default async function handler(req, res) {
 
   try {
     const result = await runRollover()
-    console.log(`[rollover-tasks] Rolled ${result.rolled} tasks:`, result.tasks)
     return res.status(200).json(result)
   } catch (err) {
     console.error('[rollover-tasks] Error:', err.message)

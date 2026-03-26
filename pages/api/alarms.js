@@ -55,7 +55,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Failed to create alarm' })
     }
 
-    console.log(`[alarms:POST] Created alarm "${title}" for ${userId} at ${alarm_time}`)
     return res.status(201).json({ alarm })
   }
 
@@ -86,7 +85,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Failed to update alarm' })
     }
 
-    console.log(`[alarms:PATCH] Marked alarm ${id} as triggered`)
     return res.status(200).json({ alarm })
   }
 
@@ -105,7 +103,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Failed to delete alarm' })
     }
 
-    console.log(`[alarms:DELETE] Deleted alarm ${id}`)
     return res.status(200).json({ success: true })
   }
 

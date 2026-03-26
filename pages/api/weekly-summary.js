@@ -38,7 +38,6 @@ export default async function handler(req, res) {
 
 Write exactly 3 sentences: one specific win using a real task name, one pattern you noticed, one thing to focus on next week. Be direct. No filler.`
 
-  console.log(`[weekly-summary] Generating for ${userId} — ${tasks?.length || 0} completed tasks`)
 
   let data
   try {
@@ -69,6 +68,5 @@ Write exactly 3 sentences: one specific win using a real task name, one pattern 
   }
 
   const summary = data?.content?.[0]?.text?.trim() ?? ''
-  console.log(`[weekly-summary] Done for ${userId}`)
   return res.status(200).json({ summary })
 }

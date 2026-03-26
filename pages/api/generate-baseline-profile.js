@@ -89,7 +89,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Failed to save baseline profile' })
   }
 
-  console.log('[generate-baseline-profile] saved profile for', userId, '— first 100 chars:', generatedText.slice(0, 100))
 
   return res.status(200).json({ success: true, profile: generatedText })
 }

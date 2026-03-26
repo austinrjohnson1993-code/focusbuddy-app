@@ -32,7 +32,6 @@ PERSONA OPTIONS (suggest at the end):
 When wrapping up, briefly explain your persona suggestion based on what they told you. Keep it to 2-3 sentences. Then add [ONBOARDING_COMPLETE].`;
 
 export default async function handler(req, res) {
-  console.log('API KEY PREFIX:', process.env.ANTHROPIC_API_KEY?.slice(0, 10));
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
