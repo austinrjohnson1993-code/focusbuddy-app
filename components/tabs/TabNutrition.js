@@ -1,20 +1,14 @@
 import React, { useState } from 'react'
 import styles from '../../styles/Dashboard.module.css'
+import { COLORS, FONTS } from '../../lib/constants'
 
 export default function TabNutrition({ user, profile, showToast, loggedFetch }) {
   const [nutrSubTab, setNutrSubTab] = useState('log')
   const [nutrWaterCount, setNutrWaterCount] = useState(6)
 
-  const COL = {
-    coal: '#211A14', char: '#3E3228', ash: '#F5F0E3',
-    ember: '#E8321A', hot: '#FF6644', green: '#4CAF50',
-    blue: '#3B8BD4', gold: '#FFB800',
-    dim: '#F5F0E390', faint: '#F5F0E360',
-    ghost: '#F5F0E350', micro: '#F5F0E338', border: '#F5F0E318',
-    charBorder: '#F5F0E31E', charLight: '#F5F0E30C',
-  }
-  const fig = "'Figtree', -apple-system, sans-serif"
-  const sora = "'Sora', sans-serif"
+  const COL = COLORS
+  const fig = FONTS.fig
+  const sora = FONTS.sora
 
   const MacroRing = ({ value, target, label, color, unit = '' }) => {
     const r = 30
