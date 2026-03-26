@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { buildChoreTasks, CHORE_PRESETS } from '../../lib/chores'
+import withAuth from '../../lib/authGuard'
 
 function getAdminClient() {
   return createClient(
@@ -8,23 +9,7 @@ function getAdminClient() {
   )
 }
 
-async function getAuthUser(req) {
-  const token = req.headers.authorization?.replace('Bearer ', '')
-  if (!token) return null
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    { global: { headers: { Authorization: `Bearer ${token}` } } }
-  )
-  const { data: { user }, error } = await supabase.auth.getUser()
-  if (error || !user) return null
-  return user
-}
-
-export default async function handler(req, res) {
-  const user = await getAuthUser(req)
-  if (!user) return res.status(401).json({ error: 'Unauthorized' })
-
+async function handler(req, res, userId) {
   const supabaseAdmin = getAdminClient()
 
   // ── GET — return current preset + available presets ──────────────────────
@@ -32,7 +17,7 @@ export default async function handler(req, res) {
     const { data: profile, error } = await supabaseAdmin
       .from('profiles')
       .select('chore_preset')
-      .eq('id', user.id)
+      .eq('id', userId)
       .single()
 
     if (error) {
@@ -57,14 +42,14 @@ export default async function handler(req, res) {
     }
 
     // Build tasks and tag with 'chore routine' so they're findable for cleanup
-    const rawTasks = buildChoreTasks(preset, user.id)
+    const rawTasks = buildChoreTasks(preset, userId)
     const tasks = rawTasks.map(t => ({ ...t, notes: 'chore routine' }))
 
     // Delete existing chore tasks (clean swap)
     const { error: deleteErr } = await supabaseAdmin
       .from('tasks')
       .delete()
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('completed', false)
       .like('notes', '%chore routine%')
 
@@ -87,7 +72,7 @@ export default async function handler(req, res) {
     const { error: profileErr } = await supabaseAdmin
       .from('profiles')
       .update({ chore_preset: presetId })
-      .eq('id', user.id)
+      .eq('id', userId)
 
     if (profileErr) {
       console.error('[chores:POST] profile update error:', JSON.stringify(profileErr))
@@ -102,7 +87,7 @@ export default async function handler(req, res) {
     const { error: deleteErr } = await supabaseAdmin
       .from('tasks')
       .delete()
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .like('notes', '%chore routine%')
 
     if (deleteErr) {
@@ -113,7 +98,7 @@ export default async function handler(req, res) {
     const { error: profileErr } = await supabaseAdmin
       .from('profiles')
       .update({ chore_preset: null })
-      .eq('id', user.id)
+      .eq('id', userId)
 
     if (profileErr) {
       console.error('[chores:DELETE] profile update error:', JSON.stringify(profileErr))
@@ -124,3 +109,5 @@ export default async function handler(req, res) {
 
   return res.status(405).json({ error: 'Method not allowed' })
 }
+
+export default withAuth(handler)

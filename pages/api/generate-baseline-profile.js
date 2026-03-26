@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { checkDailyRateLimit, rateLimitErrorResponse } from '../../lib/rateLimit'
+import withAuth from '../../lib/authGuard'
 
 function getAdminClient() {
   return createClient(
@@ -8,11 +9,8 @@ function getAdminClient() {
   )
 }
 
-export default async function handler(req, res) {
+async function handler(req, res, userId) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
-
-  const { userId } = req.body
-  if (!userId) return res.status(400).json({ error: 'userId required' })
 
   const rateCheck = await checkDailyRateLimit(userId)
   if (!rateCheck.allowed) {
@@ -92,3 +90,5 @@ export default async function handler(req, res) {
 
   return res.status(200).json({ success: true, profile: generatedText })
 }
+
+export default withAuth(handler)

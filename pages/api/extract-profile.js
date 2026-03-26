@@ -1,6 +1,7 @@
 import { lightweightMessage } from '../../lib/anthropic';
+import withAuth from '../../lib/authGuard';
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -53,3 +54,5 @@ Return ONLY valid JSON, no other text:
     return res.status(500).json({ error: 'Extraction failed' });
   }
 }
+
+export default withAuth(handler);

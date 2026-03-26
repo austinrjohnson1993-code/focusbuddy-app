@@ -1,17 +1,15 @@
 import Stripe from 'stripe';
+import withAuth from '../../../lib/authGuard';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-export default async function handler(req, res) {
+async function handler(req, res, userId) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { userId, plan } = req.body;
+  const { plan } = req.body;
 
-  if (!userId) {
-    return res.status(400).json({ error: 'userId required' });
-  }
   if (!['monthly', 'yearly'].includes(plan)) {
     return res.status(400).json({ error: 'plan must be "monthly" or "yearly"' });
   }
@@ -41,3 +39,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: err.message });
   }
 }
+
+export default withAuth(handler);

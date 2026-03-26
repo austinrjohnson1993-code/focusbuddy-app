@@ -1,8 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk'
+import withAuth from '../../lib/authGuard'
 
 const client = new Anthropic()
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
   const { text } = req.body
   if (!text?.trim()) return res.json({ tasks: [] })
@@ -46,3 +47,5 @@ Return ONLY valid JSON — a bare array, no markdown, no explanation.`,
     return res.status(500).json({ tasks: [] })
   }
 }
+
+export default withAuth(handler)

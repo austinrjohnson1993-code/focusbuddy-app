@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import withAuth from '../../lib/authGuard'
 
 function getAdminClient() {
   return createClient(
@@ -7,11 +8,8 @@ function getAdminClient() {
   )
 }
 
-export default async function handler(req, res) {
+async function handler(req, res, userId) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
-
-  const { userId } = req.query
-  if (!userId) return res.status(400).json({ error: 'userId required' })
 
   const supabaseAdmin = getAdminClient()
 
@@ -70,3 +68,5 @@ Write exactly 3 sentences: one specific win using a real task name, one pattern 
   const summary = data?.content?.[0]?.text?.trim() ?? ''
   return res.status(200).json({ summary })
 }
+
+export default withAuth(handler)

@@ -6,6 +6,7 @@
 
 import webpush from 'web-push';
 import { createClient } from '@supabase/supabase-js';
+import withAuth from '../../lib/authGuard';
 
 webpush.setVapidDetails(
   'mailto:ryan@cinis.app',
@@ -20,12 +21,12 @@ function getAdminClient() {
   );
 }
 
-export default async function handler(req, res) {
+async function handler(req, res, userId) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { userId, title, body, url = '/dashboard' } = req.body;
-  if (!userId || !title || !body) {
-    return res.status(400).json({ error: 'userId, title, and body are required' });
+  const { title, body, url = '/dashboard' } = req.body;
+  if (!title || !body) {
+    return res.status(400).json({ error: 'title and body are required' });
   }
 
   const supabaseAdmin = getAdminClient();
@@ -55,3 +56,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Failed to send notification' });
   }
 }
+
+export default withAuth(handler);

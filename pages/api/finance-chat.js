@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { coachingMessage } from '../../lib/anthropic'
+import withAuth from '../../lib/authGuard'
 
 function getAdminClient() {
   return createClient(
@@ -10,11 +11,11 @@ function getAdminClient() {
 
 const SYSTEM_PROMPT = `You are Cinis's financial coach. Be practical and specific. Reference their actual numbers. Suggest one actionable thing at a time. Never shame. Point them toward specific app features when relevant. Keep responses under 4 sentences.`
 
-export default async function handler(req, res) {
+async function handler(req, res, userId) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { userId, message, conversationHistory = [] } = req.body
-  if (!userId || !message) return res.status(400).json({ error: 'userId and message required' })
+  const { message, conversationHistory = [] } = req.body
+  if (!message) return res.status(400).json({ error: 'message required' })
 
   const supabase = getAdminClient()
 
@@ -50,3 +51,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Failed to generate response' })
   }
 }
+
+export default withAuth(handler)

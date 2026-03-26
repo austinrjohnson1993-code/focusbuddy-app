@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import withAuth from '../../lib/authGuard'
 
 const VALID_FREQUENCIES = ['weekly', 'biweekly', 'bimonthly', 'monthly']
 
@@ -9,23 +10,7 @@ function getAdminClient() {
   )
 }
 
-export default async function handler(req, res) {
-  // Authenticate via Authorization header
-  const token = req.headers.authorization?.replace('Bearer ', '')
-  if (!token) return res.status(401).json({ error: 'No auth token provided' })
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    { global: { headers: { Authorization: `Bearer ${token}` } } }
-  )
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    console.error('[income] Auth error:', JSON.stringify(authError))
-    return res.status(401).json({ error: 'Unauthorized' })
-  }
-
+async function handler(req, res, userId) {
   const supabaseAdmin = getAdminClient()
 
   // GET — fetch monthly_income and income_frequency from profile
@@ -33,7 +18,7 @@ export default async function handler(req, res) {
     const { data: profile, error } = await supabaseAdmin
       .from('profiles')
       .select('monthly_income, income_frequency')
-      .eq('id', user.id)
+      .eq('id', userId)
       .single()
 
     if (error) {
@@ -66,7 +51,7 @@ export default async function handler(req, res) {
     const { error } = await supabaseAdmin
       .from('profiles')
       .update(updates)
-      .eq('id', user.id)
+      .eq('id', userId)
 
     if (error) {
       console.error('[income:POST] error:', JSON.stringify(error))
@@ -78,3 +63,5 @@ export default async function handler(req, res) {
 
   return res.status(405).json({ error: 'Method not allowed' })
 }
+
+export default withAuth(handler)
