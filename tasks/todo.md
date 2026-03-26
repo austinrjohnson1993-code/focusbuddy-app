@@ -41,3 +41,5 @@
 - tasks/todo.md created and populated
 - CLAUDE.md updated — T5/T6 added, context7, ralph, load confirmation
 - context7 MCP installed
+- Progress tab "Couldn't load your data" error fixed
+- Nutrition active ring color corrected (Ember not Hot)
