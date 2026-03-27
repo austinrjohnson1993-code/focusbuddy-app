@@ -2,6 +2,9 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
+import dynamic from 'next/dynamic'
+
+const CinisIntro = dynamic(() => import('../components/CinisIntro'), { ssr: false })
 
 const AnimatedMark = ({ phase }) => {
   return (
@@ -58,6 +61,7 @@ const EmberParticles = ({ ready }) => {
 
 export default function Home() {
   const router = useRouter()
+  const [introComplete, setIntroComplete] = useState(false)
   const [phase, setPhase] = useState(0)
   const [embersReady, setEmbersReady] = useState(false)
   const [formSubmitted, setFormSubmitted] = useState(false)
@@ -723,6 +727,8 @@ export default function Home() {
           }
         `}</style>
       </Head>
+
+      <CinisIntro onComplete={() => setIntroComplete(true)} />
 
       <div className="page">
         <div id="cursor-glow" />
