@@ -30,15 +30,15 @@ export default function App({ Component, pageProps }) {
         <link rel="icon" type="image/png" href="/icons/icon-192x192.png" />
         <link rel="shortcut icon" type="image/png" href="/icons/icon-192x192.png" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-        <meta property="og:title" content="Cinis — AI coaching for ADHD and executive function" />
-        <meta property="og:description" content="Where start meets finished. The AI that builds your external executive function." />
-        <meta property="og:image" content="https://cinis.app/og-image.png" />
-        <meta property="og:url" content="https://cinis.app" />
+        <meta property="og:title" content="Cinis — Where start meets finished." />
+        <meta property="og:description" content="The productivity coach that shows up before you think to ask. AI check-ins, voice capture, focus sessions, and everything in one place." />
+        <meta property="og:image" content="https://www.getcinis.app/og-image.png" />
+        <meta property="og:url" content="https://www.getcinis.app" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Cinis — AI coaching for ADHD and executive function" />
-        <meta name="twitter:description" content="Where start meets finished. The AI that builds your external executive function." />
-        <meta name="twitter:image" content="https://cinis.app/og-image.png" />
+        <meta name="twitter:title" content="Cinis — Where start meets finished." />
+        <meta name="twitter:description" content="The productivity coach that shows up before you think to ask. AI check-ins, voice capture, focus sessions, and everything in one place." />
+        <meta name="twitter:image" content="https://www.getcinis.app/og-image.png" />
       </Head>
       <Component {...pageProps} />
     </>
