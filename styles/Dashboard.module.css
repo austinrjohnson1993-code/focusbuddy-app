@@ -96,7 +96,7 @@
 .header { margin-bottom: 36px; }
 
 .greetingText {
-  font-family: 'Playfair Display', serif; font-weight: 900;
+  font-family: 'Sora', sans-serif; font-weight: 900;
   font-size: clamp(1.8rem, 4vw, 2.4rem); letter-spacing: -0.02em;
   color: var(--text-color, #f0ead6); margin-bottom: 6px; line-height: 1.1;
 }
@@ -318,7 +318,7 @@
 
 .modalHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .modalHeaderRight { display: flex; align-items: center; gap: 10px; }
-.modalTitle { font-family: 'Playfair Display', serif; font-weight: 900; font-size: 1.4rem; color: #f0ead6; }
+.modalTitle { font-family: 'Sora', sans-serif; font-weight: 900; font-size: 1.4rem; color: #f0ead6; }
 .modalClose {
   background: transparent; border: none; color: rgba(240,234,214,0.35);
   font-size: 1.6rem; cursor: pointer; line-height: 1; padding: 0 4px; transition: color 0.2s;
@@ -499,7 +499,7 @@
   margin-bottom: 20px;
 }
 .calMonthLabel {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Sora', sans-serif;
   font-weight: 900;
   font-size: 1.5rem;
   color: #f0ead6;
@@ -623,7 +623,7 @@
 .calBackBtn:hover { border-color: rgba(255,77,28,0.3); color: var(--accent); }
 .calDayTitleBlock { flex: 1; }
 .calDayTitle {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Sora', sans-serif;
   font-weight: 900;
   font-size: 1.5rem;
   color: #f0ead6;
@@ -1283,7 +1283,7 @@
   color: var(--accent); margin-bottom: 12px;
 }
 .focusSetupTask {
-  font-family: 'Playfair Display', serif; font-weight: 900;
+  font-family: 'Sora', sans-serif; font-weight: 900;
   font-size: clamp(1.4rem, 4vw, 1.8rem); color: var(--text-color, #f0ead6);
   letter-spacing: -0.02em; margin-bottom: 36px; line-height: 1.2;
 }
@@ -1359,7 +1359,7 @@
   width: 100%; padding: 8px 0 4px;
 }
 .focusIdleHeadline {
-  font-family: 'Playfair Display', serif; font-weight: 900;
+  font-family: 'Sora', sans-serif; font-weight: 900;
   font-size: clamp(1.6rem, 5vw, 2.2rem); color: var(--text-color, #f0ead6);
   letter-spacing: -0.02em; margin-bottom: 10px; line-height: 1.15;
 }
@@ -1376,7 +1376,7 @@
 
 .focusComplete { display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%; }
 .focusCompleteHeading {
-  font-family: 'Playfair Display', serif; font-weight: 900; font-size: 2.4rem;
+  font-family: 'Sora', sans-serif; font-weight: 900; font-size: 2.4rem;
   color: #f0ead6; letter-spacing: -0.02em; margin-bottom: 8px;
 }
 .focusCompleteTask { font-size: 0.9rem; color: rgba(240,234,214,0.45); margin-bottom: 28px; }
@@ -1557,7 +1557,7 @@
   border-top: 1px solid rgba(255,200,120,0.1);
 }
 .progressStatNum {
-  font-family: 'Playfair Display', serif; font-weight: 900; font-size: 2rem;
+  font-family: 'Sora', sans-serif; font-weight: 900; font-size: 2rem;
   color: #f0ead6; letter-spacing: -0.02em;
 }
 .progressStatLabel {
@@ -1592,7 +1592,7 @@
   border: 1px solid rgba(255,200,120,0.08); border-radius: 16px; margin-top: 4px;
 }
 .progressDayOneHeadline {
-  font-family: 'Playfair Display', serif; font-weight: 900;
+  font-family: 'Sora', sans-serif; font-weight: 900;
   font-size: clamp(1.3rem, 4vw, 1.7rem); color: rgba(240,234,214,0.85);
   letter-spacing: -0.02em; margin-bottom: 8px; line-height: 1.2;
 }
@@ -1630,7 +1630,7 @@
    ════════════════════════════════════════════ */
 
 .financeTotal {
-  font-family: 'Playfair Display', serif; font-weight: 900; font-size: 2rem;
+  font-family: 'Sora', sans-serif; font-weight: 900; font-size: 2rem;
   color: #f0ead6; letter-spacing: -0.03em; margin-top: 4px;
 }
 .financeTotalSub { font-size: 1rem; color: rgba(240,234,214,0.35); font-weight: 400; letter-spacing: 0; }
@@ -2017,7 +2017,7 @@
 
 .focusContentCards { width: 100%; }
 .focusContentTitle {
-  font-family: 'Playfair Display', serif; font-weight: 900; font-size: 1.5rem;
+  font-family: 'Sora', sans-serif; font-weight: 900; font-size: 1.5rem;
   color: #f0ead6; letter-spacing: -0.02em; margin-bottom: 6px;
 }
 .focusContentSub { font-size: 0.88rem; color: rgba(240,234,214,0.38); margin-bottom: 24px; line-height: 1.5; }
@@ -4535,7 +4535,7 @@
   font-family: 'Sora', sans-serif;
   font-size: 17px;
   font-weight: 700;
-  color: #F5F0E3;
+  color: #F0EAD6;
   text-align: center;
   line-height: 1;
 }
@@ -5810,7 +5810,7 @@
 }
 .financeChatInput {
   flex: 1; background: transparent; border: none; outline: none;
-  padding: 12px 14px; font-size: 0.9rem; color: #F5F0E3;
+  padding: 12px 14px; font-size: 0.9rem; color: #F0EAD6;
   font-family: 'Figtree', sans-serif;
 }
 .financeChatInput::placeholder { color: rgba(245,240,227,0.25); }

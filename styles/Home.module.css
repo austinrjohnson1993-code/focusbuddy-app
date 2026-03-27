@@ -88,7 +88,7 @@
   font-size: clamp(1.8rem, 5vw, 2.8rem);
   line-height: 1.2;
   letter-spacing: -0.01em;
-  color: #F5F0E3;
+  color: #F0EAD6;
   max-width: 600px;
   margin-bottom: 16px;
 }
@@ -118,7 +118,7 @@
   border: 1px solid rgba(240,234,214,0.15);
   border-radius: 10px;
   background: rgba(58,50,40,0.4);
-  color: #F5F0E3;
+  color: #F0EAD6;
   transition: all 0.2s ease;
 }
 
@@ -145,7 +145,7 @@
   font-weight: 700;
   padding: 14px 20px;
   background: #FF6644;
-  color: #F5F0E3;
+  color: #F0EAD6;
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -225,7 +225,7 @@
   font-family: 'Sora', sans-serif;
   font-size: 24px;
   font-weight: 600;
-  color: #F5F0E3;
+  color: #F0EAD6;
   margin: 0 0 8px 0;
 }
 
@@ -280,7 +280,7 @@
   font-family: 'Sora', sans-serif;
   font-size: 28px;
   font-weight: 600;
-  color: #F5F0E3;
+  color: #F0EAD6;
   text-align: center;
   margin: 0 0 48px 0;
 }
@@ -299,7 +299,7 @@
   font-family: 'Figtree', sans-serif;
   font-size: 16px;
   font-weight: 700;
-  color: #F5F0E3;
+  color: #F0EAD6;
   margin: 0 0 12px 0;
 }
 
@@ -332,7 +332,7 @@
   font-family: 'Figtree', sans-serif;
   font-size: 16px;
   font-weight: 700;
-  color: #F5F0E3;
+  color: #F0EAD6;
   margin: 0 0 12px 0;
 }
 

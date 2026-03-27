@@ -79,7 +79,7 @@
 
 .page {
   background: #211A14;
-  color: #F5F0E3;
+  color: #F0EAD6;
   min-height: 100vh;
   font-family: 'Figtree', sans-serif;
   position: relative;
@@ -140,7 +140,7 @@
   font-weight: 600;
   font-size: 0.82rem;
   letter-spacing: 0.16em;
-  color: #F5F0E3;
+  color: #F0EAD6;
   text-decoration: none;
 }
 
@@ -160,7 +160,7 @@
   border-radius: 8px;
   transition: color 0.2s, background 0.2s;
 }
-.navLink:hover { color: #F5F0E3; background: rgba(245,240,227,0.05); }
+.navLink:hover { color: #F0EAD6; background: rgba(245,240,227,0.05); }
 
 .navCta {
   background: #FF6644;
@@ -269,7 +269,7 @@
   font-family: 'Sora', sans-serif;
   font-size: 38px;
   font-weight: 900;
-  color: #F5F0E3;
+  color: #F0EAD6;
   text-transform: uppercase;
   white-space: nowrap;
   line-height: 1;
@@ -326,7 +326,7 @@
   border: 1px solid rgba(245,240,227,0.12);
   border-radius: 10px;
   background: rgba(62,50,40,0.45);
-  color: #F5F0E3;
+  color: #F0EAD6;
   transition: border-color 0.2s, background 0.2s;
   outline: none;
   width: 100%;
@@ -377,7 +377,7 @@
   font-family: 'Sora', sans-serif;
   font-size: 18px;
   font-weight: 600;
-  color: #F5F0E3;
+  color: #F0EAD6;
   margin-bottom: 6px;
 }
 
@@ -456,7 +456,7 @@
   font-family: 'Sora', sans-serif;
   font-size: 28px;
   font-weight: 700;
-  color: #F5F0E3;
+  color: #F0EAD6;
   text-align: center;
   margin-bottom: 48px;
 }
@@ -496,7 +496,7 @@
   font-family: 'Sora', sans-serif;
   font-size: 18px;
   font-weight: 700;
-  color: #F5F0E3;
+  color: #F0EAD6;
   margin-bottom: 8px;
 }
 
@@ -600,7 +600,7 @@
   transition: all 0.15s;
   flex-shrink: 0;
 }
-.demoClose:hover { color: #F5F0E3; border-color: rgba(245,240,227,0.3); }
+.demoClose:hover { color: #F0EAD6; border-color: rgba(245,240,227,0.3); }
 
 .demoContent {
   flex: 1;
@@ -823,7 +823,7 @@
   font-family: 'Sora', sans-serif;
   font-size: 28px;
   font-weight: 700;
-  color: #F5F0E3;
+  color: #F0EAD6;
   text-align: center;
   margin-bottom: 8px;
 }
@@ -901,7 +901,7 @@
   font-family: 'Sora', sans-serif;
   font-size: 40px;
   font-weight: 800;
-  color: #F5F0E3;
+  color: #F0EAD6;
   line-height: 1;
   margin-bottom: 6px;
 }
@@ -963,7 +963,7 @@
   font-family: 'Sora', sans-serif;
   font-size: 22px;
   font-weight: 700;
-  color: #F5F0E3;
+  color: #F0EAD6;
   margin-bottom: 6px;
 }
 
@@ -1010,7 +1010,7 @@
   font-weight: 600;
   font-size: 9px;
   letter-spacing: 0.18em;
-  color: #F5F0E3;
+  color: #F0EAD6;
   text-decoration: none;
 }
 

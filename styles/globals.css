@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Figtree:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800;900&family=Figtree:wght@300;400;500;600;700&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -44,13 +44,11 @@ button { cursor: pointer; font-family: 'Figtree', sans-serif; -webkit-appearance
 input, textarea { font-family: 'Figtree', sans-serif; }
 
 .brand {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Sora', sans-serif;
   font-weight: 900;
   letter-spacing: -0.02em;
 }
 
-.brand .focus { color: var(--cream); }
-.brand .buddy { color: var(--accent); }
 
 /* ── MIDNIGHT theme — pure dark palette ── */
 [data-theme="midnight"] {
@@ -76,4 +74,3 @@ input, textarea { font-family: 'Figtree', sans-serif; }
   background-image: radial-gradient(ellipse at top left, rgba(200,190,170,0.3) 0%, transparent 60%);
   color: #1a1a1a;
 }
-[data-theme="paper"] .brand .focus { color: #1a1a1a; }
