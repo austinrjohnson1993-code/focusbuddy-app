@@ -7,32 +7,26 @@ import CinisMark from '../lib/CinisMark'
 
 // ── Questions ────────────────────────────────────────────────────────────────
 
+const SLIDE_THEMES = ['How you work', 'How you want to be coached', 'What gets in your way']
+
 const QUESTIONS = [
+  // ── Slide 1: How you work ──────────────────────────────────
   {
     text: "When you have a big task you've been avoiding, what usually happens?",
     options: [
-      { id: 'a', text: "I keep moving it to tomorrow until the deadline forces me" },
+      { id: 'a', text: "I keep moving it to tomorrow until a deadline forces me" },
       { id: 'b', text: "I start it but lose momentum halfway through" },
       { id: 'c', text: "I overthink it until it feels impossible to start" },
       { id: 'd', text: "I do everything else on my list first" },
     ]
   },
   {
-    text: "A friend asks for help moving on the same day you had planned to catch up on work. You:",
+    text: "How do you prefer to start your day?",
     options: [
-      { id: 'a', text: "Cancel your plans — commitments to others come first" },
-      { id: 'b', text: "Try to do both and end up stressed" },
-      { id: 'c', text: "Say no but feel guilty about it all day" },
-      { id: 'd', text: "Negotiate a shorter window that works for both" },
-    ]
-  },
-  {
-    text: "When you get a reminder notification, you usually:",
-    options: [
-      { id: 'a', text: "Do the thing immediately" },
-      { id: 'b', text: "Snooze it and forget about it" },
-      { id: 'c', text: "Acknowledge it mentally but get to it later" },
-      { id: 'd', text: "Feel annoyed and dismiss it" },
+      { id: 'a', text: "With a clear prioritized list ready to go" },
+      { id: 'b', text: "With a quick check-in to assess how I'm feeling" },
+      { id: 'c', text: "Just jumping into the most urgent thing" },
+      { id: 'd', text: "Slowly — I need time to ease in" },
     ]
   },
   {
@@ -44,6 +38,7 @@ const QUESTIONS = [
       { id: 'd', text: "I kept my promises to others and myself" },
     ]
   },
+  // ── Slide 2: How you want to be coached ────────────────────
   {
     text: "When someone gives you direct, blunt feedback, you:",
     options: [
@@ -64,23 +59,15 @@ const QUESTIONS = [
     ]
   },
   {
-    text: "When you miss a goal or deadline, your first instinct is:",
+    text: "How do you respond to accountability?",
     options: [
-      { id: 'a', text: "Figure out what went wrong and fix the system" },
-      { id: 'b', text: "Beat yourself up about it" },
-      { id: 'c', text: "Remind yourself it's not the end of the world" },
-      { id: 'd', text: "Move on quickly and focus on what's next" },
+      { id: 'a', text: "I need someone checking in or I'll drift" },
+      { id: 'b', text: "I work better when I set my own deadlines" },
+      { id: 'c', text: "Public commitment helps me follow through" },
+      { id: 'd', text: "I do best when I understand the why behind the goal" },
     ]
   },
-  {
-    text: "How do you prefer to start your day?",
-    options: [
-      { id: 'a', text: "With a clear prioritized list ready to go" },
-      { id: 'b', text: "With a quick check-in to assess how I'm feeling" },
-      { id: 'c', text: "Just jumping into the most urgent thing" },
-      { id: 'd', text: "Slowly — I need time to ease in" },
-    ]
-  },
+  // ── Slide 3: What gets in your way ─────────────────────────
   {
     text: "When a task keeps getting pushed back, it's usually because:",
     options: [
@@ -91,25 +78,16 @@ const QUESTIONS = [
     ]
   },
   {
-    text: "How do you respond to accountability?",
+    text: "When you miss a goal or deadline, your first instinct is:",
     options: [
-      { id: 'a', text: "I need someone checking in or I'll drift" },
-      { id: 'b', text: "I work better when I set my own deadlines" },
-      { id: 'c', text: "Public commitment helps me follow through" },
-      { id: 'd', text: "I do best when I understand the why behind the goal" },
+      { id: 'a', text: "Figure out what went wrong and fix the system" },
+      { id: 'b', text: "Beat myself up about it" },
+      { id: 'c', text: "Remind myself it's not the end of the world" },
+      { id: 'd', text: "Move on quickly and focus on what's next" },
     ]
   },
   {
-    text: "What's your relationship with your phone notifications?",
-    options: [
-      { id: 'a', text: "I check everything immediately" },
-      { id: 'b', text: "I batch them and check periodically" },
-      { id: 'c', text: "I'm often overwhelmed by them" },
-      { id: 'd', text: "I mostly ignore them" },
-    ]
-  },
-  {
-    text: "When you complete something you've been putting off, you feel:",
+    text: "When you finish something you've been putting off, you feel:",
     options: [
       { id: 'a', text: "Relieved more than proud" },
       { id: 'b', text: "Genuinely proud — wins matter to me" },
@@ -122,18 +100,18 @@ const QUESTIONS = [
 // ── Persona scoring ───────────────────────────────────────────────────────────
 
 const SCORING = [
-  { a: { drill_sergeant: 2 }, b: { coach: 2 }, c: { thinking_partner: 2 }, d: { strategist: 2 } },
-  { a: { drill_sergeant: 1 }, b: { hype_person: 1 }, c: { thinking_partner: 2 }, d: { strategist: 2 } },
-  { a: { drill_sergeant: 2 }, b: { hype_person: 2 }, c: { coach: 1 }, d: { strategist: 1 } },
-  { a: { drill_sergeant: 1, strategist: 1 }, b: { strategist: 2 }, c: { thinking_partner: 2 }, d: { coach: 2 } },
-  { a: { drill_sergeant: 3 }, b: { coach: 2 }, c: { thinking_partner: 2 }, d: { empath: 3 } },
-  { a: { drill_sergeant: 3 }, b: { thinking_partner: 3 }, c: { hype_person: 3 }, d: { strategist: 3 }, e: { empath: 3 } },
-  { a: { strategist: 3 }, b: { thinking_partner: 2 }, c: { coach: 2 }, d: { drill_sergeant: 2 } },
-  { a: { strategist: 2, drill_sergeant: 1 }, b: { thinking_partner: 2 }, c: { drill_sergeant: 2 }, d: { coach: 1 } },
-  { a: { thinking_partner: 2 }, b: { strategist: 2 }, c: { thinking_partner: 1, coach: 1 }, d: { coach: 2 } },
-  { a: { drill_sergeant: 2, hype_person: 1 }, b: { strategist: 2 }, c: { hype_person: 2 }, d: { thinking_partner: 2 } },
-  { a: { drill_sergeant: 1 }, b: { strategist: 2 }, c: { thinking_partner: 1, coach: 1 }, d: { coach: 2 } },
-  { a: { thinking_partner: 1 }, b: { hype_person: 3 }, c: { strategist: 2 }, d: { drill_sergeant: 1 } },
+  // Slide 1 — How you work
+  /* Q1 procrastination */  { a: { drill_sergeant: 2 }, b: { coach: 2 }, c: { thinking_partner: 2 }, d: { strategist: 2 } },
+  /* Q2 day start */        { a: { strategist: 2, drill_sergeant: 1 }, b: { thinking_partner: 2 }, c: { drill_sergeant: 2 }, d: { coach: 1, empath: 1 } },
+  /* Q3 productive day */   { a: { drill_sergeant: 1, strategist: 1 }, b: { strategist: 2 }, c: { thinking_partner: 2 }, d: { coach: 2 } },
+  // Slide 2 — How you want to be coached
+  /* Q4 feedback */         { a: { drill_sergeant: 3 }, b: { coach: 2 }, c: { thinking_partner: 2 }, d: { empath: 3 } },
+  /* Q5 ideal coach */      { a: { drill_sergeant: 3 }, b: { thinking_partner: 3 }, c: { hype_person: 3 }, d: { strategist: 3 }, e: { empath: 3 } },
+  /* Q6 accountability */   { a: { drill_sergeant: 2, hype_person: 1 }, b: { strategist: 2 }, c: { hype_person: 2 }, d: { thinking_partner: 2 } },
+  // Slide 3 — What gets in your way
+  /* Q7 task stalls */      { a: { thinking_partner: 2 }, b: { strategist: 2 }, c: { thinking_partner: 1, coach: 1 }, d: { coach: 2 } },
+  /* Q8 missed goals */     { a: { strategist: 3 }, b: { thinking_partner: 2 }, c: { coach: 2 }, d: { drill_sergeant: 2 } },
+  /* Q9 completion feel */  { a: { thinking_partner: 1 }, b: { hype_person: 3 }, c: { strategist: 2 }, d: { drill_sergeant: 1 } },
 ]
 
 const PERSONA_DEFS = {
@@ -177,6 +155,8 @@ const MH_OPTIONS = [
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const RANK_ITEMS_DEFAULT = ['Deep focus work', 'Quick wins', 'External commitments', 'Self-care / personal tasks']
+const QUESTIONS_PER_SLIDE = 3
+const TOTAL_SLIDES = Math.ceil(QUESTIONS.length / QUESTIONS_PER_SLIDE)
 
 export default function Onboarding() {
   const router = useRouter()
@@ -185,7 +165,7 @@ export default function Onboarding() {
   const [mentalHealthContext, setMentalHealthContext] = useState(null)
   const [name, setName] = useState('')
   const [checkinTimes, setCheckinTimes] = useState(['morning', 'evening'])
-  const [currentQ, setCurrentQ] = useState(0)
+  const [currentSlide, setCurrentSlide] = useState(0)
   const [answers, setAnswers] = useState(Array(QUESTIONS.length).fill(null))
   const [animKey, setAnimKey] = useState(0)
   const [slideDirection, setSlideDirection] = useState('forward') // forward | backward
@@ -215,25 +195,25 @@ export default function Onboarding() {
     )
   }
 
-  const handleAnswer = (optionId) => {
-    const newAnswers = answers.map((a, i) => i === currentQ ? optionId : a)
-    setAnswers(newAnswers)
+  const handleSelect = (qIdx, optionId) => {
+    setAnswers(prev => prev.map((a, i) => i === qIdx ? optionId : a))
+  }
 
-    if (currentQ < QUESTIONS.length - 1) {
+  const handleNextSlide = () => {
+    if (currentSlide < TOTAL_SLIDES - 1) {
       setSlideDirection('forward')
       setAnimKey(k => k + 1)
-      setCurrentQ(q => q + 1)
+      setCurrentSlide(s => s + 1)
     } else {
-      // After last question, show ranked priorities question
       setPhase('rankq')
     }
   }
 
   const handleBack = () => {
-    if (currentQ > 0) {
+    if (currentSlide > 0) {
       setSlideDirection('backward')
       setAnimKey(k => k + 1)
-      setCurrentQ(q => q - 1)
+      setCurrentSlide(s => s - 1)
     } else {
       setPhase('intro')
     }
@@ -341,7 +321,7 @@ export default function Onboarding() {
               </span>
             </div>
             <h1 className={styles.introTitle}>Let's set you up.</h1>
-            <p className={styles.introSub}>12 quick questions. No wrong answers. Takes about 2 minutes.</p>
+            <p className={styles.introSub}>A few quick questions. No wrong answers. Under a minute.</p>
 
             <div className={styles.introForm}>
               <div className={styles.introField}>
@@ -383,10 +363,12 @@ export default function Onboarding() {
     )
   }
 
-  // ── Questions ─────────────────────────────────────────────────────────────
+  // ── Questions (grouped slides) ────────────────────────────────────────────
   if (phase === 'questions') {
-    const q = QUESTIONS[currentQ]
-    const progress = ((currentQ + 2) / 13) * 100
+    const slideStart = currentSlide * QUESTIONS_PER_SLIDE
+    const slideQuestions = QUESTIONS.slice(slideStart, slideStart + QUESTIONS_PER_SLIDE)
+    const slideAllAnswered = slideQuestions.every((_, i) => answers[slideStart + i] !== null)
+    const progress = ((currentSlide + 1) / (TOTAL_SLIDES + 1)) * 100
 
     return (
       <>
@@ -398,27 +380,41 @@ export default function Onboarding() {
 
           <div className={styles.questionContainer}>
             <div className={styles.questionNav}>
-              <button onClick={handleBack} className={styles.backBtn}>← Back</button>
-              <span className={styles.questionCount}>{currentQ + 1} of {QUESTIONS.length + 1}</span>
+              <button onClick={handleBack} className={styles.backBtn}>&larr; Back</button>
+              <span className={styles.questionCount}>{currentSlide + 1} of {TOTAL_SLIDES + 1}</span>
             </div>
 
             <div key={animKey} className={`${styles.questionWrap} ${slideDirection === 'backward' ? styles.questionWrapBackward : ''}`}>
-              <h2 className={styles.questionText}>{q.text}</h2>
-              <div className={styles.optionsGrid}>
-                {q.options.map(opt => {
-                  const selected = answers[currentQ] === opt.id
-                  return (
-                    <button
-                      key={opt.id}
-                      onClick={() => handleAnswer(opt.id)}
-                      className={`${styles.optionCard} ${selected ? styles.optionCardSelected : ''}`}
-                    >
-                      <span className={`${styles.optionLetter} ${selected ? styles.optionLetterSelected : ''}`}>{opt.id.toUpperCase()}</span>
-                      <span className={styles.optionText}>{opt.text}</span>
-                    </button>
-                  )
-                })}
-              </div>
+              <p className={styles.slideTheme}>{SLIDE_THEMES[currentSlide]}</p>
+
+              {slideQuestions.map((q, i) => {
+                const qIdx = slideStart + i
+                return (
+                  <div key={qIdx} className={styles.questionBlock}>
+                    <p className={styles.questionLabel}>{q.text}</p>
+                    <div className={styles.optionsList}>
+                      {q.options.map(opt => (
+                        <button
+                          key={opt.id}
+                          onClick={() => handleSelect(qIdx, opt.id)}
+                          className={`${styles.optionPill} ${answers[qIdx] === opt.id ? styles.optionPillSelected : ''}`}
+                        >
+                          {opt.text}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+
+              <button
+                onClick={handleNextSlide}
+                disabled={!slideAllAnswered}
+                className={styles.startBtn}
+                style={{ marginTop: 8 }}
+              >
+                {currentSlide < TOTAL_SLIDES - 1 ? 'Next \u2192' : 'Almost done \u2192'}
+              </button>
             </div>
           </div>
         </div>
@@ -428,18 +424,17 @@ export default function Onboarding() {
 
   // ── Rank question ─────────────────────────────────────────────────────────
   if (phase === 'rankq') {
-    const progress = (13 / 13) * 100
     return (
       <>
         <Head><title>Getting Started — Cinis</title></Head>
         <div className={styles.page}>
           <div className={styles.progressBar}>
-            <div className={styles.progressFill} style={{ width: `${progress}%` }} />
+            <div className={styles.progressFill} style={{ width: '100%' }} />
           </div>
           <div className={styles.questionContainer}>
             <div className={styles.questionNav}>
-              <button onClick={() => { setSlideDirection('backward'); setPhase('questions'); setCurrentQ(QUESTIONS.length - 1); setAnimKey(k => k + 1) }} className={styles.backBtn}>← Back</button>
-              <span className={styles.questionCount}>{QUESTIONS.length + 1} of {QUESTIONS.length + 1}</span>
+              <button onClick={() => { setSlideDirection('backward'); setPhase('questions'); setCurrentSlide(TOTAL_SLIDES - 1); setAnimKey(k => k + 1) }} className={styles.backBtn}>&larr; Back</button>
+              <span className={styles.questionCount}>{TOTAL_SLIDES + 1} of {TOTAL_SLIDES + 1}</span>
             </div>
             <div className={styles.questionWrap}>
               <h2 className={styles.questionText}>Drag to rank what matters most to you.</h2>
@@ -557,17 +552,7 @@ export default function Onboarding() {
         <div className={styles.page}>
           <div className={styles.buildingContainer}>
             <div className={styles.buildingMark}>
-              <svg width="56" height="56" viewBox="0 0 64 64" fill="none">
-                <polygon points="32,2 56,15 56,43 32,56 8,43 8,15" fill="none" stroke="#FF6644" strokeWidth="1.1" opacity="0.45"/>
-                <path d="M 12.63,14.56 L 29.37,5.44 Q 32,4 34.63,5.44 L 51.37,14.56 Q 54,16 54,19 L 54,39 Q 54,42 51.37,43.44 L 34.63,52.56 Q 32,54 29.37,52.56 L 12.63,43.44 Q 10,42 10,39 L 10,19 Q 10,16 12.63,14.56 Z" fill="#FF6644"/>
-                <path d="M 14.9,16.1 L 29.8,7.8 Q 32,6.6 34.2,7.8 L 49.1,16.1 Q 51.4,17.4 51.4,20 L 51.4,38 Q 51.4,40.6 49.1,41.9 L 34.2,50.2 Q 32,51.4 29.8,50.2 L 14.9,41.9 Q 12.6,40.6 12.6,38 L 12.6,20 Q 12.6,17.4 14.9,16.1 Z" fill="#120704"/>
-                <polygon points="32,14 46,22 46,40 32,48 18,40 18,22" fill="#5A1005"/>
-                <polygon points="32,20 42,26 42,40 32,45 22,40 22,26" fill="#A82010"/>
-                <polygon points="32,26 38,29 38,40 32,43 26,40 26,29" fill="#E8321A"/>
-                <polygon points="32,29 45,40 40,43 32,47 24,43 19,40" fill="#FF6644" opacity="0.92"/>
-                <polygon points="32,33 41,40 38,42 32,45 26,42 23,40" fill="#FFD0C0" opacity="0.76"/>
-                <polygon points="32,36 37,40 36,41 32,43 28,41 27,40" fill="#FFF0EB" opacity="0.60"/>
-              </svg>
+              <CinisMark size={56} />
             </div>
             <p className={styles.buildingText}>Your coach is learning about you.</p>
           </div>

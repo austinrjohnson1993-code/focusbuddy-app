@@ -39,9 +39,14 @@
   align-self: flex-start;
 }
 
-.startBtn:hover {
+.startBtn:hover:not(:disabled) {
   background: #ff7043;
   transform: translateY(-2px);
+}
+
+.startBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 /* ── Saving screen ── */
@@ -208,11 +213,12 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  max-width: 680px;
+  justify-content: flex-start;
+  max-width: 600px;
   margin: 0 auto;
-  padding: 72px 24px 48px;
+  padding: 56px 24px 48px;
   width: 100%;
+  overflow-y: auto;
 }
 
 .questionCount {
@@ -757,6 +763,69 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ── Grouped slide layout ── */
+
+.slideTheme {
+  font-family: 'Sora', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255,77,28,0.55);
+  margin-bottom: 28px;
+}
+
+.questionBlock {
+  margin-bottom: 28px;
+}
+
+.questionBlock:last-of-type {
+  margin-bottom: 20px;
+}
+
+.questionLabel {
+  font-family: 'Sora', sans-serif;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #f0ead6;
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+
+.optionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.optionPill {
+  text-align: left;
+  width: 100%;
+  padding: 11px 16px;
+  background: rgba(255,200,120,0.04);
+  border: 1px solid rgba(255,200,120,0.08);
+  border-radius: 10px;
+  color: rgba(240,234,214,0.6);
+  font-size: 0.84rem;
+  font-family: 'Figtree', sans-serif;
+  font-weight: 400;
+  line-height: 1.45;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.optionPill:hover {
+  background: rgba(255,77,28,0.06);
+  border-color: rgba(255,77,28,0.25);
+  color: rgba(240,234,214,0.85);
+}
+
+.optionPillSelected {
+  background: rgba(255,77,28,0.1) !important;
+  border-color: rgba(255,77,28,0.5) !important;
+  color: #f0ead6 !important;
 }
 
 /* ── Responsive ── */
