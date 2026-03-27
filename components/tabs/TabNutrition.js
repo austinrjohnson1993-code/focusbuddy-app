@@ -26,11 +26,11 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
           </svg>
           <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <span style={{ fontFamily: sora, fontSize: 15, fontWeight: 600, color }}>{value}</span>
-            {unit && <span style={{ fontSize: 7, color: COL.ghost }}>{unit}</span>}
+            {unit && <span style={{ fontSize: 14, color: COL.ghost }}>{unit}</span>}
           </div>
         </div>
-        <div style={{ fontSize: 9, color: COL.ghost, fontFamily: fig }}>/ {target}{unit}</div>
-        <div style={{ fontSize: 8, color: COL.ghost, fontFamily: fig, marginTop: 5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
+        <div style={{ fontSize: 14, color: COL.ghost, fontFamily: fig }}>/ {target}{unit}</div>
+        <div style={{ fontSize: 14, color: COL.ghost, fontFamily: fig, marginTop: 5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
       </div>
     )
   }
@@ -44,15 +44,15 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
   )
 
   const SLabel = ({ children, color }) => (
-    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: color || COL.ghost, fontFamily: fig, marginBottom: 6, marginTop: 10 }}>{children}</div>
+    <div style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: color || COL.ghost, fontFamily: fig, marginBottom: 6, marginTop: 10 }}>{children}</div>
   )
 
   const NTag = ({ bg, color, children }) => (
-    <span style={{ display: 'inline-block', fontFamily: fig, fontSize: 9, borderRadius: 4, padding: '2px 8px', background: bg, color }}>{children}</span>
+    <span style={{ display: 'inline-block', fontFamily: fig, fontSize: 14, borderRadius: 4, padding: '2px 8px', background: bg, color }}>{children}</span>
   )
 
   const NChip = ({ active, children }) => (
-    <span style={{ padding: '5px 12px', borderRadius: 14, fontFamily: fig, fontSize: 10, background: active ? COL.ember : COL.char, color: active ? COL.ash : COL.dim }}>{children}</span>
+    <span style={{ padding: '5px 12px', borderRadius: 14, fontFamily: fig, fontSize: 14, background: active ? COL.ember : COL.char, color: active ? COL.ash : COL.dim }}>{children}</span>
   )
 
   const nutrTabs = ['Log', 'Meals', 'Stack', 'Body', 'Insights', 'Knowledge', 'Learn']
@@ -62,7 +62,7 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
     <div>
       {/* Header */}
       <div style={{ marginBottom: 12 }}>
-        <span style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.06em', color: COL.ghost, fontFamily: fig }}>Nutrition</span>
+        <span style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: COL.ghost, fontFamily: fig }}>Nutrition</span>
         <h1 style={{ margin: '2px 0 0', fontFamily: sora, fontSize: 20, fontWeight: 600, color: COL.ash }}>Today</h1>
       </div>
 
@@ -77,14 +77,14 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
       {/* Protein callout */}
       <div style={{ background: COL.char, borderRadius: 8, padding: '10px 12px', marginBottom: 14 }}>
         <span style={{ fontFamily: sora, fontSize: 14, fontWeight: 600, color: COL.ash }}>52g protein remaining</span>
-        <p style={{ fontSize: 10, color: COL.ghost, fontFamily: fig, margin: '3px 0 0' }}>Hit your target by eating ~2 scoops whey or 7oz chicken</p>
+        <p style={{ fontSize: 14, color: COL.ghost, fontFamily: fig, margin: '3px 0 0' }}>Hit your target by eating ~2 scoops whey or 7oz chicken</p>
       </div>
 
       {/* Water tracker */}
       <div style={{ background: COL.char, borderRadius: 10, padding: 12, marginBottom: 14 }}>
         <NRow>
-          <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: COL.blue, fontFamily: fig }}>Water</span>
-          <span style={{ fontFamily: sora, fontSize: 9, color: COL.ghost }}>{nutrWaterCount} / 8 glasses</span>
+          <span style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: COL.blue, fontFamily: fig }}>Water</span>
+          <span style={{ fontFamily: sora, fontSize: 14, color: COL.ghost }}>{nutrWaterCount} / 8 glasses</span>
         </NRow>
         <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
           {Array.from({ length: 8 }).map((_, i) => {
@@ -98,7 +98,7 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
                   background: filled ? `${COL.blue}30` : 'rgba(245,240,227,0.08)',
                   border: `1px solid ${filled ? `${COL.blue}60` : COL.charBorder}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 12, color: filled ? COL.blue : COL.micro,
+                  fontSize: 14, color: filled ? COL.blue : COL.micro,
                 }}>
                   {filled ? '💧' : ''}
                 </div>
@@ -117,13 +117,13 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
       ].map((ml, i) => (
         <NCard key={i} style={{ padding: 10, borderRadius: 10, marginBottom: 8 }}>
           <NRow style={{ marginBottom: 4 }}>
-            <span style={{ fontFamily: fig, fontSize: 12, fontWeight: 600, color: COL.ash }}>{ml.name}</span>
-            <span style={{ fontSize: 9, color: COL.ghost, fontFamily: fig }}>{ml.time}</span>
+            <span style={{ fontFamily: fig, fontSize: 14, fontWeight: 600, color: COL.ash }}>{ml.name}</span>
+            <span style={{ fontSize: 14, color: COL.ghost, fontFamily: fig }}>{ml.time}</span>
           </NRow>
-          <div style={{ fontSize: 11, color: `${COL.ash}aa`, fontFamily: fig }}>{ml.food}</div>
+          <div style={{ fontSize: 14, color: `${COL.ash}aa`, fontFamily: fig }}>{ml.food}</div>
           <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
             {[['cal', ml.cal], ['P', ml.p + 'g'], ['C', ml.carb + 'g'], ['F', ml.f + 'g']].map(([l, v]) => (
-              <span key={l} style={{ fontSize: 10, color: COL.faint, fontFamily: fig }}>
+              <span key={l} style={{ fontSize: 14, color: COL.faint, fontFamily: fig }}>
                 <span style={{ color: COL.ash }}>{v}</span> {l}
               </span>
             ))}
@@ -133,10 +133,10 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
       {/* Empty dinner slot */}
       <div style={{ border: `0.5px dashed ${COL.charBorder}`, borderRadius: 10, padding: 12, marginBottom: 8 }}>
         <NRow>
-          <span style={{ fontFamily: fig, fontSize: 12, fontWeight: 600, color: COL.ghost }}>Snacks</span>
-          <span style={{ fontSize: 9, color: COL.ghost, fontFamily: fig }}>Not logged</span>
+          <span style={{ fontFamily: fig, fontSize: 14, fontWeight: 600, color: COL.ghost }}>Snacks</span>
+          <span style={{ fontSize: 14, color: COL.ghost, fontFamily: fig }}>Not logged</span>
         </NRow>
-        <div style={{ fontSize: 11, color: COL.ghost, fontFamily: fig, fontStyle: 'italic', marginTop: 4 }}>+ Log Snacks</div>
+        <div style={{ fontSize: 14, color: COL.ghost, fontFamily: fig, fontStyle: 'italic', marginTop: 4 }}>+ Log Snacks</div>
       </div>
 
       {/* Quick add */}
@@ -144,10 +144,10 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
         <SLabel>Quick add</SLabel>
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
           {['Protein shake', 'Chicken + rice', 'Eggs', 'Protein bar', '+ Custom'].map(m => (
-            <div key={m} style={{ background: COL.coal, border: `0.5px solid ${COL.charBorder}`, borderRadius: 6, padding: '5px 10px', fontSize: 10, color: COL.dim, fontFamily: fig }}>{m}</div>
+            <div key={m} style={{ background: COL.coal, border: `0.5px solid ${COL.charBorder}`, borderRadius: 6, padding: '5px 10px', fontSize: 14, color: COL.dim, fontFamily: fig }}>{m}</div>
           ))}
         </div>
-        <div style={{ fontSize: 9, color: COL.ghost, fontFamily: fig, marginTop: 6 }}>Saved meals auto-fill macros. Tap or type anything — AI estimates the rest.</div>
+        <div style={{ fontSize: 14, color: COL.ghost, fontFamily: fig, marginTop: 6 }}>Saved meals auto-fill macros. Tap or type anything — AI estimates the rest.</div>
       </NCard>
     </div>
   )
@@ -156,8 +156,8 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
   const stackContent = (
     <div>
       <NRow style={{ marginBottom: 10 }}>
-        <span style={{ fontSize: 11, color: COL.dim, fontFamily: fig }}>Your supplement stack. Tap to edit.</span>
-        <span style={{ fontSize: 10, color: COL.ember, fontFamily: fig }}>+ Add</span>
+        <span style={{ fontSize: 14, color: COL.dim, fontFamily: fig }}>Your supplement stack. Tap to edit.</span>
+        <span style={{ fontSize: 14, color: COL.ember, fontFamily: fig }}>+ Add</span>
       </NRow>
       {[
         { label: 'Morning — with breakfast', color: COL.hot, items: [
@@ -180,10 +180,10 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
             <NCard key={i} style={{ padding: 10 }}>
               <NRow>
                 <div>
-                  <span style={{ fontSize: 12, fontWeight: 500, color: COL.ash, fontFamily: fig }}>{item.name}</span>
-                  <div style={{ fontSize: 9, color: COL.ghost, fontFamily: fig }}>{item.dose} · {item.note}</div>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: COL.ash, fontFamily: fig }}>{item.name}</span>
+                  <div style={{ fontSize: 14, color: COL.ghost, fontFamily: fig }}>{item.dose} · {item.note}</div>
                 </div>
-                <span style={{ fontSize: 9, color: item.pct >= 80 ? COL.green : item.pct >= 65 ? COL.hot : COL.ember, fontFamily: fig }}>{item.pct}%</span>
+                <span style={{ fontSize: 14, color: item.pct >= 80 ? COL.green : item.pct >= 65 ? COL.hot : COL.ember, fontFamily: fig }}>{item.pct}%</span>
               </NRow>
             </NCard>
           ))}
@@ -191,8 +191,8 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
       ))}
       <div style={{ height: 0.5, background: COL.border, margin: '12px 0' }}/>
       <NCard borderLeft={`3px solid ${COL.hot}`}>
-        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: COL.hot, fontFamily: fig, marginBottom: 4 }}>Stack tip</div>
-        <div style={{ fontSize: 11, color: `${COL.ash}aa`, fontFamily: fig, lineHeight: 1.5 }}>Evening stack is 61% vs 88% morning. Move ZMA to 30 min before bed as a separate reminder.</div>
+        <div style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: COL.hot, fontFamily: fig, marginBottom: 4 }}>Stack tip</div>
+        <div style={{ fontSize: 14, color: `${COL.ash}aa`, fontFamily: fig, lineHeight: 1.5 }}>Evening stack is 61% vs 88% morning. Move ZMA to 30 min before bed as a separate reminder.</div>
       </NCard>
     </div>
   )
@@ -201,8 +201,8 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
   const mealsContent = (
     <div>
       <NRow style={{ marginBottom: 10 }}>
-        <span style={{ fontSize: 11, color: COL.dim, fontFamily: fig }}>Your saved meals. Tap to quick-log.</span>
-        <span style={{ fontSize: 10, color: COL.ember, fontFamily: fig }}>+ Create</span>
+        <span style={{ fontSize: 14, color: COL.dim, fontFamily: fig }}>Your saved meals. Tap to quick-log.</span>
+        <span style={{ fontSize: 14, color: COL.ember, fontFamily: fig }}>+ Create</span>
       </NRow>
       <SLabel>Go-to meals</SLabel>
       {[
@@ -212,13 +212,13 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
       ].map((m, i) => (
         <div key={i} style={{ background: COL.coal, border: `0.5px solid ${COL.border}`, borderRadius: 8, padding: '10px 12px', marginBottom: 6 }}>
           <NRow style={{ marginBottom: 4 }}>
-            <span style={{ fontSize: 13, fontWeight: 500, color: COL.ash, fontFamily: fig }}>{m.name}</span>
-            <span style={{ fontSize: 9, color: COL.ghost, fontFamily: fig }}>Logged {m.count}x</span>
+            <span style={{ fontSize: 14, fontWeight: 500, color: COL.ash, fontFamily: fig }}>{m.name}</span>
+            <span style={{ fontSize: 14, color: COL.ghost, fontFamily: fig }}>Logged {m.count}x</span>
           </NRow>
-          <div style={{ fontSize: 11, color: COL.dim, fontFamily: fig }}>{m.desc}</div>
+          <div style={{ fontSize: 14, color: COL.dim, fontFamily: fig }}>{m.desc}</div>
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
             {[['cal', m.cal], ['P', m.p + 'g'], ['C', m.carb + 'g'], ['F', m.f + 'g']].map(([l, v]) => (
-              <span key={l} style={{ fontSize: 10, color: COL.faint, fontFamily: fig }}>
+              <span key={l} style={{ fontSize: 14, color: COL.faint, fontFamily: fig }}>
                 <span style={{ color: COL.ash }}>{v}</span> {l}
               </span>
             ))}
@@ -229,10 +229,10 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
       <SLabel>Need ideas? Tap a goal</SLabel>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {['High protein \u2192', 'Under 500 cal \u2192', '5 min prep \u2192', 'Meal prep batch \u2192', 'Just pick for me \u2192'].map(g => (
-          <div key={g} style={{ background: COL.char, borderRadius: 6, padding: '7px 12px', fontSize: 11, color: COL.dim, fontFamily: fig }}>{g}</div>
+          <div key={g} style={{ background: COL.char, borderRadius: 6, padding: '7px 12px', fontSize: 14, color: COL.dim, fontFamily: fig }}>{g}</div>
         ))}
       </div>
-      <div style={{ fontSize: 9, color: COL.ghost, fontFamily: fig, marginTop: 6 }}>AI suggests meals based on remaining macros.</div>
+      <div style={{ fontSize: 14, color: COL.ghost, fontFamily: fig, marginTop: 6 }}>AI suggests meals based on remaining macros.</div>
     </div>
   )
 
@@ -243,7 +243,7 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
         {[{ v: '185', l: 'Weight (lbs)', col: COL.ash }, { v: '2,400', l: 'Daily target', col: COL.hot }, { v: 'Lean bulk', l: 'Current goal', col: COL.dim }].map((s, i) => (
           <div key={i} style={{ flex: 1, background: COL.char, borderRadius: 8, padding: 10, textAlign: 'center' }}>
             <div style={{ fontFamily: sora, fontSize: 18, fontWeight: 600, color: s.col }}>{s.v}</div>
-            <div style={{ fontSize: 9, color: COL.faint, fontFamily: fig, marginTop: 2 }}>{s.l}</div>
+            <div style={{ fontSize: 14, color: COL.faint, fontFamily: fig, marginTop: 2 }}>{s.l}</div>
           </div>
         ))}
       </div>
@@ -251,34 +251,34 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
         <SLabel>Goal</SLabel>
         <div style={{ display: 'flex', gap: 6 }}>
           {['Cut', 'Maintain', 'Lean bulk', 'Bulk'].map((g) => (
-            <div key={g} style={{ flex: 1, padding: 8, borderRadius: 6, textAlign: 'center', background: g === 'Lean bulk' ? `${COL.ember}18` : COL.coal, border: `${g === 'Lean bulk' ? '1' : '0.5'}px solid ${g === 'Lean bulk' ? `${COL.ember}40` : COL.charBorder}`, fontSize: 11, color: g === 'Lean bulk' ? COL.ember : COL.faint, fontFamily: fig }}>{g}</div>
+            <div key={g} style={{ flex: 1, padding: 8, borderRadius: 6, textAlign: 'center', background: g === 'Lean bulk' ? `${COL.ember}18` : COL.coal, border: `${g === 'Lean bulk' ? '1' : '0.5'}px solid ${g === 'Lean bulk' ? `${COL.ember}40` : COL.charBorder}`, fontSize: 14, color: g === 'Lean bulk' ? COL.ember : COL.faint, fontFamily: fig }}>{g}</div>
           ))}
         </div>
-        <div style={{ fontSize: 9, color: COL.ghost, fontFamily: fig, marginTop: 6 }}>Goal sets calorie target and macro split automatically</div>
+        <div style={{ fontSize: 14, color: COL.ghost, fontFamily: fig, marginTop: 6 }}>Goal sets calorie target and macro split automatically</div>
       </NCard>
       <NRow style={{ margin: '10px 0 6px' }}>
         <SLabel>Weight log</SLabel>
-        <span style={{ fontSize: 10, color: COL.ember, fontFamily: fig }}>+ Log today</span>
+        <span style={{ fontSize: 14, color: COL.ember, fontFamily: fig }}>+ Log today</span>
       </NRow>
       {[['Mar 19', '185.2', '+0.4'], ['Mar 17', '184.8', '+0.2'], ['Mar 14', '184.6', '\u2014'], ['Mar 10', '184.0', '+0.6'], ['Mar 7', '183.4', '']].map(([d, w, delta], i) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < 4 ? `0.5px solid ${COL.charLight}` : 'none' }}>
-          <span style={{ fontSize: 12, color: COL.ash, fontFamily: fig }}>{d}</span>
+          <span style={{ fontSize: 14, color: COL.ash, fontFamily: fig }}>{d}</span>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <span style={{ fontFamily: sora, fontSize: 14, fontWeight: 500, color: COL.ash }}>{w}</span>
-            {delta && <span style={{ fontSize: 10, color: delta === '\u2014' ? COL.faint : COL.green, fontFamily: fig, marginLeft: 6 }}>{delta}</span>}
+            {delta && <span style={{ fontSize: 14, color: delta === '\u2014' ? COL.faint : COL.green, fontFamily: fig, marginLeft: 6 }}>{delta}</span>}
           </div>
         </div>
       ))}
       <div style={{ height: 0.5, background: COL.border, margin: '12px 0' }}/>
       <NRow style={{ marginBottom: 6 }}>
         <SLabel>Measurements</SLabel>
-        <span style={{ fontSize: 10, color: COL.ember, fontFamily: fig }}>+ Update</span>
+        <span style={{ fontSize: 14, color: COL.ember, fontFamily: fig }}>+ Update</span>
       </NRow>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {[['15.5"', 'Arms'], ['42"', 'Chest'], ['33"', 'Waist'], ['25"', 'Quads']].map(([v, l]) => (
           <div key={l} style={{ flex: 1, minWidth: 70, background: COL.char, borderRadius: 8, padding: 8, textAlign: 'center' }}>
             <div style={{ fontFamily: sora, fontSize: 16, fontWeight: 600, color: COL.ash }}>{v}</div>
-            <div style={{ fontSize: 9, color: COL.ghost, fontFamily: fig }}>{l}</div>
+            <div style={{ fontSize: 14, color: COL.ghost, fontFamily: fig }}>{l}</div>
           </div>
         ))}
       </div>
@@ -287,14 +287,14 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
         <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
           {['Mar 1', 'Mar 10'].map(d => (
             <div key={d} style={{ width: 60, height: 80, background: COL.coal, borderRadius: 6, border: `0.5px solid ${COL.charBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: 9, color: COL.ghost, fontFamily: fig }}>{d}</span>
+              <span style={{ fontSize: 14, color: COL.ghost, fontFamily: fig }}>{d}</span>
             </div>
           ))}
           <div style={{ width: 60, height: 80, background: COL.coal, borderRadius: 6, border: `0.5px dashed ${COL.ember}40`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: 10, color: COL.ember, fontFamily: fig }}>+ Add</span>
+            <span style={{ fontSize: 14, color: COL.ember, fontFamily: fig }}>+ Add</span>
           </div>
         </div>
-        <div style={{ fontSize: 9, color: COL.ghost, fontFamily: fig, marginTop: 6 }}>Every 2 weeks. Cinis keeps them private.</div>
+        <div style={{ fontSize: 14, color: COL.ghost, fontFamily: fig, marginTop: 6 }}>Every 2 weeks. Cinis keeps them private.</div>
       </NCard>
     </div>
   )
@@ -317,10 +317,10 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
       ].map((card, i) => (
         <NCard key={i}>
           <NRow>
-            <span style={{ fontSize: 13, fontWeight: 500, color: COL.ash, fontFamily: fig }}>{card.title}</span>
+            <span style={{ fontSize: 14, fontWeight: 500, color: COL.ash, fontFamily: fig }}>{card.title}</span>
             <NTag bg={card.tagBg} color={card.tagCol}>{card.tag}</NTag>
           </NRow>
-          <div style={{ fontSize: 11, color: `${COL.ash}70`, fontFamily: fig, lineHeight: 1.6, marginTop: 6 }}>{card.body}</div>
+          <div style={{ fontSize: 14, color: `${COL.ash}70`, fontFamily: fig, lineHeight: 1.6, marginTop: 6 }}>{card.body}</div>
         </NCard>
       ))}
     </div>
@@ -336,9 +336,9 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
       </div>
       <NCard borderLeft={`3px solid ${COL.hot}`} style={{ padding: 14 }}>
         <NTag bg={`${COL.hot}20`} color={COL.hot}>Featured guide</NTag>
-        <div style={{ fontSize: 13, fontWeight: 500, color: COL.ash, fontFamily: fig, margin: '6px 0 4px' }}>Your first meal prep: a step-by-step system</div>
-        <div style={{ fontSize: 11, color: `${COL.ash}70`, fontFamily: fig, lineHeight: 1.5 }}>Pick 2 proteins, 2 carbs, 1 sauce. 90 minutes on Sunday. Uses your actual macro targets.</div>
-        <div style={{ fontSize: 11, color: COL.ember, fontFamily: fig, marginTop: 6 }}>Start guide &#8594;</div>
+        <div style={{ fontSize: 14, fontWeight: 500, color: COL.ash, fontFamily: fig, margin: '6px 0 4px' }}>Your first meal prep: a step-by-step system</div>
+        <div style={{ fontSize: 14, color: `${COL.ash}70`, fontFamily: fig, lineHeight: 1.5 }}>Pick 2 proteins, 2 carbs, 1 sauce. 90 minutes on Sunday. Uses your actual macro targets.</div>
+        <div style={{ fontSize: 14, color: COL.ember, fontFamily: fig, marginTop: 6 }}>Start guide &#8594;</div>
       </NCard>
       <SLabel>Guides</SLabel>
       {[
@@ -348,9 +348,9 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
       ].map(([t, d], i) => (
         <NCard key={i} style={{ padding: 14 }}>
           <NTag bg={`${COL.ember}20`} color={COL.ember}>Guide</NTag>
-          <div style={{ fontSize: 13, fontWeight: 500, color: COL.ash, fontFamily: fig, margin: '6px 0 4px' }}>{t}</div>
-          <div style={{ fontSize: 11, color: `${COL.ash}70`, fontFamily: fig, lineHeight: 1.5 }}>{d}</div>
-          <div style={{ fontSize: 11, color: COL.ember, fontFamily: fig, marginTop: 6 }}>Start &#8594;</div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: COL.ash, fontFamily: fig, margin: '6px 0 4px' }}>{t}</div>
+          <div style={{ fontSize: 14, color: `${COL.ash}70`, fontFamily: fig, lineHeight: 1.5 }}>{d}</div>
+          <div style={{ fontSize: 14, color: COL.ember, fontFamily: fig, marginTop: 6 }}>Start &#8594;</div>
         </NCard>
       ))}
       <SLabel>Calculators</SLabel>
@@ -361,9 +361,9 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
       ].map(([t, d], i) => (
         <NCard key={i} style={{ padding: 14 }}>
           <NTag bg={`${COL.green}20`} color={COL.green}>Calculator</NTag>
-          <div style={{ fontSize: 13, fontWeight: 500, color: COL.ash, fontFamily: fig, margin: '6px 0 4px' }}>{t}</div>
-          <div style={{ fontSize: 11, color: `${COL.ash}70`, fontFamily: fig, lineHeight: 1.5 }}>{d}</div>
-          <div style={{ fontSize: 11, color: COL.ember, fontFamily: fig, marginTop: 6 }}>Calculate &#8594;</div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: COL.ash, fontFamily: fig, margin: '6px 0 4px' }}>{t}</div>
+          <div style={{ fontSize: 14, color: `${COL.ash}70`, fontFamily: fig, lineHeight: 1.5 }}>{d}</div>
+          <div style={{ fontSize: 14, color: COL.ember, fontFamily: fig, marginTop: 6 }}>Calculate &#8594;</div>
         </NCard>
       ))}
       <SLabel>Trusted resources</SLabel>
@@ -374,9 +374,9 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
       ].map(([t, d], i) => (
         <NCard key={i} style={{ padding: 14 }}>
           <NTag bg={`${COL.ash}10`} color={COL.dim}>External</NTag>
-          <div style={{ fontSize: 13, fontWeight: 500, color: COL.ash, fontFamily: fig, margin: '6px 0 4px' }}>{t}</div>
-          <div style={{ fontSize: 11, color: `${COL.ash}70`, fontFamily: fig, lineHeight: 1.5 }}>{d}</div>
-          <div style={{ fontSize: 11, color: COL.ember, fontFamily: fig, marginTop: 6 }}>Open site &#8594;</div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: COL.ash, fontFamily: fig, margin: '6px 0 4px' }}>{t}</div>
+          <div style={{ fontSize: 14, color: `${COL.ash}70`, fontFamily: fig, lineHeight: 1.5 }}>{d}</div>
+          <div style={{ fontSize: 14, color: COL.ember, fontFamily: fig, marginTop: 6 }}>Open site &#8594;</div>
         </NCard>
       ))}
     </div>
@@ -389,30 +389,30 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
         {[{ v: '2.4', l: 'Avg meals/day', col: COL.hot }, { v: '4.1', l: 'Avg glasses', col: COL.blue }, { v: '78%', l: 'Supp adherence', col: COL.green }].map((s, i) => (
           <div key={i} style={{ flex: 1, background: COL.char, borderRadius: 8, padding: 10, textAlign: 'center' }}>
             <div style={{ fontFamily: sora, fontSize: 18, fontWeight: 600, color: s.col }}>{s.v}</div>
-            <div style={{ fontSize: 9, color: COL.faint, fontFamily: fig, marginTop: 2 }}>{s.l}</div>
+            <div style={{ fontSize: 14, color: COL.faint, fontFamily: fig, marginTop: 2 }}>{s.l}</div>
           </div>
         ))}
       </div>
       <NCard borderLeft={`3px solid ${COL.ember}`}>
-        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: COL.ember, fontFamily: fig, marginBottom: 4 }}>Pattern</div>
-        <div style={{ fontSize: 12, color: `${COL.ash}aa`, fontFamily: fig, lineHeight: 1.6 }}>You have skipped lunch 3 of 4 days this week. On lunch days, focus sessions average 22 minutes. Skip days: 14 minutes. Lunch is buying you 8 more minutes of focus.</div>
+        <div style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: COL.ember, fontFamily: fig, marginBottom: 4 }}>Pattern</div>
+        <div style={{ fontSize: 14, color: `${COL.ash}aa`, fontFamily: fig, lineHeight: 1.6 }}>You have skipped lunch 3 of 4 days this week. On lunch days, focus sessions average 22 minutes. Skip days: 14 minutes. Lunch is buying you 8 more minutes of focus.</div>
       </NCard>
       <NCard borderLeft={`3px solid ${COL.blue}`}>
-        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: COL.blue, fontFamily: fig, marginBottom: 4 }}>Hydration</div>
-        <div style={{ fontSize: 12, color: `${COL.ash}aa`, fontFamily: fig, lineHeight: 1.6 }}>Water intake drops after 2 PM every day. Set alarms for 2:00 and 4:00 — two afternoon glasses makes the biggest difference.</div>
+        <div style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: COL.blue, fontFamily: fig, marginBottom: 4 }}>Hydration</div>
+        <div style={{ fontSize: 14, color: `${COL.ash}aa`, fontFamily: fig, lineHeight: 1.6 }}>Water intake drops after 2 PM every day. Set alarms for 2:00 and 4:00 — two afternoon glasses makes the biggest difference.</div>
       </NCard>
       <NCard borderLeft={`3px solid ${COL.green}`}>
-        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: COL.green, fontFamily: fig, marginBottom: 4 }}>Win</div>
-        <div style={{ fontSize: 12, color: `${COL.ash}aa`, fontFamily: fig, lineHeight: 1.6 }}>Morning supplements at 89%. That routine is locked. Evening at 64% — consider moving Omega-3 to morning.</div>
+        <div style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: COL.green, fontFamily: fig, marginBottom: 4 }}>Win</div>
+        <div style={{ fontSize: 14, color: `${COL.ash}aa`, fontFamily: fig, lineHeight: 1.6 }}>Morning supplements at 89%. That routine is locked. Evening at 64% — consider moving Omega-3 to morning.</div>
       </NCard>
       <NCard borderLeft={`3px solid ${COL.hot}`}>
-        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: COL.hot, fontFamily: fig, marginBottom: 4 }}>Food + spending</div>
-        <div style={{ fontSize: 12, color: `${COL.ash}aa`, fontFamily: fig, lineHeight: 1.6 }}>2 meals out this week ($14.50 + $22). On track with your $35/day budget. Eating out is not the enemy — skipping meals then binge-ordering at 9 PM is.</div>
+        <div style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: COL.hot, fontFamily: fig, marginBottom: 4 }}>Food + spending</div>
+        <div style={{ fontSize: 14, color: `${COL.ash}aa`, fontFamily: fig, lineHeight: 1.6 }}>2 meals out this week ($14.50 + $22). On track with your $35/day budget. Eating out is not the enemy — skipping meals then binge-ordering at 9 PM is.</div>
       </NCard>
       <div style={{ height: 0.5, background: COL.border, margin: '12px 0' }}/>
       <NCard style={{ textAlign: 'center', padding: 14 }}>
-        <div style={{ fontSize: 12, color: COL.dim, fontFamily: fig, marginBottom: 6 }}>Your coach knows your nutrition data</div>
-        <div style={{ fontSize: 12, color: COL.ember, fontFamily: fig }}>Ask about meal ideas or supplement timing &#8594;</div>
+        <div style={{ fontSize: 14, color: COL.dim, fontFamily: fig, marginBottom: 6 }}>Your coach knows your nutrition data</div>
+        <div style={{ fontSize: 14, color: COL.ember, fontFamily: fig }}>Ask about meal ideas or supplement timing &#8594;</div>
       </NCard>
     </div>
   )
@@ -436,7 +436,7 @@ export default function TabNutrition({ user, profile, showToast, loggedFetch }) 
                 background: isActive ? 'rgba(232,50,26,0.15)' : COL.char,
                 color: isActive ? COL.ember : COL.ghost,
                 border: isActive ? '1px solid rgba(232,50,26,0.25)' : `1px solid ${COL.charBorder}`,
-                fontFamily: fig, fontSize: 10, fontWeight: isActive ? 500 : 400,
+                fontFamily: fig, fontSize: 14, fontWeight: isActive ? 500 : 400,
               }}>
               {tab}
             </button>

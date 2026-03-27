@@ -249,21 +249,21 @@ export default function TabProgress({ user, profile, tasks, showToast, loggedFet
     <div style={{ padding: '12px 14px', paddingBottom: 80, overflowY: 'auto', height: '100%' }}>
 
       {/* 1 — Header */}
-      <h2 style={{ margin: '0 0 12px', fontFamily: "'Figtree', sans-serif", fontSize: 13, fontWeight: 600, color: '#F5F0E3' }}>Progress</h2>
+      <h2 style={{ margin: '0 0 12px', fontFamily: "'Figtree', sans-serif", fontSize: 14, fontWeight: 600, color: '#F5F0E3' }}>Progress</h2>
 
       {/* 2 — Three rings */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginBottom: 16 }}>
         <div className={styles.pgRingWrap}>
           {renderRing(taskRingPct, '#FF6644', String(completedTodayCount), totalTodayCount > 0 ? 'of ' + String(totalTodayCount) : '0')}
-          <span style={{ fontSize: 9, color: 'rgba(245,240,227,0.45)', fontFamily: "'Figtree', sans-serif", marginTop: 5 }}>Tasks</span>
+          <span style={{ fontSize: 14, color: 'rgba(245,240,227,0.45)', fontFamily: "'Figtree', sans-serif", marginTop: 5 }}>Tasks</span>
         </div>
         <div className={styles.pgRingWrap}>
           {renderRing(focusRingPct, '#3B8BD4', todayFocusMinutes + 'm', '')}
-          <span style={{ fontSize: 9, color: 'rgba(245,240,227,0.45)', fontFamily: "'Figtree', sans-serif", marginTop: 5 }}>Focus</span>
+          <span style={{ fontSize: 14, color: 'rgba(245,240,227,0.45)', fontFamily: "'Figtree', sans-serif", marginTop: 5 }}>Focus</span>
         </div>
         <div className={styles.pgRingWrap}>
           {renderRing(journalRingPct, '#4CAF50', todayJournaled ? '1' : '0', 'entry')}
-          <span style={{ fontSize: 9, color: 'rgba(245,240,227,0.45)', fontFamily: "'Figtree', sans-serif", marginTop: 5 }}>Journal</span>
+          <span style={{ fontSize: 14, color: 'rgba(245,240,227,0.45)', fontFamily: "'Figtree', sans-serif", marginTop: 5 }}>Journal</span>
         </div>
       </div>
 
@@ -277,8 +277,8 @@ export default function TabProgress({ user, profile, tasks, showToast, loggedFet
           </div>
           {nextMilestone && (
             <div className={styles.pgXpRight}>
-              <span style={{ fontSize: 9, fontWeight: 600, color: '#FFB800', fontFamily: "'Figtree', sans-serif" }}>{xpToNext} to go</span>
-              <span style={{ fontSize: 8, color: 'rgba(245,240,227,0.38)', fontFamily: "'Figtree', sans-serif" }}>{nextMilestone.label} at {nextMilestone.xp >= 1000 ? (nextMilestone.xp / 1000) + 'K' : nextMilestone.xp}</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#FFB800', fontFamily: "'Figtree', sans-serif" }}>{xpToNext} to go</span>
+              <span style={{ fontSize: 14, color: 'rgba(245,240,227,0.38)', fontFamily: "'Figtree', sans-serif" }}>{nextMilestone.label} at {nextMilestone.xp >= 1000 ? (nextMilestone.xp / 1000) + 'K' : nextMilestone.xp}</span>
             </div>
           )}
         </div>
@@ -286,14 +286,14 @@ export default function TabProgress({ user, profile, tasks, showToast, loggedFet
           <div style={{ height: '100%', width: xpBarPct + '%', background: 'linear-gradient(90deg, #FFB800, #FF6644)', borderRadius: 3, transition: 'width 0.5s ease' }} />
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-          <span style={{ fontSize: 7, color: 'rgba(245,240,227,0.3)', fontFamily: "'Figtree', sans-serif" }}>
+          <span style={{ fontSize: 14, color: 'rgba(245,240,227,0.3)', fontFamily: "'Figtree', sans-serif" }}>
             {prevMilestone ? `${prevMilestone.xp >= 1000 ? (prevMilestone.xp / 1000) + 'K' : prevMilestone.xp}` : '0'}
           </span>
-          <span style={{ fontSize: 7, color: 'rgba(245,240,227,0.3)', fontFamily: "'Figtree', sans-serif" }}>
+          <span style={{ fontSize: 14, color: 'rgba(245,240,227,0.3)', fontFamily: "'Figtree', sans-serif" }}>
             {nextMilestone ? `${nextMilestone.xp >= 1000 ? (nextMilestone.xp / 1000) + 'K' : nextMilestone.xp}` : '25K'}
           </span>
           {XP_MILESTONES.length > 2 && (
-            <span style={{ fontSize: 7, color: 'rgba(245,240,227,0.3)', fontFamily: "'Figtree', sans-serif" }}>
+            <span style={{ fontSize: 14, color: 'rgba(245,240,227,0.3)', fontFamily: "'Figtree', sans-serif" }}>
               {XP_MILESTONES[2].xp >= 1000 ? (XP_MILESTONES[2].xp / 1000) + 'K' : XP_MILESTONES[2].xp}
             </span>
           )}
@@ -313,9 +313,9 @@ export default function TabProgress({ user, profile, tasks, showToast, loggedFet
             <div key={i} style={{ background: '#3E3228', borderRadius: 8, padding: '9px 10px', marginBottom: 5, borderLeft: `3px solid ${ins.color}` }}>
               <div className={styles.pgInsightHeader}>
                 <span className={styles.pgInsightIcon} style={{ color: ins.color }}>{ins.icon}</span>
-                <span style={{ fontSize: 9, fontWeight: 800, color: ins.color, fontFamily: "'Figtree', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase' }}>{ins.label}</span>
+                <span style={{ fontSize: 14, fontWeight: 800, color: ins.color, fontFamily: "'Figtree', sans-serif", letterSpacing: '0.08em', textTransform: 'uppercase' }}>{ins.label}</span>
               </div>
-              <p style={{ fontSize: 11, color: 'rgba(245,240,227,0.56)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.55, margin: 0 }}>{ins.body}</p>
+              <p style={{ fontSize: 14, color: 'rgba(245,240,227,0.56)', fontFamily: "'Figtree', sans-serif", lineHeight: 1.55, margin: 0 }}>{ins.body}</p>
             </div>
           ))}
         </div>
@@ -324,8 +324,8 @@ export default function TabProgress({ user, profile, tasks, showToast, loggedFet
       {/* 5 — Weekly bar chart */}
       <div style={{ background: '#3E3228', borderRadius: 10, padding: 12, marginTop: 10, marginBottom: 12 }}>
         <div className={styles.pgWeekHeader}>
-          <span style={{ fontFamily: "'Figtree', sans-serif", fontSize: 10, fontWeight: 700, color: 'rgba(245,240,227,0.45)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>This week vs last</span>
-          <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 600, color: '#F5F0E3' }}>{thisWeekTotal} tasks</span>
+          <span style={{ fontFamily: "'Figtree', sans-serif", fontSize: 14, fontWeight: 700, color: 'rgba(245,240,227,0.45)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>This week vs last</span>
+          <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 600, color: '#F5F0E3' }}>{thisWeekTotal} tasks</span>
         </div>
         <div className={styles.pgBarChart}>
           {barDays.map((d, i) => {
@@ -338,7 +338,7 @@ export default function TabProgress({ user, profile, tasks, showToast, loggedFet
                   <div style={{ width: 8, borderRadius: 2, background: 'rgba(245,240,227,0.10)', height: prevBarCounts[i] > 0 ? Math.max(prevH, 4) : 0 }} />
                   <div style={{ width: 8, borderRadius: 2, background: isToday ? '#FF6644' : 'rgba(255,102,68,0.5)', height: Math.max(thisH, 3) }} />
                 </div>
-                <span style={{ fontSize: 9, fontWeight: 500, color: isToday ? '#FF6644' : 'rgba(245,240,227,0.3)', fontFamily: "'Figtree', sans-serif" }}>
+                <span style={{ fontSize: 14, fontWeight: 500, color: isToday ? '#FF6644' : 'rgba(245,240,227,0.3)', fontFamily: "'Figtree', sans-serif" }}>
                   {d.toLocaleDateString('en-US', { weekday: 'narrow' })}
                 </span>
               </div>
@@ -348,37 +348,37 @@ export default function TabProgress({ user, profile, tasks, showToast, loggedFet
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#FF6644' }} />
-            <span style={{ fontSize: 9, color: 'rgba(245,240,227,0.4)', fontFamily: "'Figtree', sans-serif" }}>This week</span>
+            <span style={{ fontSize: 14, color: 'rgba(245,240,227,0.4)', fontFamily: "'Figtree', sans-serif" }}>This week</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'rgba(245,240,227,0.10)' }} />
-            <span style={{ fontSize: 9, color: 'rgba(245,240,227,0.4)', fontFamily: "'Figtree', sans-serif" }}>Last week</span>
+            <span style={{ fontSize: 14, color: 'rgba(245,240,227,0.4)', fontFamily: "'Figtree', sans-serif" }}>Last week</span>
           </div>
         </div>
       </div>
 
       {/* 6 — Monthly stats */}
       <div style={{ background: '#3E3228', borderRadius: 10, padding: 12 }}>
-        <p style={{ fontFamily: "'Figtree', sans-serif", fontSize: 10, fontWeight: 500, color: '#F5F0E3', marginBottom: 8, margin: '0 0 8px' }}>{monthName}</p>
+        <p style={{ fontFamily: "'Figtree', sans-serif", fontSize: 14, fontWeight: 500, color: '#F5F0E3', marginBottom: 8, margin: '0 0 8px' }}>{monthName}</p>
         <div className={styles.pgMonthStats}>
           <div className={styles.pgMonthStat}>
             <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 600, color: '#FF6644', lineHeight: 1 }}>{completedThisMonthList.length}</span>
-            <span style={{ fontSize: 8, color: 'rgba(245,240,227,0.38)', fontFamily: "'Figtree', sans-serif", marginTop: 2 }}>tasks</span>
+            <span style={{ fontSize: 14, color: 'rgba(245,240,227,0.38)', fontFamily: "'Figtree', sans-serif", marginTop: 2 }}>tasks</span>
           </div>
           <div className={styles.pgMonthDivider} />
           <div className={styles.pgMonthStat}>
             <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 600, color: '#3B8BD4', lineHeight: 1 }}>{fmtFocusMonth}</span>
-            <span style={{ fontSize: 8, color: 'rgba(245,240,227,0.38)', fontFamily: "'Figtree', sans-serif", marginTop: 2 }}>focus</span>
+            <span style={{ fontSize: 14, color: 'rgba(245,240,227,0.38)', fontFamily: "'Figtree', sans-serif", marginTop: 2 }}>focus</span>
           </div>
           <div className={styles.pgMonthDivider} />
           <div className={styles.pgMonthStat}>
             <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 600, color: '#4CAF50', lineHeight: 1 }}>{monthJournalCount}</span>
-            <span style={{ fontSize: 8, color: 'rgba(245,240,227,0.38)', fontFamily: "'Figtree', sans-serif", marginTop: 2 }}>entries</span>
+            <span style={{ fontSize: 14, color: 'rgba(245,240,227,0.38)', fontFamily: "'Figtree', sans-serif", marginTop: 2 }}>entries</span>
           </div>
           <div className={styles.pgMonthDivider} />
           <div className={styles.pgMonthStat}>
             <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 600, color: '#FFB800', lineHeight: 1 }}>{(profile?.current_streak || 0) + 'd'}</span>
-            <span style={{ fontSize: 8, color: 'rgba(245,240,227,0.38)', fontFamily: "'Figtree', sans-serif", marginTop: 2 }}>streak</span>
+            <span style={{ fontSize: 14, color: 'rgba(245,240,227,0.38)', fontFamily: "'Figtree', sans-serif", marginTop: 2 }}>streak</span>
           </div>
         </div>
       </div>

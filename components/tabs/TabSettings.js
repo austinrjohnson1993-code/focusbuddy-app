@@ -333,7 +333,7 @@ export default function TabSettings({ user, profile, setProfile, showToast, logg
             )}
             {profile?.push_notifications_enabled && notifPermission !== 'denied' && (
               <div className={styles.stgRow} style={{ borderTop: '0.5px solid rgba(245,240,227,0.08)', paddingTop: 8 }}>
-                <span className={styles.stgRowLabel} style={{ fontSize: 12 }}>Test notification</span>
+                <span className={styles.stgRowLabel} style={{ fontSize: 14 }}>Test notification</span>
                 <button
                   className={styles.stgGhostBtn}
                   onClick={handleSendTestNotification}

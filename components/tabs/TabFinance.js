@@ -258,7 +258,7 @@ export default function TabFinance({ user, profile, showToast, loggedFetch, setP
                   background: isActive ? 'rgba(255,102,68,0.15)' : '#3E3228',
                   color: isActive ? '#FF6644' : 'rgba(245,240,227,0.32)',
                   border: isActive ? '1px solid rgba(255,102,68,0.25)' : '1px solid rgba(245,240,227,0.12)',
-                  fontFamily: "'Figtree', sans-serif", fontSize: 10, fontWeight: isActive ? 500 : 400,
+                  fontFamily: "'Figtree', sans-serif", fontSize: 14, fontWeight: isActive ? 500 : 400,
                 }}>
                 {label}
               </button>
@@ -282,7 +282,7 @@ export default function TabFinance({ user, profile, showToast, loggedFetch, setP
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '12px 14px 0', marginBottom: 16 }}>
                   <div>
-                    <span style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(245,240,227,0.32)', fontFamily: "'Figtree', sans-serif" }}>Finance</span>
+                    <span style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(245,240,227,0.32)', fontFamily: "'Figtree', sans-serif" }}>Finance</span>
                     <h1 style={{ margin: '2px 0 0', fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 600, color: '#F5F0E3' }}>Bills</h1>
                     <p className={styles.financeTotal}>{fmtMoney(monthlyTotal)}<span className={styles.financeTotalSub}>/mo</span></p>
                   </div>
@@ -300,7 +300,7 @@ export default function TabFinance({ user, profile, showToast, loggedFetch, setP
             <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '12px 14px 0', marginBottom: 16 }}>
               <div>
-                <span style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(245,240,227,0.32)', fontFamily: "'Figtree', sans-serif" }}>Finance</span>
+                <span style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(245,240,227,0.32)', fontFamily: "'Figtree', sans-serif" }}>Finance</span>
                 <h1 style={{ margin: '2px 0 0', fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 600, color: '#F5F0E3' }}>Bills</h1>
                 <p className={styles.financeTotal}>{fmtMoney(monthlyTotal)}<span className={styles.financeTotalSub}>/mo</span></p>
               </div>

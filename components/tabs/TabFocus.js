@@ -176,14 +176,14 @@ export default function TabFocus({
         {focusPhase === 'setup' && (
           <>
             {/* Header */}
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#F5F0E3', fontFamily: ff, marginBottom: 10 }}>Focus</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#F5F0E3', fontFamily: ff, marginBottom: 10 }}>Focus</div>
 
             {/* Timer display */}
             <div style={{ textAlign: 'center', padding: '30px 0 20px' }}>
               <div style={{ fontFamily: sf, fontSize: 52, fontWeight: 300, color: '#F5F0E3', letterSpacing: '0.04em' }}>
                 {focusDuration}:00
               </div>
-              <div style={{ fontSize: 10, color: '#F5F0E350', fontFamily: ff, marginTop: 4 }}>Ready to start</div>
+              <div style={{ fontSize: 14, color: '#F5F0E350', fontFamily: ff, marginTop: 4 }}>Ready to start</div>
             </div>
 
             {/* Duration presets */}
@@ -191,7 +191,7 @@ export default function TabFocus({
               {[5, 15, 25, 45, 60].map(d => (
                 <div key={d} onClick={() => { setFocusDuration(d); setFocusCustom('') }} style={{
                   width: 44, height: 44, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: sf, fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                  fontFamily: sf, fontSize: 14, fontWeight: 500, cursor: 'pointer',
                   background: focusDuration === d && !focusCustom ? '#FF664425' : '#3E3228',
                   color: focusDuration === d && !focusCustom ? '#FF6644' : '#F5F0E350',
                   border: focusDuration === d && !focusCustom ? '1px solid #FF664450' : '1px solid #F5F0E312',
@@ -214,8 +214,8 @@ export default function TabFocus({
                 &#128101;
               </div>
               <div>
-                <div style={{ fontFamily: ff, fontSize: 12, fontWeight: 500, color: '#F5F0E3' }}>Partner up</div>
-                <div style={{ fontSize: 9, color: '#F5F0E350', fontFamily: ff, marginTop: 2 }}>Body double with a teammate</div>
+                <div style={{ fontFamily: ff, fontSize: 14, fontWeight: 500, color: '#F5F0E3' }}>Partner up</div>
+                <div style={{ fontSize: 14, color: '#F5F0E350', fontFamily: ff, marginTop: 2 }}>Body double with a teammate</div>
               </div>
             </div>
 
@@ -228,7 +228,7 @@ export default function TabFocus({
               ].map(s => (
                 <div key={s.label} style={{ flex: 1, background: '#3E3228', borderRadius: 8, padding: '10px 8px', textAlign: 'center' }}>
                   <div style={{ fontFamily: sf, fontSize: 16, fontWeight: 600, color: s.color }}>{s.value}</div>
-                  <div style={{ fontSize: 8, color: '#F5F0E350', fontFamily: ff, marginTop: 2 }}>{s.label}</div>
+                  <div style={{ fontSize: 14, color: '#F5F0E350', fontFamily: ff, marginTop: 2 }}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -238,10 +238,10 @@ export default function TabFocus({
         {focusPhase === 'active' && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 20 }}>
             {/* Session label */}
-            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#E8321A', fontFamily: ff, fontWeight: 500, marginBottom: 4 }}>FOCUS SESSION</div>
+            <div style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#E8321A', fontFamily: ff, fontWeight: 500, marginBottom: 4 }}>FOCUS SESSION</div>
 
             {/* Task name */}
-            {topTask && <div style={{ fontSize: 12, color: '#F5F0E3AA', fontFamily: ff, textAlign: 'center', marginBottom: 16 }}>{topTask.title}</div>}
+            {topTask && <div style={{ fontSize: 14, color: '#F5F0E3AA', fontFamily: ff, textAlign: 'center', marginBottom: 16 }}>{topTask.title}</div>}
 
             {/* Timer digits */}
             <div style={{ fontFamily: sf, fontSize: 48, fontWeight: 300, color: '#F5F0E3', letterSpacing: '0.04em' }}>
@@ -254,8 +254,8 @@ export default function TabFocus({
                 <div style={{ width: `${progressPct}%`, height: '100%', background: 'linear-gradient(90deg, #E8321A, #FF6644)', borderRadius: 3, transition: 'width 1s' }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                <span style={{ fontSize: 10, color: '#F5F0E350', fontFamily: ff }}>{fmtTime(sessionStartTime)}</span>
-                <span style={{ fontSize: 10, color: '#F5F0E350', fontFamily: ff }}>{fmtTime(sessionEndTime)}</span>
+                <span style={{ fontSize: 14, color: '#F5F0E350', fontFamily: ff }}>{fmtTime(sessionStartTime)}</span>
+                <span style={{ fontSize: 14, color: '#F5F0E350', fontFamily: ff }}>{fmtTime(sessionEndTime)}</span>
               </div>
             </div>
 
@@ -263,11 +263,11 @@ export default function TabFocus({
             <div style={{ display: 'flex', gap: 10, margin: '16px 0' }}>
               <div onClick={toggleFocusPause} style={{
                 border: '1px solid #F5F0E340', background: 'transparent', borderRadius: 20,
-                padding: '7px 22px', fontSize: 12, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer'
+                padding: '7px 22px', fontSize: 14, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer'
               }}>{focusRunning ? 'Pause' : 'Resume'}</div>
               <div onClick={() => setShowAbandonConfirm(true)} style={{
                 border: '1px solid #E8321A58', background: '#E8321A25', borderRadius: 20,
-                padding: '7px 22px', fontSize: 12, color: '#E8321A', fontFamily: ff, cursor: 'pointer'
+                padding: '7px 22px', fontSize: 14, color: '#E8321A', fontFamily: ff, cursor: 'pointer'
               }}>Got stuck</div>
             </div>
 
@@ -278,8 +278,8 @@ export default function TabFocus({
             <div style={{ background: '#3E3228', borderRadius: 10, padding: 12, maxWidth: 300, width: '100%', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
               <span style={{ fontSize: 16, color: '#E8321A' }}>&#128737;</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: ff, fontSize: 12, fontWeight: 500, color: '#F5F0E3' }}>Focus shield</div>
-                <div style={{ fontSize: 10, color: '#F5F0E350', fontFamily: ff }}>Notifications + apps blocked</div>
+                <div style={{ fontFamily: ff, fontSize: 14, fontWeight: 500, color: '#F5F0E3' }}>Focus shield</div>
+                <div style={{ fontSize: 14, color: '#F5F0E350', fontFamily: ff }}>Notifications + apps blocked</div>
               </div>
               <div style={{ minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div onClick={() => setFocusShieldOn(v => !v)} style={{
@@ -304,15 +304,15 @@ export default function TabFocus({
               ].map(s => (
                 <div key={s.label} style={{ flex: 1, background: '#3E3228', borderRadius: 8, padding: '10px 8px', textAlign: 'center' }}>
                   <div style={{ fontFamily: sf, fontSize: 16, fontWeight: 600, color: s.color }}>{s.value}</div>
-                  <div style={{ fontSize: 8, color: '#F5F0E350', fontFamily: ff, marginTop: 2 }}>{s.label}</div>
+                  <div style={{ fontSize: 14, color: '#F5F0E350', fontFamily: ff, marginTop: 2 }}>{s.label}</div>
                 </div>
               ))}
             </div>
 
             {/* Tip card */}
             <div style={{ background: '#3E3228', borderRadius: 10, padding: 12, maxWidth: 300, width: '100%' }}>
-              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#FF6644', fontFamily: ff, fontWeight: 500, marginBottom: 6 }}>STAY IN THE ZONE</div>
-              <div style={{ fontSize: 12, color: '#F5F0E3AA', fontFamily: ff, lineHeight: 1.6 }}>{tip}</div>
+              <div style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#FF6644', fontFamily: ff, fontWeight: 500, marginBottom: 6 }}>STAY IN THE ZONE</div>
+              <div style={{ fontSize: 14, color: '#F5F0E3AA', fontFamily: ff, lineHeight: 1.6 }}>{tip}</div>
             </div>
           </div>
         )}
@@ -325,8 +325,8 @@ export default function TabFocus({
           <div style={{ background: '#211A14', border: '1px solid #F5F0E318', borderRadius: 14, padding: 20, maxWidth: 320, width: '90%' }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: '#F5F0E3', fontFamily: ff, marginBottom: 8 }}>Abandon session?</div>
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-              <div onClick={confirmAbandon} style={{ flex: 1, padding: '10px 0', textAlign: 'center', background: '#E8321A', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer' }}>Yes, stop</div>
-              <div onClick={() => setShowAbandonConfirm(false)} style={{ flex: 1, padding: '10px 0', textAlign: 'center', background: '#3E3228', border: '1px solid #F5F0E318', borderRadius: 8, fontSize: 12, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer' }}>Keep going</div>
+              <div onClick={confirmAbandon} style={{ flex: 1, padding: '10px 0', textAlign: 'center', background: '#E8321A', borderRadius: 8, fontSize: 14, fontWeight: 500, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer' }}>Yes, stop</div>
+              <div onClick={() => setShowAbandonConfirm(false)} style={{ flex: 1, padding: '10px 0', textAlign: 'center', background: '#3E3228', border: '1px solid #F5F0E318', borderRadius: 8, fontSize: 14, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer' }}>Keep going</div>
             </div>
           </div>
         </div>
@@ -339,12 +339,12 @@ export default function TabFocus({
             <div style={{ fontSize: 14, fontWeight: 600, color: '#F5F0E3', fontFamily: ff, marginBottom: 4 }}>
               {sessionEndType === 'complete' ? 'Session complete' : 'Session ended'}
             </div>
-            {topTask && <div style={{ fontSize: 12, color: '#F5F0E370', fontFamily: ff, marginBottom: 12 }}>{topTask.title}</div>}
-            <div style={{ fontSize: 12, color: '#F5F0E3', fontFamily: ff, marginBottom: 14 }}>How&apos;d it go?</div>
+            {topTask && <div style={{ fontSize: 14, color: '#F5F0E370', fontFamily: ff, marginBottom: 12 }}>{topTask.title}</div>}
+            <div style={{ fontSize: 14, color: '#F5F0E3', fontFamily: ff, marginBottom: 14 }}>How&apos;d it go?</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div onClick={() => handleFocusResult('complete')} style={{ padding: '10px 14px', background: '#4CAF50', borderRadius: 8, fontSize: 12, fontWeight: 500, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer', textAlign: 'center' }}>&#10003; Nailed it</div>
-              <div onClick={() => handleFocusResult('progress')} style={{ padding: '10px 14px', background: '#3E3228', border: '1px solid #F5F0E318', borderRadius: 8, fontSize: 12, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer', textAlign: 'center' }}>&#9654; Made progress</div>
-              <div onClick={() => { setShowSessionEndModal(false); setStuckTask(topTask); setStuckConfirmRemove(false); setShowStuckModal(true) }} style={{ padding: '10px 14px', background: '#3E3228', border: '1px solid #F5F0E318', borderRadius: 8, fontSize: 12, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer', textAlign: 'center' }}>&#129521; Got stuck</div>
+              <div onClick={() => handleFocusResult('complete')} style={{ padding: '10px 14px', background: '#4CAF50', borderRadius: 8, fontSize: 14, fontWeight: 500, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer', textAlign: 'center' }}>&#10003; Nailed it</div>
+              <div onClick={() => handleFocusResult('progress')} style={{ padding: '10px 14px', background: '#3E3228', border: '1px solid #F5F0E318', borderRadius: 8, fontSize: 14, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer', textAlign: 'center' }}>&#9654; Made progress</div>
+              <div onClick={() => { setShowSessionEndModal(false); setStuckTask(topTask); setStuckConfirmRemove(false); setShowStuckModal(true) }} style={{ padding: '10px 14px', background: '#3E3228', border: '1px solid #F5F0E318', borderRadius: 8, fontSize: 14, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer', textAlign: 'center' }}>&#129521; Got stuck</div>
             </div>
           </div>
         </div>
@@ -355,23 +355,23 @@ export default function TabFocus({
         <div onClick={e => e.target === e.currentTarget && (setShowStuckModal(false), setStuckConfirmRemove(false))} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
           <div style={{ background: '#211A14', border: '1px solid #F5F0E318', borderRadius: 14, padding: 20, maxWidth: 340, width: '90%' }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: '#F5F0E3', fontFamily: ff, marginBottom: 4 }}>What do you want to do with this?</div>
-            {stuckTask && <div style={{ fontSize: 12, color: '#F5F0E370', fontFamily: ff, marginBottom: 8 }}>{stuckTask.title}</div>}
-            <div style={{ fontSize: 11, color: '#F5F0E390', fontFamily: ff, marginBottom: 16, lineHeight: 1.5 }}>No judgment \u2014 let&apos;s figure out the next step.</div>
+            {stuckTask && <div style={{ fontSize: 14, color: '#F5F0E370', fontFamily: ff, marginBottom: 8 }}>{stuckTask.title}</div>}
+            <div style={{ fontSize: 14, color: '#F5F0E390', fontFamily: ff, marginBottom: 16, lineHeight: 1.5 }}>No judgment \u2014 let&apos;s figure out the next step.</div>
             {stuckConfirmRemove ? (
               <div>
-                <div style={{ fontSize: 12, color: '#F5F0E390', fontFamily: ff, marginBottom: 14, lineHeight: 1.5 }}>
+                <div style={{ fontSize: 14, color: '#F5F0E390', fontFamily: ff, marginBottom: 14, lineHeight: 1.5 }}>
                   Are you sure? This will remove <strong style={{ color: '#F5F0E3' }}>{stuckTask?.title}</strong> from your list.
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <div onClick={async () => { if (stuckTask && archiveTask) await archiveTask(stuckTask); setShowStuckModal(false); setStuckConfirmRemove(false) }} style={{ flex: 1, padding: '10px 0', textAlign: 'center', background: '#E8321A', borderRadius: 8, fontSize: 12, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer' }}>Yes, remove it</div>
-                  <div onClick={() => setStuckConfirmRemove(false)} style={{ flex: 1, padding: '10px 0', textAlign: 'center', background: '#3E3228', border: '1px solid #F5F0E318', borderRadius: 8, fontSize: 12, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer' }}>Cancel</div>
+                  <div onClick={async () => { if (stuckTask && archiveTask) await archiveTask(stuckTask); setShowStuckModal(false); setStuckConfirmRemove(false) }} style={{ flex: 1, padding: '10px 0', textAlign: 'center', background: '#E8321A', borderRadius: 8, fontSize: 14, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer' }}>Yes, remove it</div>
+                  <div onClick={() => setStuckConfirmRemove(false)} style={{ flex: 1, padding: '10px 0', textAlign: 'center', background: '#3E3228', border: '1px solid #F5F0E318', borderRadius: 8, fontSize: 14, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer' }}>Cancel</div>
                 </div>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div onClick={() => { if (stuckTask && setDetailTask) { setDetailTask(stuckTask); if (openDetailEdit) openDetailEdit() } setShowStuckModal(false) }} style={{ padding: '10px 14px', background: '#3E3228', border: '1px solid #F5F0E318', borderRadius: 8, fontSize: 12, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer', textAlign: 'center' }}>&#128197; Reschedule it</div>
-                <div onClick={() => setStuckConfirmRemove(true)} style={{ padding: '10px 14px', background: '#3E3228', border: '1px solid #F5F0E318', borderRadius: 8, fontSize: 12, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer', textAlign: 'center' }}>&#128465; Remove it</div>
-                <div onClick={() => { setShowStuckModal(false); setStuckConfirmRemove(false) }} style={{ padding: '10px 14px', background: '#3E3228', border: '1px solid #F5F0E318', borderRadius: 8, fontSize: 12, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer', textAlign: 'center' }}>&#10003; Keep it on my list</div>
+                <div onClick={() => { if (stuckTask && setDetailTask) { setDetailTask(stuckTask); if (openDetailEdit) openDetailEdit() } setShowStuckModal(false) }} style={{ padding: '10px 14px', background: '#3E3228', border: '1px solid #F5F0E318', borderRadius: 8, fontSize: 14, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer', textAlign: 'center' }}>&#128197; Reschedule it</div>
+                <div onClick={() => setStuckConfirmRemove(true)} style={{ padding: '10px 14px', background: '#3E3228', border: '1px solid #F5F0E318', borderRadius: 8, fontSize: 14, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer', textAlign: 'center' }}>&#128465; Remove it</div>
+                <div onClick={() => { setShowStuckModal(false); setStuckConfirmRemove(false) }} style={{ padding: '10px 14px', background: '#3E3228', border: '1px solid #F5F0E318', borderRadius: 8, fontSize: 14, color: '#F5F0E3', fontFamily: ff, cursor: 'pointer', textAlign: 'center' }}>&#10003; Keep it on my list</div>
               </div>
             )}
           </div>
