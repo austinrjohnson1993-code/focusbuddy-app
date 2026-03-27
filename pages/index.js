@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
+import CinisMark from '../lib/CinisMark'
 const AnimatedMark = ({ phase }) => {
   return (
     <svg width="64" height="64" viewBox="0 0 64 64" fill="none" style={{ marginBottom: 28 }}>
@@ -738,10 +739,7 @@ export default function Home() {
         {/* NAV */}
         <nav className="nav">
           <span className="nav-logo">
-            <svg width="20" height="20" viewBox="0 0 64 64" fill="none" style={{ flexShrink: 0, animation: 'markEntry 0.4s ease-out forwards' }}>
-              <polygon points="32,4 54,16 54,42 32,54 10,42 10,16" fill="#FF6644"/>
-              <polygon points="32,7 51,18 51,40 32,52 13,40 13,18" fill="#120704"/>
-            </svg>
+            <CinisMark size={20} style={{ flexShrink: 0, animation: 'markEntry 0.4s ease-out forwards' }} />
             CINIS
           </span>
           <div className="nav-links">
@@ -888,10 +886,7 @@ export default function Home() {
         {/* FOOTER */}
         <footer className="footer">
           <div className="footer-logo">
-            <svg width="14" height="14" viewBox="0 0 64 64" fill="none">
-              <polygon points="32,4 54,16 54,42 32,54 10,42 10,16" fill="#FF6644"/>
-              <polygon points="32,7 51,18 51,40 32,52 13,40 13,18" fill="#120704"/>
-            </svg>
+            <CinisMark size={14} />
             CINIS
           </div>
           <p className="footer-tagline">Where start meets finished.</p>

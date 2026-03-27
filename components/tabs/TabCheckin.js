@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { getCheckinType, loadChatHistory, saveChatHistory } from './shared'
+import CinisMark from '../../lib/CinisMark'
 
 export default function TabCheckin({ user, profile, tasks = [], showToast, loggedFetch }) {
   const [messages, setMessages] = useState([])
@@ -88,7 +89,7 @@ export default function TabCheckin({ user, profile, tasks = [], showToast, logge
           <div key={i} style={{ marginBottom: 14 }}>
             <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
               <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#FF664415', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
-                <svg width="14" height="14" viewBox="0 0 64 64" fill="none"><polygon points="32,4 54,16 54,42 32,54 10,42 10,16" fill="#FF6644" /><polygon points="32,7 51,18 51,40 32,52 13,40 13,18" fill="#120704" /><polygon points="32,26 38,29 38,40 32,43 26,40 26,29" fill="#E8321A" /></svg>
+                <CinisMark size={14} />
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ background: '#3E3228', borderRadius: '2px 12px 12px 12px', padding: '11px 13px', fontSize: 14, color: '#F5F0E3', fontFamily: "'Figtree',sans-serif", lineHeight: 1.65 }}>{m.content}</div>
@@ -114,7 +115,7 @@ export default function TabCheckin({ user, profile, tasks = [], showToast, logge
           <div style={{ marginBottom: 14 }}>
             <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
               <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#FF664415', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
-                <svg width="14" height="14" viewBox="0 0 64 64" fill="none"><polygon points="32,4 54,16 54,42 32,54 10,42 10,16" fill="#FF6644" /><polygon points="32,7 51,18 51,40 32,52 13,40 13,18" fill="#120704" /><polygon points="32,26 38,29 38,40 32,43 26,40 26,29" fill="#E8321A" /></svg>
+                <CinisMark size={14} />
               </div>
               <div style={{ background: '#3E3228', borderRadius: '2px 12px 12px 12px', padding: '11px 13px', fontSize: 14, color: '#F5F0E350', fontFamily: "'Figtree',sans-serif" }}>&middot;&middot;&middot;</div>
             </div>
