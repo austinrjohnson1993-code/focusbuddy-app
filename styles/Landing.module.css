@@ -283,7 +283,7 @@
   height: 100%;
   border-radius: 50%;
   border: 1.5px solid rgba(255,102,68,0.3);
-  animation: pulseRing 4.5s ease-out infinite;
+  animation: pulseRing 4.5s ease-out infinite backwards;
 }
 
 .pulseRing2 { animation-delay: 1.5s; }
