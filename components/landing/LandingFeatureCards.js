@@ -431,10 +431,8 @@ export default function LandingFeatureCards() {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            const el = entry.target
-            const idx = parseInt(el.dataset.card, 10) || 0
-            el.style.animation = `cardReveal 0.5s ease ${idx * 0.1}s both`
-            observer.unobserve(el)
+            entry.target.classList.add(styles.featureCardVisible)
+            observer.unobserve(entry.target)
           }
         })
       },
@@ -459,10 +457,9 @@ export default function LandingFeatureCards() {
         {regularCards.map((card, i) => (
           <div
             key={card.num}
-            className={styles.featureCard}
+            className={`${styles.featureCard} ${styles.featureCardHidden}`}
             data-card={i}
             onClick={() => setOpenCard(card.num)}
-            style={{ opacity: 0 }}
           >
             <div className={styles.featureCardTop}>
               <div className={styles.featureNum}>{card.num} —</div>
