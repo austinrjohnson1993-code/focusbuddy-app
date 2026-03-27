@@ -252,7 +252,7 @@
   height: 110px;
   display: block;
   position: relative;
-  z-index: 2;
+  z-index: 4;
 }
 
 .markFloating {
