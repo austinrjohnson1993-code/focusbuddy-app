@@ -50,6 +50,7 @@ const CARDS = [
     label: 'AI Check-In',
     scene: "The day is a series of negotiations. You wake up with a vision. You end the day with an excuse. Somewhere in between, the perfect time to start vanished.",
     feature: "Cinis meets you where you are, finds what\u2019s actually in the way, and gets you to the first move.",
+    preview: "That proposal has been rescheduled three times. What\u2019s the real blocker?",
     benefit: "YOU STOP NEGOTIATING.\nYOU START FINISHING.",
   },
   {
@@ -57,6 +58,7 @@ const CARDS = [
     label: 'Voice Capture',
     scene: "Ideas have a half-life. Your best thoughts happen in motion, when your hands are busy and your mind isn\u2019t. If you don\u2019t catch them instantly, they\u2019re gone.",
     feature: "Say it out loud. Cinis catches it, files it, and surfaces it when it matters.",
+    preview: "Caught. Task: Call Marcus re contract \u00B7 Due Friday.",
     benefit: "CAPTURE THE SPARK.\nNOTHING GETS LEFT BEHIND.",
   },
   {
@@ -64,6 +66,7 @@ const CARDS = [
     label: 'Focus Sessions',
     scene: "You\u2019ve cleared your desk. You\u2019ve silenced your phone. But you\u2019re still staring at a blinking cursor. The hardest part of work isn\u2019t the work \u2014 it\u2019s the transition into it.",
     feature: "Work alongside someone on the same timer. No talking. Just the quiet pull of not being alone in it.",
+    preview: "Jordan just started a 45-minute session. Want to join?",
     benefit: "ENTER THE FLOW.\nYOU STOP WAITING. YOU JUST START.",
   },
   {
@@ -71,6 +74,7 @@ const CARDS = [
     label: 'Progress & Insights',
     scene: "You\u2019ve had weeks where everything worked. You can\u2019t recreate them because you never understood what made them different.",
     feature: "Cinis tracks the patterns of your peak performance so your best weeks stop being accidents.",
+    preview: "Your three best weeks all started before 8:30am. Every single one.",
     benefit: "DECODE YOUR MOMENTUM.\nGOLD WEEKS BECOME THE BASELINE.",
   },
   {
@@ -78,6 +82,7 @@ const CARDS = [
     label: 'One Place',
     scene: "Your brain is for having ideas, not storing them. Tasks in your head, habits in an app, notes in a drawer. When your system is fragmented, your focus is too.",
     feature: "Tasks, habits, finances, and focus in one place. One system. Nothing waiting to surprise you.",
+    preview: "Your electric bill is due Thursday. $124. You haven\u2019t touched it.",
     benefit: "CLOSE THE TABS.\nCLEAR THE NOISE.",
     fullWidth: true,
   },
@@ -320,6 +325,7 @@ function ChatBubble({ msg }) {
 function DemoOverlay({ card, onClose }) {
   const [activeTab, setActiveTab] = useState(0)
   const [visibleCount, setVisibleCount] = useState(0)
+  const [showTyping, setShowTyping] = useState(false)
   const [appTabPulse, setAppTabPulse] = useState(false)
   const contentRef = useRef(null)
   const timersRef = useRef([])
@@ -327,19 +333,29 @@ function DemoOverlay({ card, onClose }) {
   const convo = CONVERSATIONS[card.num] || []
   const AppUI = APP_UI_MAP[card.num]
 
-  // Animate bubbles in one by one
+  // Animate bubbles in one by one with typing indicator
   useEffect(() => {
     if (activeTab !== 0 || convo.length === 0) return
     setVisibleCount(0)
-    const timers = convo.map((msg, i) =>
-      setTimeout(() => {
+    setShowTyping(false)
+    const timers = []
+
+    convo.forEach((msg, i) => {
+      // Show typing indicator before coach/voice messages
+      if ((msg.f === 'coach' || msg.f === 'voice') && msg.d > 0) {
+        timers.push(setTimeout(() => {
+          setShowTyping(true)
+          if (contentRef.current) contentRef.current.scrollTop = contentRef.current.scrollHeight
+        }, Math.max(50, msg.d - 1100)))
+      }
+      // Show the message
+      timers.push(setTimeout(() => {
+        setShowTyping(false)
         setVisibleCount(prev => prev + 1)
-        // Scroll to bottom
-        if (contentRef.current) {
-          contentRef.current.scrollTop = contentRef.current.scrollHeight
-        }
-      }, msg.d)
-    )
+        if (contentRef.current) contentRef.current.scrollTop = contentRef.current.scrollHeight
+      }, msg.d))
+    })
+
     // Pulse "In the app" tab after last message
     const lastDelay = convo[convo.length - 1].d + 2000
     timers.push(setTimeout(() => setAppTabPulse(true), lastDelay))
@@ -386,6 +402,20 @@ function DemoOverlay({ card, onClose }) {
           {activeTab === 0 && convo.slice(0, visibleCount).map((msg, i) => (
             <ChatBubble key={i} msg={msg} />
           ))}
+          {activeTab === 0 && showTyping && (
+            <div className={`${styles.chatBubble} ${styles.chatCoach}`}>
+              <div className={styles.chatAvatar} aria-hidden="true">
+                <CinisMark size={12} />
+              </div>
+              <span className={`${styles.chatBubbleText} ${styles.chatCoachText}`}>
+                <span className={styles.typingDots}>
+                  <span className={styles.typingDot} />
+                  <span className={styles.typingDot} />
+                  <span className={styles.typingDot} />
+                </span>
+              </span>
+            </div>
+          )}
           {activeTab === 1 && AppUI && <AppUI />}
         </div>
         {activeTab === 0 && (
@@ -468,9 +498,15 @@ export default function LandingFeatureCards() {
             </div>
             <div className={styles.featureCardDivider} />
             <div className={styles.featureCardBottom}>
+              {card.preview && (
+                <div className={styles.cardPreview}>
+                  <div className={styles.previewPip} />
+                  <div className={styles.previewText}>&ldquo;{card.preview}&rdquo;</div>
+                </div>
+              )}
               <div className={styles.featureFeature}>{card.feature}</div>
               <div className={styles.featureBenefit}>{card.benefit}</div>
-              <div className={styles.featureCta}>Tap to see it live →</div>
+              <div className={styles.featureCta}>See it happen <span className={styles.featureCtaArrow}>→</span></div>
             </div>
           </div>
         ))}

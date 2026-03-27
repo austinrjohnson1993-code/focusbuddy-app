@@ -6,7 +6,9 @@ import styles from '../styles/Landing.module.css'
 import LandingBackground from '../components/landing/LandingBackground'
 import LandingNav from '../components/landing/LandingNav'
 import LandingHero from '../components/landing/LandingHero'
+import LandingEmpathy from '../components/landing/LandingEmpathy'
 import LandingFeatureCards from '../components/landing/LandingFeatureCards'
+import LandingTestimonials from '../components/landing/LandingTestimonials'
 import LandingPricing from '../components/landing/LandingPricing'
 import LandingFooter from '../components/landing/LandingFooter'
 
@@ -43,7 +45,9 @@ export default function Home() {
         <LandingBackground />
         <LandingNav />
         <LandingHero />
+        <LandingEmpathy />
         <LandingFeatureCards />
+        <LandingTestimonials />
         <LandingPricing />
         <LandingFooter />
       </div>
