@@ -50,7 +50,7 @@ float snoise(vec2 v) {
 
 // ── Curl noise (2D) — rotated gradient of snoise for turbulent advection ────
 vec2 curlNoise(vec2 p) {
-  float eps = 0.001;
+  float eps = 0.01;
   float n1 = snoise(p + vec2(0.0, eps));
   float n2 = snoise(p - vec2(0.0, eps));
   float n3 = snoise(p + vec2(eps, 0.0));
@@ -65,60 +65,38 @@ float fbm4(vec2 p) {
   float v = 0.0;
   float a = 0.5;
   float angle = 0.5;
-  // Rotation matrices between octaves for decorrelation
   mat2 r1 = mat2(cos(angle), sin(angle), -sin(angle), cos(angle));
   mat2 r2 = mat2(cos(angle * 1.3), sin(angle * 1.3), -sin(angle * 1.3), cos(angle * 1.3));
   mat2 r3 = mat2(cos(angle * 1.7), sin(angle * 1.7), -sin(angle * 1.7), cos(angle * 1.7));
-  // Octave 0
   v += a * snoise(p);
   p = r1 * p * 2.02; a *= 0.5;
-  // Octave 1
   v += a * snoise(p);
   p = r2 * p * 2.03; a *= 0.5;
-  // Octave 2
   v += a * snoise(p);
   p = r3 * p * 2.01; a *= 0.5;
-  // Octave 3
   v += a * snoise(p);
   return v;
 }
 
-// ── Domain-warped fbm: fbm(fbm(p)) — two levels of self-distortion ─────────
+// ── Domain-warped fbm with reduced warp amplitudes + faster time terms ──────
 float warpedFbm(vec2 p, float t) {
-  // First warp pass
+  // First warp pass — moderate displacement
   vec2 q = vec2(
     fbm4(p + vec2(0.0, 0.0)),
     fbm4(p + vec2(5.2, 1.3))
   );
-  // Curl advection for turbulent motion
-  vec2 curl = curlNoise(p * 0.8 + t * 0.15);
-  // Second warp pass (domain warping)
+  // Curl advection — visible turbulent swirl
+  vec2 curl = curlNoise(p * 1.2 + t * 0.4);
+  // Second warp pass — reduced amplitudes to preserve noise structure
   vec2 r = vec2(
-    fbm4(p + 3.8 * q + vec2(1.7, 9.2) + curl * 0.6 + vec2(0.0, t * 0.12)),
-    fbm4(p + 3.8 * q + vec2(8.3, 2.8) + curl * 0.6 + vec2(0.0, t * 0.09))
+    fbm4(p + 2.0 * q + vec2(1.7, 9.2) + curl * 0.35 + vec2(0.0, t * 0.4)),
+    fbm4(p + 2.0 * q + vec2(8.3, 2.8) + curl * 0.35 + vec2(0.0, t * 0.35))
   );
-  return fbm4(p + 3.2 * r);
-}
-
-// ── Flame shape function: sharp tips, wide base, gravity pull ───────────────
-float flameShape(vec2 uv, float spread) {
-  // uv.y = 0 at ceiling, 1 at bottom
-  float cx = abs(uv.x - 0.5) * 2.0; // 0 center, 1 edges
-  // Base width narrows toward flame tips (bottom)
-  float baseWidth = mix(0.15, 1.0, spread);
-  float tipTaper = mix(1.0, 0.1, pow(uv.y, 0.7)); // sharp at tips
-  float widthEnv = smoothstep(baseWidth * tipTaper, baseWidth * tipTaper - 0.35, cx);
-  // Vertical falloff — flame fades by ~60% screen height from ceiling
-  float maxReach = 0.6 * (1.0 - 0.3 * cx * cx);
-  float falloff = 1.0 - smoothstep(0.0, maxReach, uv.y);
-  // Gravity pull — accelerates falloff at tips
-  falloff = pow(falloff, 1.4 + uv.y * 0.8);
-  return widthEnv * falloff;
+  return fbm4(p + 1.8 * r);
 }
 
 // ── Color ramp: density + vertical position → flame color ───────────────────
 vec4 flameColor(float d, float y) {
-  // Color stops from spec
   vec3 deepRed  = vec3(0.353, 0.031, 0.0);    // #5A0800
   vec3 ember    = vec3(0.910, 0.196, 0.102);   // #E8321A
   vec3 hotPool  = vec3(1.000, 0.400, 0.267);   // #FF6644
@@ -126,9 +104,9 @@ vec4 flameColor(float d, float y) {
   vec3 yellow   = vec3(1.000, 0.878, 0.251);   // #FFE040
   vec3 whiteHot = vec3(1.000, 0.992, 0.878);   // #FFFDE0
 
-  // Vertical bias: brighter near ceiling (y close to 0)
-  float vertBias = (1.0 - y * 0.3);
-  float dd = d * vertBias;
+  // Vertical bias: hotter near ceiling
+  float vertBias = 1.0 + (1.0 - y) * 0.25;
+  float dd = clamp(d * vertBias, 0.0, 1.0);
 
   vec3 col;
   float alpha;
@@ -136,24 +114,19 @@ vec4 flameColor(float d, float y) {
     alpha = smoothstep(0.0, 0.05, dd);
     col = deepRed;
   } else if (dd <= 0.20) {
-    float t = (dd - 0.05) / 0.15;
-    col = mix(deepRed, ember, t);
+    col = mix(deepRed, ember, (dd - 0.05) / 0.15);
     alpha = 1.0;
   } else if (dd <= 0.38) {
-    float t = (dd - 0.20) / 0.18;
-    col = mix(ember, hotPool, t);
+    col = mix(ember, hotPool, (dd - 0.20) / 0.18);
     alpha = 1.0;
   } else if (dd <= 0.55) {
-    float t = (dd - 0.38) / 0.17;
-    col = mix(hotPool, orange, t);
+    col = mix(hotPool, orange, (dd - 0.38) / 0.17);
     alpha = 1.0;
   } else if (dd <= 0.72) {
-    float t = (dd - 0.55) / 0.17;
-    col = mix(orange, yellow, t);
+    col = mix(orange, yellow, (dd - 0.55) / 0.17);
     alpha = 1.0;
   } else if (dd <= 0.88) {
-    float t = (dd - 0.72) / 0.16;
-    col = mix(yellow, whiteHot, t);
+    col = mix(yellow, whiteHot, (dd - 0.72) / 0.16);
     alpha = 1.0;
   } else {
     col = whiteHot;
@@ -164,58 +137,82 @@ vec4 flameColor(float d, float y) {
 
 void main() {
   vec2 uv = gl_FragCoord.xy / uResolution;
-  // y=0 bottom, y=1 top in GL. Flip so y=0 is ceiling (top of screen)
-  float yFlip = 1.0 - uv.y;
+  // y=0 bottom of screen, y=1 top of screen in GL
+  // flameY: 0 at ceiling (top), 1 at floor (bottom)
+  float flameY = 1.0 - uv.y;
 
-  // ── Collapse vortex: pull all coordinates toward center ──────────────────
+  // ── Collapse vortex ────────────────────────────────────────────────────────
   vec2 center = vec2(0.5, 0.5);
-  vec2 toCenter = center - uv;
-  float dist = length(toCenter);
-  // Centripetal acceleration increases with collapse progress
+  float dist = length(uv - center);
   float vortexStrength = uCollapse * uCollapse * 3.5;
-  // Spiral: rotate coordinates as they pull inward
-  float angle = vortexStrength * dist * 6.2831 * 0.5;
-  mat2 spin = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
-  vec2 vortexUV = center + spin * (uv - center) * (1.0 - uCollapse * 0.92);
+  float vAngle = vortexStrength * dist * 6.2831 * 0.5;
+  mat2 spin = mat2(cos(vAngle), -sin(vAngle), sin(vAngle), cos(vAngle));
+  vec2 flameUV = center + spin * (uv - center) * (1.0 - uCollapse * 0.92);
+  flameY = 1.0 - flameUV.y;
 
-  // Use vortex-distorted UVs for flame sampling
-  vec2 flameUV = vortexUV;
-  float flameY = 1.0 - flameUV.y;
+  // ── Time ───────────────────────────────────────────────────────────────────
+  float t = uTime * 0.65;
 
-  // ── Noise field with domain warping ──────────────────────────────────────
-  float t = uTime * 0.6; // speed factor
-  vec2 p = vec2(flameUV.x * 3.0, flameY * 2.5 - t * 0.7);
+  // ── Lateral spread mask — controls fire width from center outward ─────────
+  float cx = abs(flameUV.x - 0.5) * 2.0;  // 0 at center, 1 at edges
+  float spreadMask = smoothstep(uSpread + 0.02, max(uSpread - 0.3, 0.0), cx);
+
+  // ── Tongue height noise — low-freq, varies which columns reach further ────
+  float tongueNoise = fbm4(vec2(flameUV.x * 5.0 + t * 0.15, t * 0.4)) * 0.5 + 0.5;
+  tongueNoise = 0.4 + tongueNoise * 0.6;  // range 0.4–1.0
+
+  // ── Hard ceiling constraint — flame hangs DOWN from top edge only ─────────
+  // maxReach: how far down (in flameY) flame can extend
+  // Varies per column (tongue noise) and per lateral position
+  float maxReach = 0.50 * tongueNoise * (1.0 - 0.35 * cx * cx);
+  float falloff = 1.0 - smoothstep(0.0, maxReach, flameY);
+  // Sharp gravity pull — accelerates at tips for pointed flame tongues
+  falloff = pow(falloff, 1.8 + flameY * 2.0);
+
+  // Hard kill: absolutely zero below 55% from ceiling
+  falloff *= step(flameY, 0.55);
+
+  // ── Primary noise field with domain warping ────────────────────────────────
+  vec2 p = vec2(flameUV.x * 2.8, flameY * 3.5 - t * 0.85);
   float noise = warpedFbm(p, t);
-  noise = noise * 0.5 + 0.5; // remap [-1,1] → [0,1]
+  noise = noise * 0.5 + 0.5;
 
-  // ── Flame envelope ───────────────────────────────────────────────────────
-  float shape = flameShape(vec2(flameUV.x, flameY), uSpread);
+  // ── Contrast amplification — stretch mid-range to fill full [0,1] ─────────
+  noise = smoothstep(0.18, 0.82, noise);
 
-  // ── Final density ────────────────────────────────────────────────────────
-  float density = noise * shape * uIntensity;
+  // ── High-frequency flicker — visible turbulence on every frame ────────────
+  float flicker = snoise(vec2(flameUV.x * 9.0, flameY * 7.0 - t * 3.0)) * 0.12;
+  float flicker2 = snoise(vec2(flameUV.x * 14.0 + 3.7, flameY * 11.0 - t * 4.5)) * 0.06;
+  noise = clamp(noise + flicker + flicker2, 0.0, 1.0);
 
-  // Collapse concentrates density toward center
+  // ── Ceiling boost — white-hot core at top 8% of flame ─────────────────────
+  float ceilingBoost = smoothstep(0.10, 0.0, flameY) * 0.35;
+
+  // ── Final density ──────────────────────────────────────────────────────────
+  float density = (noise + ceilingBoost) * falloff * spreadMask * uIntensity;
+  // Power curve to lift structure into visible color ramp bands
+  density = pow(clamp(density, 0.0, 1.0), 0.72);
+
+  // ── Collapse concentrates density toward center ────────────────────────────
   if (uCollapse > 0.0) {
     float collapseFocus = smoothstep(0.0, 0.6 - uCollapse * 0.55, dist);
     density *= mix(1.0, collapseFocus * 2.5, uCollapse);
+    density = clamp(density, 0.0, 1.0);
   }
 
-  density = clamp(density, 0.0, 1.0);
-
-  // ── Sub-surface glow layer ───────────────────────────────────────────────
-  float glow = fbm4(p * 0.5 + vec2(0.0, t * 0.2)) * 0.5 + 0.5;
-  float glowMask = shape * glow * 0.3 * uIntensity;
+  // ── Sub-surface glow layer ─────────────────────────────────────────────────
+  float glow = fbm4(p * 0.5 + vec2(0.0, t * 0.3)) * 0.5 + 0.5;
+  float glowMask = falloff * spreadMask * glow * 0.25 * uIntensity;
   vec3 glowCol = vec3(1.0, 0.45, 0.1) * glowMask;
 
-  // ── Color output ─────────────────────────────────────────────────────────
+  // ── Color output ───────────────────────────────────────────────────────────
   vec4 flame = flameColor(density, flameY);
   vec3 finalCol = flame.rgb + glowCol;
-  float finalAlpha = flame.a + glowMask * 0.5;
+  float finalAlpha = flame.a + glowMask * 0.4;
 
-  // Collapse fade: rapid transparency as collapse nears completion
+  // Collapse fade
   if (uCollapse > 0.85) {
-    float fadeFactor = 1.0 - smoothstep(0.85, 1.0, uCollapse);
-    finalAlpha *= fadeFactor;
+    finalAlpha *= 1.0 - smoothstep(0.85, 1.0, uCollapse);
   }
 
   gl_FragColor = vec4(finalCol, finalAlpha);
