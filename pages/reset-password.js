@@ -14,19 +14,21 @@ export default function ResetPassword() {
   const [sessionReady, setSessionReady] = useState(false)
 
   useEffect(() => {
-    // Check if we have a valid session (user came from password reset email)
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
+    // Listen for PASSWORD_RECOVERY event — fired when Supabase processes the
+    // recovery token from the URL hash. More reliable than getSession() which
+    // has a timing race before the hash is exchanged.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
         setSessionReady(true)
-      } else {
-        setError('Invalid or expired reset link. Please request a new password reset.')
+      } else if (event === 'SIGNED_IN' && session) {
+        // Fallback: hash already exchanged before component mounted
+        setSessionReady(true)
+      } else if (event === 'SIGNED_OUT' || (event === 'INITIAL_SESSION' && !session)) {
+        setError('Invalid or expired reset link. Please request a new one.')
       }
-    }
-    if (router.isReady) {
-      checkSession()
-    }
-  }, [router.isReady])
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
   const handleResetPassword = async (e) => {
     e.preventDefault()

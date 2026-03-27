@@ -104,6 +104,10 @@ export default function Login() {
           </form>
 
           <p className={styles.signupLink}>
+            <a href="/forgot-password">Forgot password?</a>
+          </p>
+
+          <p className={styles.signupLink}>
             Don&apos;t have an account? <a href="/signup">Sign up free</a>
           </p>
         </div>
