@@ -1112,8 +1112,8 @@ async function handler(req, res, userId) {
     // Log AI response for opening messages
     logCheckinMessage(supabaseAdmin, userId, 'assistant', text, personaBlend).catch(() => {})
     // Fire-and-forget memory compression for opening messages after 3+ exchanges (6+ total)
-    if (isPro && conversationHistory && conversationHistory.length >= 6) {
-      compressAndSaveMemory(userId, conversationHistory, profile.rolling_memory_summary).catch(err => console.error('Memory compression failed:', err))
+    if (isPro && openingMessages && openingMessages.length >= 6) {
+      compressAndSaveMemory(userId, openingMessages, profile.rolling_memory_summary).catch(err => console.error('Memory compression failed:', err))
     }
     return res.status(200).json({
       message: text,

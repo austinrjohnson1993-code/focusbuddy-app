@@ -64,7 +64,6 @@ export default async function handler(req, res) {
         const updateData = {
           subscription_status: 'pro',
           stripe_customer_id: customerId,
-          stripe_subscription_id: subscriptionId,
         };
 
         // Fetch subscription to get current_period_end for expiry
