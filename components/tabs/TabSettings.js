@@ -230,6 +230,12 @@ export default function TabSettings({ user, profile, setProfile, showToast, logg
     <TabErrorBoundary tabName="Settings">
       <div className={styles.stgView}>
 
+        {/* ── PAGE HEADING ── */}
+        <div style={{ marginBottom: 28 }}>
+          <span style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(240,234,214,0.32)', fontFamily: "'Figtree', sans-serif" }}>Account</span>
+          <h1 style={{ margin: '2px 0 0', fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 600, color: '#F0EAD6' }}>Settings</h1>
+        </div>
+
         {/* ── 1. COACHING BLEND ── */}
         <div className={styles.stgSection}>
           <p className={styles.stgLabel}>Coaching Blend</p>
