@@ -1,4 +1,4 @@
--- FocusBuddy migration 004: bills extended columns + income on profiles
+-- Cinis migration 004: bills extended columns + income on profiles
 -- All additive with IF NOT EXISTS — safe to run on existing data
 
 ALTER TABLE bills ADD COLUMN IF NOT EXISTS bill_type text DEFAULT 'bill';

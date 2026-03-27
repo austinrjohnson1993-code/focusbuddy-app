@@ -1,4 +1,4 @@
--- FocusBuddy migration 013: checkin_logs table + checkin_mode on profiles
+-- Cinis migration 013: checkin_logs table + checkin_mode on profiles
 -- Creates full conversation logging for check-in exchanges
 
 -- Create checkin_logs table

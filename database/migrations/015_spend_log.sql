@@ -1,4 +1,4 @@
--- FocusBuddy migration 015: spend_log table for daily spending tracking
+-- Cinis migration 015: spend_log table for daily spending tracking
 -- Enables coach to see daily spending and calculate actual daily budget remaining
 
 CREATE TABLE IF NOT EXISTS spend_log (

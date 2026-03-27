@@ -1,4 +1,4 @@
--- FocusBuddy migration 014: Tag Team crew tables
+-- Cinis migration 014: Tag Team crew tables
 -- Enables family/work crew collaboration with task delegation
 
 -- Create crews table

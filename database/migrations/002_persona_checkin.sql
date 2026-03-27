@@ -1,4 +1,4 @@
--- FocusBuddy migration 002: persona system + check-in columns
+-- Cinis migration 002: persona system + check-in columns
 -- Run this in Supabase SQL Editor if these columns don't already exist
 
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS persona_blend text[] DEFAULT '{}';
