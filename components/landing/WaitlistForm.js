@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import styles from '../../styles/Landing.module.css'
 
-export default function WaitlistForm() {
+export default function WaitlistForm({ buttonLabel = 'Get early access', micro = 'No card. No commitment. Early access open now.' }) {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -33,7 +33,7 @@ export default function WaitlistForm() {
     return (
       <div className={styles.waitlistSuccess}>
         <div className={styles.waitlistSuccessHeadline}>You&apos;re on the list.</div>
-        <div className={styles.waitlistSuccessSub}>We launch April 14. You&apos;ll hear from us that morning.</div>
+        <div className={styles.waitlistSuccessSub}>You&apos;re on the list. We&apos;ll reach out before April 14.</div>
       </div>
     )
   }
@@ -55,9 +55,9 @@ export default function WaitlistForm() {
         disabled={loading || !email.includes('@')}
         className={styles.waitlistBtn}
       >
-        {loading ? 'Joining...' : 'Get early access'}
+        {loading ? 'Joining...' : buttonLabel}
       </button>
-      <p className={styles.waitlistMicro}>No card. No commitment. Early access open now.</p>
+      <p className={styles.waitlistMicro}>{micro}</p>
     </form>
   )
 }

@@ -60,7 +60,7 @@ export default function LandingPricing() {
 
         {/* Waitlist form */}
         <div className={styles.pricingFormWrap}>
-          <WaitlistForm />
+          <WaitlistForm buttonLabel="Join the waitlist" micro="No card. No commitment." />
         </div>
       </div>
     </section>
