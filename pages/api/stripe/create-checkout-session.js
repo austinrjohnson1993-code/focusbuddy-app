@@ -16,10 +16,10 @@ async function handler(req, res, userId) {
 
   const priceId = plan === 'monthly'
     ? process.env.STRIPE_PRICE_MONTHLY
-    : process.env.STRIPE_PRICE_YEARLY;
+    : process.env.STRIPE_YEARLY_PRICE_ID;
 
   if (!priceId) {
-    console.error(`[checkout-session] Missing STRIPE_PRICE_${plan.toUpperCase()} env var`);
+    console.error(`[checkout-session] Missing ${plan === 'monthly' ? 'STRIPE_PRICE_MONTHLY' : 'STRIPE_YEARLY_PRICE_ID'} env var`);
     return res.status(500).json({ error: 'Stripe price not configured' });
   }
 

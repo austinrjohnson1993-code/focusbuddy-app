@@ -75,6 +75,8 @@ export default async function handler(req, res) {
       for (const sub of subscriptions.data) {
         await stripe.subscriptions.cancel(sub.id)
       }
+
+      await stripe.customers.del(profile.stripe_customer_id)
     } catch (stripeErr) {
       console.error(`[delete-account] Stripe cancellation failed for user ${userId}:`, stripeErr.message)
       // Do not block deletion — proceed regardless

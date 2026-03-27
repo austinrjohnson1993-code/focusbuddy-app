@@ -61,9 +61,16 @@ async function cacheInsights(supabaseAdmin, userId, cards) {
 async function handler(req, res, userId) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
+  const { type = 'weekly' } = req.query
   const supabaseAdmin = getAdminClient()
 
   try {
+    // ── Determine date range based on type ─────────────────────────────────────
+    const isMonthly = type === 'monthly'
+    const daysBack = isMonthly ? 30 : 7
+    const dateRangeStart = isMonthly ? getMonthStartStr() : daysAgoStr(7)
+    const snapshotRangeStart = isMonthly ? daysAgoStr(30) : daysAgoStr(14)
+
     // ── Fetch all data in parallel ────────────────────────────────────────────
     const [
       { data: snapshots },
@@ -75,7 +82,7 @@ async function handler(req, res, userId) {
         .from('progress_snapshots')
         .select('snapshot_date, tasks_completed, focus_minutes, journal_entries')
         .eq('user_id', userId)
-        .gte('snapshot_date', daysAgoStr(14))
+        .gte('snapshot_date', snapshotRangeStart)
         .order('snapshot_date', { ascending: true }),
 
       supabaseAdmin
@@ -83,7 +90,7 @@ async function handler(req, res, userId) {
         .select('completed_at')
         .eq('user_id', userId)
         .eq('completed', true)
-        .gte('completed_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+        .gte('completed_at', new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString()),
 
       supabaseAdmin
         .from('tasks')
@@ -104,13 +111,12 @@ async function handler(req, res, userId) {
     const snapshotList = snapshots || []
     const recent = recentTasks || []
     const today = todayStr()
-    const sevenDaysAgo = daysAgoStr(7)
 
     const completionsPerDay = snapshotList.map(s => s.tasks_completed || 0)
 
-    const last7Snapshots = snapshotList.filter(s => s.snapshot_date >= sevenDaysAgo)
-    const totalFocusMinutes = last7Snapshots.reduce((sum, s) => sum + (s.focus_minutes || 0), 0)
-    const totalJournalEntries = last7Snapshots.reduce((sum, s) => sum + (s.journal_entries || 0), 0)
+    const rangeSnapshots = snapshotList.filter(s => s.snapshot_date >= dateRangeStart)
+    const totalFocusMinutes = rangeSnapshots.reduce((sum, s) => sum + (s.focus_minutes || 0), 0)
+    const totalJournalEntries = rangeSnapshots.reduce((sum, s) => sum + (s.journal_entries || 0), 0)
 
     // Best completion day from real completed_at timestamps
     const dayGroups = {}
@@ -127,19 +133,23 @@ async function handler(req, res, userId) {
     const currentStreak = profile?.current_streak || 0
     const stuckCount = (stuckTasks || []).length
     const focusHours = (totalFocusMinutes / 60).toFixed(1)
+    const timeframeLabel = isMonthly ? 'this month' : 'this week'
+    const daysLabel = isMonthly ? 'last 30 days' : 'last 7 days'
 
     // ── Build prompt ─────────────────────────────────────────────────────────
     const systemPrompt = `You are a behavioral pattern analyst for a productivity coaching app. Users have ADHD and executive function challenges. Generate exactly 3 insight cards as JSON. Be specific, data-driven, and brief. Reference actual numbers from the data. Never use motivational poster language.`
 
     const userPrompt = `Analyze this user data and return 3 insight cards as a JSON array. Each card has: type ('pattern'|'alert'|'win'), title (max 8 words), body (max 20 words, reference specific numbers).
 
+This is a ${isMonthly ? 'MONTHLY' : 'WEEKLY'} analysis — do NOT reference the wrong timeframe.
+
 Data:
-- Last 14 days tasks completed per day: [${completionsPerDay.join(', ') || '0'}]
-- Focus minutes last 7 days: ${totalFocusMinutes} (${focusHours} hours)
-- Journal entries last 7 days: ${totalJournalEntries}
+- Tasks completed ${daysLabel}: [${completionsPerDay.join(', ') || '0'}]
+- Focus minutes ${daysLabel}: ${totalFocusMinutes} (${focusHours} hours)
+- Journal entries ${daysLabel}: ${totalJournalEntries}
 - Current streak: ${currentStreak} days
 - Tasks stuck (rolled 3+ times): ${stuckCount}
-- Best completion day this week: ${bestDayStr}
+- Best completion day ${timeframeLabel}: ${bestDayStr}
 
 Return ONLY a JSON array, no other text. Example format:
 [
@@ -183,10 +193,10 @@ Return ONLY a JSON array, no other text. Example format:
       // non-fatal — still return cards
     }
 
-    return res.status(200).json({ insights: cards })
+    return res.status(200).json({ insights: cards, type })
   } catch (err) {
     console.error('[insights] fatal error:', err.message)
-    return res.status(200).json({ insights: FALLBACK_CARDS })
+    return res.status(200).json({ insights: FALLBACK_CARDS, type })
   }
 }
 

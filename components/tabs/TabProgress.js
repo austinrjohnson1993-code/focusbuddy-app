@@ -20,7 +20,8 @@ export default function TabProgress({ user, profile, tasks, showToast, loggedFet
   const [progressSnapshots, setProgressSnapshots] = useState([])
   const [progressBand, setProgressBand] = useState('week')
 
-  const [progressInsights, setProgressInsights] = useState([])
+  const [weeklyInsights, setWeeklyInsights] = useState([])
+  const [monthlyInsights, setMonthlyInsights] = useState([])
   const [progressInsightsLoading, setProgressInsightsLoading] = useState(false)
   const [progressInsightsLoaded, setProgressInsightsLoaded] = useState(false)
 
@@ -33,10 +34,15 @@ export default function TabProgress({ user, profile, tasks, showToast, loggedFet
     setProgressInsightsLoaded(true)
     setProgressInsightsLoading(true)
     try {
-      const res = await loggedFetch(`/api/progress/insights?userId=${user.id}`)
-      if (res.ok) {
-        const data = await res.json()
-        setProgressInsights(data.insights || [])
+      const [weeklyRes, monthlyRes] = await Promise.all([
+        loggedFetch(`/api/progress/insights?userId=${user.id}&type=weekly`),
+        loggedFetch(`/api/progress/insights?userId=${user.id}&type=monthly`)
+      ])
+      if (weeklyRes.ok && monthlyRes.ok) {
+        const weeklyData = await weeklyRes.json()
+        const monthlyData = await monthlyRes.json()
+        setWeeklyInsights(weeklyData.insights || [])
+        setMonthlyInsights(monthlyData.insights || [])
       } else {
         setProgressError(true)
       }
@@ -217,8 +223,9 @@ export default function TabProgress({ user, profile, tasks, showToast, loggedFet
     { icon: '!', label: 'HEADS UP', body: '4 tasks pushed more than twice this week. LLC filing rescheduled 3 times.', color: '#E8321A' },
     { icon: '\u2713', label: 'WIN', body: '12-day streak. Longest since you started. Focus minutes up 30% week-over-week.', color: '#4CAF50' },
   ]
-  const insightSource = progressInsights.length > 0
-    ? progressInsights.map(ins => ({
+  const activeInsights = progressBand === 'month' ? monthlyInsights : weeklyInsights
+  const insightSource = activeInsights.length > 0
+    ? activeInsights.map(ins => ({
         icon: ins.type === 'alert' ? '!' : ins.type === 'win' ? '\u2713' : '\u26a1',
         label: ins.type === 'alert' ? 'HEADS UP' : ins.type === 'win' ? 'WIN' : 'PATTERN',
         body: ins.body || ins.title || '',
