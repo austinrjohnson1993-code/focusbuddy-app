@@ -1,6 +1,7 @@
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import CinisMark from '../lib/CinisMark'
+import { PRICING } from '../lib/constants'
 
 const FREE_FEATURES = [
   'Basic task management',
@@ -64,8 +65,8 @@ export default function Pricing() {
           <div style={{ ...s.card, ...s.cardPro }}>
             <div style={s.proBadge}>Most Popular</div>
             <p style={s.tierLabel}>Pro</p>
-            <p style={s.price}>$14<span style={s.per}>/month</span></p>
-            <p style={{ ...s.per, fontSize: '0.85rem', marginTop: 2 }}>or $99/year <span style={{ color: '#FF6644', fontWeight: 600 }}>· Save 41% vs monthly</span></p>
+            <p style={s.price}>{PRICING.monthlyDisplay}<span style={s.per}>/month</span></p>
+            <p style={{ ...s.per, fontSize: '0.85rem', marginTop: 2 }}>or {PRICING.annualLabel} <span style={{ color: '#FF6644', fontWeight: 600 }}>· Save 41% vs monthly</span></p>
             <p style={s.tierDesc}>For brains that need more than a to-do list.</p>
             <ul style={s.featureList}>
               <li style={s.featureItem}><span style={s.check}>✓</span> Everything in Free</li>

@@ -1,6 +1,7 @@
 import Head from 'next/head'
 import styles from '../styles/Legal.module.css'
 import CinisMark from '../lib/CinisMark'
+import { PRICING } from '../lib/constants'
 
 export default function Terms() {
   return (
@@ -49,8 +50,8 @@ export default function Terms() {
               Cinis offers a free tier and a Pro subscription. Pro is available at:
             </p>
             <ul className={styles.ul}>
-              <li><strong>Monthly</strong> — $14/month, billed monthly.</li>
-              <li><strong>Yearly</strong> — $99/year, billed annually (equivalent to ~$8.25/month).</li>
+              <li><strong>Monthly</strong> — {PRICING.monthlyLabel}, billed monthly.</li>
+              <li><strong>Yearly</strong> — {PRICING.annualLabel}, billed annually (equivalent to ~$8.25/month).</li>
             </ul>
             <p className={styles.p}>
               Subscriptions renew automatically at the end of each billing period. You may cancel at any time through your account settings or by contacting us. Cancellation takes effect at the end of the current billing period — you retain Pro access until then.

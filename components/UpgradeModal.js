@@ -1,5 +1,6 @@
 import React from 'react'
 import { supabase } from '../lib/supabase'
+import { PRICING } from '../lib/constants'
 
 const COPY = {
   limit: {
@@ -47,12 +48,12 @@ export default function UpgradeModal({ trigger, onClose }) {
         <h2 style={headlineStyle}>{headline}</h2>
         <p style={bodyStyle}>{body}</p>
         <button style={ctaBtn} onClick={() => handleUpgrade('monthly')}>
-          Upgrade to Pro — $14/mo
+          Upgrade to Pro — {PRICING.monthlyDisplay}/mo
         </button>
         <p style={yearlyLink}>
           or{' '}
           <span style={yearlyLinkBtn} onClick={() => handleUpgrade('yearly')}>
-            $99/year
+            {PRICING.annualLabel}
           </span>
           {' '}(Save 40%)
         </p>

@@ -4,6 +4,7 @@ import Head from 'next/head'
 import { supabase } from '../lib/supabase'
 import styles from '../styles/Upgrade.module.css'
 import CinisMark from '../lib/CinisMark'
+import { PRICING } from '../lib/constants'
 
 const CINIS_MARK = <CinisMark size={64} />
 
@@ -92,11 +93,11 @@ export default function Upgrade() {
               {/* Pricing */}
               <div className={styles.priceSection}>
                 <div className={styles.monthlyPrice}>
-                  <span className={styles.priceAmount}>$14</span>
+                  <span className={styles.priceAmount}>{PRICING.monthlyDisplay}</span>
                   <span className={styles.pricePeriod}>/month</span>
                 </div>
                 <div className={styles.yearlyPrice}>
-                  <span className={styles.yearlyAmount}>$99/year</span>
+                  <span className={styles.yearlyAmount}>{PRICING.annualLabel}</span>
                   <span className={styles.saveBadge}>Save 40%</span>
                 </div>
               </div>
