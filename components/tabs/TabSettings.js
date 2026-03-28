@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
-import styles from '../../styles/Dashboard.module.css'
 import { supabase } from '../../lib/supabase'
-import { THEMES, applyTheme, PERSONAS_LIST, TabErrorBoundary } from './shared'
+import { THEMES, applyTheme, PERSONAS_LIST } from './shared'
+import styles from '../../styles/TabSettings.module.css'
 
+/* ── VAPID helper ──────────────────────────────────────────────────────────── */
 function urlBase64ToUint8Array(base64String) {
   const clean = (base64String || '').trim()
   const padding = '='.repeat((4 - clean.length % 4) % 4)
@@ -14,478 +15,340 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray
 }
 
+/* ── Persona display map ───────────────────────────────────────────────────── */
+const PERSONA_DISPLAY = {
+  strategist: 'Strategist',
+  empath: 'Empath',
+  drill_sergeant: 'Drill Sergeant',
+  hype_person: 'Hype Person',
+  thinking_partner: 'Thinking Partner',
+  coach: 'Coach',
+}
+
+/* ── Component ─────────────────────────────────────────────────────────────── */
 export default function TabSettings({ user, profile, setProfile, showToast, loggedFetch, activeTheme, setActiveTheme }) {
   const router = useRouter()
 
-  // ── State ──────────────────────────────────────────────────────────────────
-  const [settingsName, setSettingsName] = useState('')
-  const [settingsSaving, setSettingsSaving] = useState(false)
-  const [exportLoading, setExportLoading] = useState(false)
-  const [exportError, setExportError] = useState(null)
-  const [notifMorning, setNotifMorning] = useState(true)
-  const [notifMidday, setNotifMidday] = useState(false)
-  const [notifEvening, setNotifEvening] = useState(true)
-  const [notifPermission, setNotifPermission] = useState(() =>
-    typeof Notification !== 'undefined' ? Notification.permission : 'default'
-  )
-  const [checkinMorningTime, setCheckinMorningTime] = useState('08:00')
-  const [checkinMiddayTime, setCheckinMiddayTime] = useState('12:00')
-  const [checkinEveningTime, setCheckinEveningTime] = useState('21:00')
-  const [pushLoading, setPushLoading] = useState(false)
-  const [testNotifLoading, setTestNotifLoading] = useState(false)
+  // State
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
+  const [pushLoading, setPushLoading] = useState(false)
 
-  // ── Sync state from profile ────────────────────────────────────────────────
+  // Check-in schedule
+  const [checkinMorning, setCheckinMorning] = useState(true)
+  const [checkinMidday, setCheckinMidday] = useState(true)
+  const [checkinEvening, setCheckinEvening] = useState(true)
+
+  // Notifications
+  const [notifCheckin, setNotifCheckin] = useState(true)
+  const [notifBills, setNotifBills] = useState(true)
+  const [notifStreak, setNotifStreak] = useState(true)
+
+  // Sync from profile
   useEffect(() => {
     if (!profile) return
-    if (profile.full_name) setSettingsName(profile.full_name)
-    if (profile.morning_time) setCheckinMorningTime(profile.morning_time)
-    if (profile.midday_time) setCheckinMiddayTime(profile.midday_time)
-    if (profile.evening_time) setCheckinEveningTime(profile.evening_time)
     if (Array.isArray(profile.checkin_times)) {
-      setNotifMorning(profile.checkin_times.includes('morning'))
-      setNotifMidday(profile.checkin_times.includes('midday'))
-      setNotifEvening(profile.checkin_times.includes('evening'))
+      setCheckinMorning(profile.checkin_times.includes('morning'))
+      setCheckinMidday(profile.checkin_times.includes('midday'))
+      setCheckinEvening(profile.checkin_times.includes('evening'))
     }
+    if (profile.notif_checkin !== undefined) setNotifCheckin(profile.notif_checkin !== false)
+    if (profile.notif_bills !== undefined) setNotifBills(profile.notif_bills !== false)
+    if (profile.notif_streak !== undefined) setNotifStreak(profile.notif_streak !== false)
   }, [profile])
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
-
+  // ── Patch helper ──────────────────────────────────────────────────────────
   const patchSettings = async (updates) => {
     if (!user) return false
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.access_token) {
-        console.error('[settings] patchSettings: no access token')
-        return false
-      }
+      if (!session?.access_token) return false
       const res = await fetch('/api/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ userId: user.id, updates }),
       })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        console.error('[settings] PATCH failed:', res.status, err)
-        return false
-      }
-      return true
-    } catch (err) {
-      console.error('[settings] PATCH error:', err)
-      return false
-    }
+      return res.ok
+    } catch { return false }
   }
 
-  const saveSettings = async () => {
-    if (!user || !settingsName.trim()) return
-    setSettingsSaving(true)
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.access_token) {
-      console.error('[settings] No session token available')
-      setSettingsSaving(false)
-      return
+  // ── Coaching blend ────────────────────────────────────────────────────────
+  const blend = profile?.persona_blend || []
+  const handleBlendTap = async (key) => {
+    const current = profile?.persona_blend || []
+    let next
+    if (current.includes(key)) {
+      next = current.filter(k => k !== key)
+    } else {
+      if (current.length >= 3) return
+      next = [...current, key]
     }
-    const payload = { userId: user.id, updates: { full_name: settingsName.trim() } }
-    const response = await fetch('/api/settings', {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify(payload),
-    })
-    console.log('[settings] saved successfully', response.status)
-    setProfile(prev => ({ ...prev, full_name: settingsName.trim() }))
-    setSettingsSaving(false)
-    showToast('Settings saved')
+    setProfile(prev => ({ ...prev, persona_blend: next }))
+    const ok = await patchSettings({ persona_blend: next })
+    if (!ok) setProfile(prev => ({ ...prev, persona_blend: current }))
   }
 
+  // ── Check-in schedule toggle ──────────────────────────────────────────────
+  const handleCheckinToggle = async (slot) => {
+    const map = { morning: [checkinMorning, setCheckinMorning], midday: [checkinMidday, setCheckinMidday], evening: [checkinEvening, setCheckinEvening] }
+    const [val, setter] = map[slot]
+    const newVal = !val
+    setter(newVal)
+    const newMorning = slot === 'morning' ? newVal : checkinMorning
+    const newMidday = slot === 'midday' ? newVal : checkinMidday
+    const newEvening = slot === 'evening' ? newVal : checkinEvening
+    const checkin_times = ['morning', 'midday', 'evening'].filter((_, i) => [newMorning, newMidday, newEvening][i])
+    await patchSettings({ checkin_times })
+  }
+
+  // ── Notification toggles ──────────────────────────────────────────────────
+  const handleNotifToggle = async (key) => {
+    const map = { notif_checkin: [notifCheckin, setNotifCheckin], notif_bills: [notifBills, setNotifBills], notif_streak: [notifStreak, setNotifStreak] }
+    const [val, setter] = map[key]
+    const newVal = !val
+    setter(newVal)
+
+    // Request push permission if enabling
+    if (newVal && typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      await Notification.requestPermission()
+    }
+    await patchSettings({ [key]: newVal })
+  }
+
+  // ── Theme save ────────────────────────────────────────────────────────────
   const saveTheme = async (theme) => {
     setActiveTheme(theme)
     setProfile(prev => ({ ...prev, accent_color: theme.id }))
     if (typeof localStorage !== 'undefined') localStorage.setItem('cinis_accent_color', theme.id)
     applyTheme(theme)
-    if (user) {
-      const themeId = theme.name?.toLowerCase() || theme.id
-      await patchSettings({ accent_color: theme.id, theme_id: themeId })
-    }
+    if (user) await patchSettings({ accent_color: theme.id })
   }
 
-  const handleExportData = async () => {
-    setExportLoading(true)
-    setExportError(null)
+  // ── Accent save ───────────────────────────────────────────────────────────
+  const [activeAccent, setActiveAccent] = useState('#FF6644')
+  useEffect(() => {
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('cinis_accent') || '#FF6644'
+      setActiveAccent(saved)
+    }
+  }, [])
+
+  const saveAccent = (color) => {
+    setActiveAccent(color)
+    if (typeof localStorage !== 'undefined') localStorage.setItem('cinis_accent', color)
+    document.documentElement.style.setProperty('--accent', color)
+  }
+
+  // ── Delete account ────────────────────────────────────────────────────────
+  const handleDelete = async () => {
+    setDeletingAccount(true)
     try {
-      const res = await fetch('/api/export', {
-        method: 'GET',
-        credentials: 'include',
-      })
-      if (!res.ok) throw new Error('Export failed')
-      const data = await res.json()
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const today = new Date().toISOString().split('T')[0]
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `cinis-export-${today}.json`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-      showToast('Data exported successfully')
-    } catch (err) {
-      setExportError('Export failed — try again')
-    } finally {
-      setExportLoading(false)
-    }
+      const res = await loggedFetch('/api/delete-account', { method: 'DELETE' })
+      if (res.ok) { await supabase.auth.signOut(); router.push('/login') }
+    } catch {}
+    setDeletingAccount(false)
   }
 
-  async function subscribeToPush() {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      return { error: 'Push notifications not supported in this browser.' }
-    }
-    const permission = await Notification.requestPermission()
-    if (permission !== 'granted') {
-      return { error: 'Notification permission denied.' }
-    }
-    const registration = await navigator.serviceWorker.ready
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY)
-    })
-    return { subscription: subscription.toJSON() }
-  }
+  // ── Derived ───────────────────────────────────────────────────────────────
+  const firstName = profile?.full_name?.split(' ')[0] || ''
+  const initial = firstName?.charAt(0)?.toUpperCase() || '?'
+  const isPro = profile?.plan === 'pro'
 
-  const handleTogglePush = async () => {
-    if (pushLoading) return
-    setPushLoading(true)
-    const isCurrentlyEnabled = profile?.push_notifications_enabled
+  // ── Theme options per brief ───────────────────────────────────────────────
+  const THEME_OPTIONS = [
+    { id: 'orange-bronze', label: 'Ember', swatch: '#FF6644' },
+    { id: 'warm', label: 'Ash', swatch: '#F0EAD6' },
+    { id: 'midnight', label: 'Dim', swatch: '#5A4F45' },
+    { id: 'indigo-night', label: 'Midnight', swatch: '#0D0A07', border: '1px solid rgba(240,234,214,0.15)' },
+  ]
 
-    try {
-      if (isCurrentlyEnabled) {
-        // Turning OFF
-        if ('serviceWorker' in navigator) {
-          const reg = await navigator.serviceWorker.ready
-          const existingSub = await reg.pushManager.getSubscription()
-          if (existingSub) await existingSub.unsubscribe()
-        }
-        const res = await loggedFetch('/api/notifications/subscribe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id, enabled: false }),
-        })
-        if (!res.ok) throw new Error('Failed to disable notifications')
-        setProfile(prev => ({ ...prev, push_notifications_enabled: false }))
-        try { localStorage.removeItem('cinis_push_enabled') } catch {}
-        showToast('Push notifications disabled')
-      } else {
-        // Turning ON
-        const result = await subscribeToPush()
-        if (result.error) {
-          if (result.error.includes('denied')) setNotifPermission('denied')
-          showToast(result.error)
-          setPushLoading(false)
-          return
-        }
-        const res = await loggedFetch('/api/notifications/subscribe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id, subscription: result.subscription, enabled: true }),
-        })
-        if (!res.ok) throw new Error('Failed to save subscription')
-        setProfile(prev => ({ ...prev, push_notifications_enabled: true }))
-        setNotifPermission('granted')
-        try { localStorage.setItem('cinis_push_enabled', 'true') } catch {}
-        showToast('Push notifications enabled')
-      }
-    } catch (err) {
-      console.error('[push] toggle error:', err)
-      showToast('Could not update notifications')
-    }
-    setPushLoading(false)
-  }
+  const ACCENT_COLORS = ['#FF6644', '#3B8BD4', '#4CAF50', '#A47BDB', '#FFB800']
 
-  const handleSendTestNotification = async () => {
-    if (testNotifLoading) return
-    setTestNotifLoading(true)
-    try {
-      const res = await loggedFetch('/api/notifications/send-test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id }),
-      })
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || 'Failed to send test notification')
-      }
-      showToast('Notification sent — check your device')
-    } catch (err) {
-      showToast(err.message || 'Could not send test notification')
-    }
-    setTestNotifLoading(false)
-  }
+  // Chevron SVG
+  const Chevron = () => (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(240,234,214,0.22)" strokeWidth="2.5" strokeLinecap="round" className={styles.chevron}>
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  )
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <TabErrorBoundary tabName="Settings">
-      <div className={styles.stgView}>
+    <div className={styles.wrap}>
+      {/* Header */}
+      <div className={styles.header}>Settings</div>
 
-        {/* ── PAGE HEADING ── */}
-        <div style={{ marginBottom: 28 }}>
-          <span style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(240,234,214,0.32)', fontFamily: "'Figtree', sans-serif" }}>Account</span>
-          <h1 style={{ margin: '2px 0 0', fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 600, color: '#F0EAD6' }}>Settings</h1>
+      {/* Profile card */}
+      <div className={styles.profileCard}>
+        <div className={styles.avatar}>{initial}</div>
+        <div className={styles.profileInfo}>
+          <div className={styles.profileName}>{profile?.full_name || 'User'}</div>
+          <div className={styles.profileEmail}>{user?.email}</div>
         </div>
-
-        {/* ── 1. COACHING BLEND ── */}
-        <div className={styles.stgSection}>
-          <p className={styles.stgLabel}>Coaching Blend</p>
-          <p className={styles.stgSublabel}>Pick up to 3 personas</p>
-          <div className={styles.stgCard}>
-            <div className={styles.stgChips}>
-              {PERSONAS_LIST.map(({ key, label }) => {
-                const blend = profile?.persona_blend || []
-                const selected = blend.includes(key)
-                return (
-                  <button
-                    key={key}
-                    className={`${styles.stgChip} ${selected ? styles.stgChipActive : ''}`}
-                    onClick={async () => {
-                      const current = profile?.persona_blend || []
-                      let next
-                      if (current.includes(key)) {
-                        next = current.filter(k => k !== key)
-                      } else {
-                        if (current.length >= 3) return
-                        next = [...current, key]
-                      }
-                      setProfile(prev => ({ ...prev, persona_blend: next }))
-                      const ok = await patchSettings({ persona_blend: next })
-                      if (!ok) {
-                        setProfile(prev => ({ ...prev, persona_blend: current }))
-                      }
-                    }}
-                  >
-                    {label}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* ── 2. CHECK-IN SCHEDULE ── */}
-        <div className={styles.stgSection}>
-          <p className={styles.stgLabel}>Check-in Schedule</p>
-          <div className={styles.stgCard}>
-            {[
-              { key: 'morning', label: 'Morning', toggle: notifMorning, setToggle: setNotifMorning, time: checkinMorningTime, setTime: setCheckinMorningTime },
-              { key: 'midday', label: 'Midday', toggle: notifMidday, setToggle: setNotifMidday, time: checkinMiddayTime, setTime: setCheckinMiddayTime },
-              { key: 'evening', label: 'Evening', toggle: notifEvening, setToggle: setNotifEvening, time: checkinEveningTime, setTime: setCheckinEveningTime },
-            ].map(({ key, label, toggle, setToggle, time, setTime }) => (
-              <div key={key} className={styles.stgRow}>
-                <span className={styles.stgRowLabel}>{label}</span>
-                <div className={styles.stgRowRight}>
-                  <input
-                    type="time"
-                    value={time}
-                    disabled={!toggle}
-                    className={`${styles.stgTimeInput} ${!toggle ? styles.stgTimeInputDisabled : ''}`}
-                    onChange={e => setTime(e.target.value)}
-                    onBlur={async e => {
-                      const newVal = e.target.value
-                      await patchSettings({
-                        morning_time: key === 'morning' ? newVal : checkinMorningTime,
-                        midday_time: key === 'midday' ? newVal : checkinMiddayTime,
-                        evening_time: key === 'evening' ? newVal : checkinEveningTime,
-                      })
-                    }}
-                  />
-                  <button
-                    className={`${styles.stgToggle} ${toggle ? styles.stgToggleOn : ''}`}
-                    onClick={async () => {
-                      const newVal = !toggle
-                      setToggle(newVal)
-                      const newMorning = key === 'morning' ? newVal : notifMorning
-                      const newMidday  = key === 'midday'  ? newVal : notifMidday
-                      const newEvening = key === 'evening' ? newVal : notifEvening
-                      const checkin_times = ['morning','midday','evening'].filter((_,i) => [newMorning,newMidday,newEvening][i])
-                      await patchSettings({ checkin_times })
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── 3. NOTIFICATIONS ── */}
-        <div className={styles.stgSection}>
-          <p className={styles.stgLabel}>Notifications</p>
-          <div className={styles.stgCard}>
-            <div className={styles.stgRow}>
-              <span className={styles.stgRowLabel}>Push notifications</span>
-              {notifPermission === 'denied' ? (
-                <span className={styles.stgNotifDeniedLabel}>Blocked</span>
-              ) : (
-                <button
-                  className={`${styles.stgToggle} ${profile?.push_notifications_enabled ? styles.stgToggleOn : ''}`}
-                  onClick={handleTogglePush}
-                  disabled={pushLoading}
-                  style={pushLoading ? { opacity: 0.5, cursor: 'wait' } : undefined}
-                />
-              )}
-            </div>
-            {notifPermission === 'denied' && (
-              <p className={styles.stgNotifDeniedMsg}>Enable notifications in your browser settings</p>
-            )}
-            {profile?.push_notifications_enabled && notifPermission !== 'denied' && (
-              <div className={styles.stgRow} style={{ borderTop: '0.5px solid rgba(245,240,227,0.08)', paddingTop: 8 }}>
-                <span className={styles.stgRowLabel} style={{ fontSize: 14 }}>Test notification</span>
-                <button
-                  className={styles.stgGhostBtn}
-                  onClick={handleSendTestNotification}
-                  disabled={testNotifLoading}
-                  style={{ opacity: testNotifLoading ? 0.6 : 1 }}
-                >
-                  {testNotifLoading ? 'Sending…' : 'Send test'}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── 4. APPEARANCE ── */}
-        <div className={styles.stgSection}>
-          <p className={styles.stgLabel}>Appearance</p>
-          <div className={styles.stgCard}>
-            <div className={styles.stgThemeChips}>
-              {[
-                { id: 'orange-bronze', label: 'Classic', locked: false },
-                { id: 'midnight', label: 'Midnight', locked: false },
-                { id: 'warm', label: 'Warm', locked: false },
-              ].map(({ id, label, locked }) => {
-                const isActive = activeTheme?.id === id
-                return (
-                  <button
-                    key={id}
-                    className={`${styles.stgThemeChip} ${isActive ? styles.stgThemeChipActive : ''} ${locked ? styles.stgThemeChipLocked : ''}`}
-                    style={locked ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
-                    onClick={locked ? undefined : () => {
-                      const theme = THEMES.find(t => t.id === id)
-                      if (theme) saveTheme(theme)
-                    }}
-                  >
-                    {label}
-                    {locked && <span className={styles.stgChipComingSoon}> Coming soon</span>}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* ── 5. ACCOUNT ── */}
-        <div className={styles.stgSection}>
-          <p className={styles.stgLabel}>Account</p>
-          <div className={styles.stgCard}>
-            <div className={styles.stgRow}>
-              <span className={styles.stgRowLabel}>Display name</span>
-              <input
-                type="text"
-                className={styles.stgInlineInput}
-                value={settingsName}
-                placeholder="Your name"
-                onChange={e => setSettingsName(e.target.value)}
-                onBlur={saveSettings}
-                onKeyDown={e => e.key === 'Enter' && e.target.blur()}
-              />
-            </div>
-            <div className={styles.stgRow}>
-              <span className={styles.stgRowLabel}>Email</span>
-              <span className={styles.stgEmailDisplay}>{user?.email}</span>
-            </div>
-            <div className={`${styles.stgRow} ${styles.stgRowLast}`}>
-              <div>
-                <span className={styles.stgRowLabel}>Data</span>
-                <span className={styles.stgRowSub}>Download a copy of everything Cinis has saved</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                <button
-                  className={styles.stgGhostBtn}
-                  onClick={handleExportData}
-                  disabled={exportLoading}
-                  style={{ opacity: exportLoading ? 0.6 : 1 }}
-                >
-                  {exportLoading ? 'Exporting...' : 'Export'}
-                </button>
-                {exportError && <span style={{ color: '#E8321A', fontSize: '12px' }}>{exportError}</span>}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── 6. DANGER ZONE ── */}
-        <div className={styles.stgSection}>
-          <p className={styles.stgLabel}>Danger Zone</p>
-          <div className={styles.stgDangerCard}>
-            <div className={styles.stgRow}>
-              <span className={styles.stgDangerRowLabel}>Delete account</span>
-              <button className={styles.stgDangerBtn} onClick={() => setDeleteConfirm(true)}>
-                Delete account
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* ── 7. LOG OUT ── */}
-        <button
-          className={styles.stgSignOutBtn}
-          onClick={async () => { await supabase.auth.signOut(); router.push('/login') }}
-        >
-          Log out
-        </button>
-
+        <span className={isPro ? styles.planPro : styles.planFree}>{isPro ? 'PRO' : 'FREE'}</span>
       </div>
 
-      {/* Delete account confirmation overlay */}
-      {deleteConfirm && (
-        <div className={styles.stgDeleteOverlay} onClick={() => !deletingAccount && setDeleteConfirm(false)}>
-          <div className={styles.stgDeleteOverlayCard} onClick={e => e.stopPropagation()}>
-            <div className={styles.stgDeleteOverlayTitle}>Delete Account</div>
-            <div className={styles.stgDeleteOverlayMsg}>
-              This will permanently delete all your data. This cannot be undone.
-            </div>
-            <div className={styles.stgDeleteOverlayActions}>
-              <button
-                className={styles.stgDeleteConfirmBtn}
-                disabled={deletingAccount}
-                onClick={async () => {
-                  setDeletingAccount(true)
-                  try {
-                    const res = await loggedFetch('/api/delete-account', { method: 'DELETE' })
-                    if (res.ok) {
-                      await supabase.auth.signOut()
-                      router.push('/login')
-                    }
-                  } catch (err) {
-                    console.error('Delete account failed:', err)
-                  }
-                  setDeletingAccount(false)
-                }}
-              >
-                {deletingAccount ? 'Deleting\u2026' : 'Yes, delete everything'}
-              </button>
-              <button
-                className={styles.stgDeleteCancelBtn}
-                disabled={deletingAccount}
-                onClick={() => setDeleteConfirm(false)}
-              >
-                Cancel
-              </button>
-            </div>
+      {/* Upgrade banner (free only) */}
+      {!isPro && (
+        <div className={styles.upgradeBanner} onClick={() => router.push('/pricing')}>
+          <div className={styles.upgradeLeft}>
+            <div className={styles.upgradeTitle}>Upgrade to Pro</div>
+            <div className={styles.upgradeSub}>Memory &middot; SMS &middot; 15 AI/day &middot; $14/mo</div>
+          </div>
+          <div className={styles.upgradeArrow}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M9 6l6 6-6 6" /></svg>
           </div>
         </div>
       )}
-    </TabErrorBoundary>
+
+      {/* Coaching blend */}
+      <div className={styles.secLabel}>COACHING BLEND</div>
+      <div className={styles.cardPad}>
+        <div className={styles.blendDesc}>Pick up to 3 voices. Your coach blends them in every response.</div>
+        <div className={styles.chips}>
+          {PERSONAS_LIST.map(({ key, label }) => (
+            <button
+              key={key}
+              className={blend.includes(key) ? styles.chipActive : styles.chip}
+              onClick={() => handleBlendTap(key)}
+            >
+              {label.replace('The ', '')}
+            </button>
+          ))}
+        </div>
+        {blend.length > 0 && (
+          <div className={styles.blendDisplay}>
+            Active blend:{' '}
+            {blend.map((k, i) => (
+              <span key={k}>
+                {i > 0 && ' \u00B7 '}
+                <span className={styles.blendName}>{PERSONA_DISPLAY[k] || k}</span>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Check-in schedule */}
+      <div className={styles.secLabel}>CHECK-IN SCHEDULE</div>
+      <div className={styles.card}>
+        {[
+          { key: 'morning', label: 'Morning', time: '8:00 AM', val: checkinMorning },
+          { key: 'midday', label: 'Midday', time: '12:30 PM', val: checkinMidday },
+          { key: 'evening', label: 'Evening', time: '8:00 PM', val: checkinEvening, last: true },
+        ].map(({ key, label, time, val, last }) => (
+          <div key={key} className={last ? styles.toggleRowLast : styles.toggleRow}>
+            <div className={styles.toggleLeft}>
+              <div className={styles.toggleLabel}>{label}</div>
+              <div className={styles.toggleSub}>{time}</div>
+            </div>
+            <button className={val ? styles.toggleOn : styles.toggle} onClick={() => handleCheckinToggle(key)}>
+              <span className={val ? styles.toggleThumbOn : styles.toggleThumb} />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Notifications */}
+      <div className={styles.secLabel}>NOTIFICATIONS</div>
+      <div className={styles.card}>
+        {[
+          { key: 'notif_checkin', label: 'Check-in reminders', sub: 'Push notifications per schedule', val: notifCheckin },
+          { key: 'notif_bills', label: 'Bill due alerts', sub: '2 days before due date', val: notifBills },
+          { key: 'notif_streak', label: 'Streak at risk', sub: 'If no activity by 9pm', val: notifStreak, last: true },
+        ].map(({ key, label, sub, val, last }) => (
+          <div key={key} className={last ? styles.toggleRowLast : styles.toggleRow}>
+            <div className={styles.toggleLeft}>
+              <div className={styles.toggleLabel}>{label}</div>
+              <div className={styles.toggleSub}>{sub}</div>
+            </div>
+            <button className={val ? styles.toggleOn : styles.toggle} onClick={() => handleNotifToggle(key)}>
+              <span className={val ? styles.toggleThumbOn : styles.toggleThumb} />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Appearance */}
+      <div className={styles.secLabel}>APPEARANCE</div>
+      <div className={styles.cardPadLR}>
+        <div className={styles.themeSublabel}>Theme</div>
+        <div className={styles.themePicker}>
+          {THEME_OPTIONS.map(opt => {
+            const isActive = activeTheme?.id === opt.id
+            return (
+              <div
+                key={opt.id}
+                className={isActive ? styles.themeOptActive : styles.themeOpt}
+                onClick={() => {
+                  const theme = THEMES.find(t => t.id === opt.id)
+                  if (theme) saveTheme(theme)
+                }}
+              >
+                <span
+                  className={styles.themeSwatch}
+                  style={{ backgroundColor: opt.swatch, border: opt.border || 'none' }}
+                />
+                <div className={isActive ? styles.themeOptLabelActive : styles.themeOptLabel}>{opt.label}</div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className={styles.accentSublabel}>Accent color</div>
+        <div className={styles.accentPicker}>
+          {ACCENT_COLORS.map(color => (
+            <button
+              key={color}
+              className={activeAccent === color ? styles.accentSwatchActive : styles.accentSwatch}
+              style={{ backgroundColor: color, color }}
+              onClick={() => saveAccent(color)}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Account rows */}
+      <div className={styles.secLabel}>ACCOUNT</div>
+      <div className={styles.card}>
+        {[
+          { label: 'Subscription & billing' },
+          { label: 'Data & privacy' },
+          { label: 'Export my data' },
+          { label: 'About & feedback', last: true },
+        ].map(({ label, last }) => (
+          <div
+            key={label}
+            className={last ? styles.accountRowLast : styles.accountRow}
+            onClick={() => console.log(`[settings] ${label}`)}
+          >
+            <span className={styles.accountRowLabel}>{label}</span>
+            <Chevron />
+          </div>
+        ))}
+      </div>
+
+      {/* Log out */}
+      <button className={styles.logoutBtn} onClick={async () => { await supabase.auth.signOut(); router.push('/login') }}>
+        Log out
+      </button>
+
+      {/* Version */}
+      <div className={styles.version}>Cinis v0.9.1 &middot; Built in Georgetown, TX</div>
+
+      {/* Delete overlay */}
+      {deleteConfirm && (
+        <div className={styles.deleteOverlay} onClick={() => !deletingAccount && setDeleteConfirm(false)}>
+          <div className={styles.deleteCard} onClick={e => e.stopPropagation()}>
+            <div className={styles.deleteTitle}>Delete Account</div>
+            <div className={styles.deleteMsg}>This will permanently delete all your data. This cannot be undone.</div>
+            <button className={styles.deleteConfirmBtn} disabled={deletingAccount} onClick={handleDelete}>
+              {deletingAccount ? 'Deleting\u2026' : 'Yes, delete everything'}
+            </button>
+            <button className={styles.deleteCancelBtn} disabled={deletingAccount} onClick={() => setDeleteConfirm(false)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

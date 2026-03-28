@@ -232,29 +232,34 @@ export default function TabHabits({ user, profile, showToast, loggedFetch }) {
           <div onClick={() => setHabitJournalExpanded(e => !e)} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
             <BigCheck done={journaledToday} color="#3B8BD4" onClick={e => e.stopPropagation()} />
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: ff, fontSize: 14, fontWeight: 500, color: '#F5F0E3', textDecoration: journaledToday ? 'line-through' : 'none' }}>Journal</div>
-              <div style={{ fontSize: 14, color: '#F5F0E350', fontFamily: ff, marginTop: 2 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontFamily: ff, fontSize: 13, fontWeight: 500, color: journaledToday ? 'rgba(240,234,214,0.22)' : '#F0EAD6', textDecoration: journaledToday ? 'line-through' : 'none' }}>Journal</span>
+                <span style={{ fontSize: 7, fontFamily: ff, fontWeight: 600, color: '#3B8BD4', background: 'rgba(59,139,212,0.15)', borderRadius: 4, padding: '1px 5px' }}>DAILY</span>
+              </div>
+              <div style={{ fontSize: 10, color: 'rgba(240,234,214,0.22)', fontFamily: ff, marginTop: 2 }}>
                 {todayEntry
                   ? `Entry #${journalEntries.indexOf(todayEntry) + 1} \u00B7 ${(todayEntry.content || '').split(/\s+/).filter(Boolean).length} words \u00B7 ${new Date(todayEntry.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`
-                  : "Tap to write today's entry"
+                  : journaledToday ? 'Entry saved' : 'No entry yet today'
                 }
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontFamily: sf, fontSize: 14, fontWeight: 600, color: '#3B8BD4' }}>{journalStreak}</div>
-              <div style={{ fontSize: 14, color: '#F5F0E350', fontFamily: ff }}>days</div>
+              <div style={{ fontFamily: sf, fontSize: 15, fontWeight: 700, color: '#3B8BD4', lineHeight: 1 }}>{journalStreak}</div>
+              <div style={{ fontSize: 7, color: 'rgba(240,234,214,0.22)', fontFamily: ff }}>days</div>
             </div>
             <span style={{ fontSize: 14, color: '#F5F0E340', transform: habitJournalExpanded ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>&#9662;</span>
           </div>
 
-          {/* Daily badge */}
-          <div style={{ marginTop: 6, display: 'inline-block', padding: '2px 8px', background: '#3B8BD415', borderRadius: 4, fontSize: 14, color: '#3B8BD4', fontFamily: ff, fontWeight: 500 }}>DAILY</div>
-
           {/* Heat strip */}
-          <div style={{ display: 'flex', gap: 3, marginTop: 6 }}>
-            {last7.map((ds, i) => (
-              <div key={i} style={{ width: 14, height: 5, borderRadius: 2, background: journalEntries.some(e => e.created_at && e.created_at.slice(0, 10) === ds) ? '#3B8BD4' : '#F5F0E312' }} />
-            ))}
+          <div style={{ display: 'flex', gap: 3, marginTop: 9 }}>
+            {last7.map((ds, i) => {
+              const done = journalEntries.some(e => e.created_at && e.created_at.slice(0, 10) === ds)
+              return (
+                <div key={i} style={{ flex: 1, height: 18, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', background: done ? 'rgba(59,139,212,0.25)' : 'rgba(240,234,214,0.05)', border: done ? '1px solid rgba(59,139,212,0.40)' : '1px solid rgba(240,234,214,0.08)' }}>
+                  {done && <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#3B8BD4' }} />}
+                </div>
+              )
+            })}
           </div>
 
           {/* Expanded */}

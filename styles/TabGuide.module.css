@@ -1,0 +1,87 @@
+/* TabGuide — curated resource center */
+
+.outer { display: flex; flex-direction: column; height: 100%; }
+
+/* Header */
+.headerWrap { padding: 12px 14px 0; flex-shrink: 0; }
+.title { font-family: 'Figtree', sans-serif; font-weight: 600; font-size: 13px; color: #F0EAD6; margin-bottom: 2px; }
+.subtitle { font-family: 'Figtree', sans-serif; font-size: 10px; color: rgba(240,234,214,0.22); margin-bottom: 10px; }
+
+/* Scrollable body */
+.body { flex: 1; overflow-y: auto; padding-bottom: 80px; }
+
+/* ── For you strip ───────────────────────────── */
+.forYouWrap { margin-bottom: 14px; }
+.forYouLabel {
+  padding: 0 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;
+}
+.forYouLabelText { font-family: 'Figtree', sans-serif; font-weight: 600; font-size: 10px; color: #FF6644; }
+.forYouScroll {
+  display: flex; gap: 8px; overflow-x: auto; padding: 0 14px 4px;
+  -webkit-overflow-scrolling: touch;
+}
+.forYouScroll::-webkit-scrollbar { display: none; }
+
+.fyCard {
+  width: 180px; min-width: 180px; flex-shrink: 0;
+  background: #3E3228; border-radius: 10px; padding: 12px;
+  display: flex; flex-direction: column;
+}
+.fyCardPrimary { composes: fyCard; border-top: 2px solid #FF6644; }
+.fyCardSecondary { composes: fyCard; border-top: 2px solid rgba(255,102,68,0.40); }
+.fyIcon { font-size: 18px; margin-bottom: 6px; }
+.fyTitle { font-family: 'Figtree', sans-serif; font-weight: 600; font-size: 12px; color: #F0EAD6; margin-bottom: 5px; }
+.fyBody { font-family: 'Figtree', sans-serif; font-size: 10px; color: rgba(240,234,214,0.22); line-height: 1.55; flex: 1; margin-bottom: 10px; }
+.fyCtaPrimary {
+  padding: 5px 0; background: #FF6644; border-radius: 6px; border: none;
+  font-family: 'Figtree', sans-serif; font-weight: 600; font-size: 9px; color: #fff;
+  cursor: pointer; text-align: center;
+}
+.fyCtaSecondary {
+  padding: 5px 0; background: rgba(255,102,68,0.12); border: 1px solid rgba(255,102,68,0.25);
+  border-radius: 6px; font-family: 'Figtree', sans-serif; font-weight: 600; font-size: 9px;
+  color: #FF6644; cursor: pointer; text-align: center;
+}
+
+/* ── Filter chips ────────────────────────────── */
+.filterRow {
+  display: flex; gap: 5px; overflow-x: auto; padding: 0 14px; margin-bottom: 10px;
+}
+.filterRow::-webkit-scrollbar { display: none; }
+.filterChip {
+  flex: 0 0 auto; padding: 5px 12px; border-radius: 12px; cursor: pointer;
+  font-family: 'Figtree', sans-serif; font-size: 9px; white-space: nowrap;
+  background: rgba(240,234,214,0.05); color: rgba(240,234,214,0.22);
+  border: 1px solid rgba(240,234,214,0.08);
+}
+.filterChipActive {
+  composes: filterChip;
+  background: rgba(255,102,68,0.14); color: #FF6644;
+  border-color: rgba(255,102,68,0.25);
+}
+
+/* ── Strategy cards ──────────────────────────── */
+.cardsWrap { padding: 0 14px; display: flex; flex-direction: column; gap: 6px; }
+.stratCard {
+  background: #3E3228; border-radius: 10px; padding: 12px;
+  display: flex; gap: 10px; cursor: pointer;
+}
+.stratIcon { font-size: 18px; flex-shrink: 0; }
+.stratRight { flex: 1; min-width: 0; }
+.stratTitleRow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.stratTitle { font-family: 'Figtree', sans-serif; font-weight: 600; font-size: 12px; color: #F0EAD6; }
+.stratTag {
+  font-family: 'Figtree', sans-serif; font-weight: 600; font-size: 7px;
+  padding: 1px 5px; border-radius: 3px;
+}
+.stratBody {
+  font-family: 'Figtree', sans-serif; font-size: 10px;
+  color: rgba(240,234,214,0.22); line-height: 1.5; margin-top: 3px;
+}
+
+/* Animation */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animateIn { animation: fadeUp 0.3s ease both; }
