@@ -65,6 +65,12 @@ export default function Dashboard() {
   const loggedFetch = useCallback(async (url, opts = {}) => {
     const t0 = Date.now()
     try {
+      // Inject Supabase auth token for API routes
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (token) {
+        opts.headers = { ...opts.headers, Authorization: `Bearer ${token}` }
+      }
       const res = await fetch(url, opts)
       const clone = res.clone()
       const text = await clone.text().catch(() => '')
