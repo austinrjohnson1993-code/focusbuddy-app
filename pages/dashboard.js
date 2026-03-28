@@ -10,6 +10,7 @@ import CinisMark from '../lib/CinisMark'
 import { THEMES, applyTheme, TabErrorBoundary } from '../components/tabs/shared'
 import VoiceFAB from '../components/VoiceFAB'
 import TutorialOverlay from '../components/TutorialOverlay'
+import WelcomeTransition from '../components/WelcomeTransition'
 
 // Tab components
 import TabTasks from '../components/tabs/TabTasks'
@@ -52,6 +53,7 @@ export default function Dashboard() {
   const [activeTheme, setActiveTheme] = useState(THEMES[0])
   const [showMoreDrawer, setShowMoreDrawer] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
+  const [showWelcome, setShowWelcome] = useState(false)
 
   // Voice FAB
   const [voiceFabState, setVoiceFabState] = useState('idle')
@@ -105,12 +107,23 @@ export default function Dashboard() {
         setActiveTheme(savedTheme)
         if (typeof localStorage !== 'undefined') localStorage.setItem('cinis_accent_color', savedTheme.id)
       }
-      // Show tutorial for new users
-      if (data.tutorial_completed === false) {
+      // Show welcome transition for first-time users, then tutorial
+      const hasSeenWelcome = typeof localStorage !== 'undefined' && localStorage.getItem('cinis_welcome_seen')
+      if (!hasSeenWelcome && data.onboarding_complete) {
+        setShowWelcome(true)
+      } else if (data.tutorial_completed === false) {
         setShowTutorial(true)
       }
     } else {
       router.push('/onboarding')
+    }
+  }
+
+  const handleWelcomeComplete = () => {
+    setShowWelcome(false)
+    // After welcome, show tutorial if not completed
+    if (profile && profile.tutorial_completed === false) {
+      setShowTutorial(true)
     }
   }
 
@@ -312,6 +325,14 @@ export default function Dashboard() {
             <span className={styles.bottomNavLabel}>More</span>
           </button>
         </nav>
+
+        {/* WELCOME TRANSITION */}
+        {showWelcome && (
+          <WelcomeTransition
+            name={profile?.full_name?.split(' ')[0] || 'there'}
+            onComplete={handleWelcomeComplete}
+          />
+        )}
 
         {/* TUTORIAL OVERLAY */}
         {showTutorial && (
