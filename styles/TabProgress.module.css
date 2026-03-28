@@ -1,0 +1,444 @@
+/* TabProgress — longitudinal progress view */
+
+.outer {
+  padding: 12px 14px 80px;
+  overflow-y: auto;
+  height: 100%;
+}
+
+/* ── Section 1: Header + toggle ─────────────── */
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.headerLeft {}
+.headerTitle {
+  font-family: 'Figtree', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  color: #F0EAD6;
+}
+.headerSub {
+  font-family: 'Figtree', sans-serif;
+  font-size: 9px;
+  color: rgba(240,234,214,0.22);
+  margin-top: 2px;
+}
+.toggleRow {
+  display: flex;
+  gap: 5px;
+}
+.togglePill {
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(240,234,214,0.08);
+  background: rgba(240,234,214,0.05);
+  color: rgba(240,234,214,0.22);
+  font-family: 'Figtree', sans-serif;
+  font-weight: 600;
+  font-size: 9px;
+  cursor: pointer;
+}
+.togglePillActive {
+  composes: togglePill;
+  background: rgba(255,102,68,0.14);
+  color: #FF6644;
+  border-color: rgba(255,102,68,0.25);
+}
+
+/* ── Section 2: Today rings ─────────────────── */
+.ringsRow {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.ringWrap {
+  text-align: center;
+}
+.ringSvgOuter {
+  position: relative;
+  width: 72px;
+  height: 72px;
+}
+.ringSvg {
+  display: block;
+  transform: rotate(-90deg);
+}
+.ringCenter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.ringValue {
+  font-family: 'Sora', sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1;
+}
+.ringSub {
+  font-size: 7px;
+  color: rgba(240,234,214,0.22);
+}
+.ringLabel {
+  font-family: 'Figtree', sans-serif;
+  font-size: 9px;
+  color: rgba(240,234,214,0.22);
+  margin-top: 5px;
+}
+
+/* Ring animation */
+.ringTrack {}
+.ringFill { transition: stroke-dashoffset 0.05s linear; }
+.ringAnimateIn { animation: ringIn 1s ease both; }
+
+@keyframes ringIn {
+  from { stroke-dashoffset: 188.5; }
+}
+
+/* ── Section 3: XP + Streak side by side ────── */
+.xpStreakRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+/* XP card */
+.xpCard {
+  flex: 1;
+  background: #3E3228;
+  border-radius: 10px;
+  padding: 11px 13px;
+}
+.xpHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 7px;
+}
+.xpLeft {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.xpFlame { width: 13px; height: 13px; flex-shrink: 0; }
+.xpNumber {
+  font-family: 'Sora', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: #FFB800;
+}
+.xpUnit {
+  font-family: 'Figtree', sans-serif;
+  font-size: 9px;
+  color: rgba(240,234,214,0.22);
+}
+.xpToNext {
+  font-family: 'Figtree', sans-serif;
+  font-size: 9px;
+  font-weight: 500;
+  color: #FFB800;
+}
+.xpBar {
+  height: 5px;
+  background: rgba(240,234,214,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.xpBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #FFB800, #FF6644);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+/* Streak card */
+.streakCard {
+  background: #3E3228;
+  border-radius: 10px;
+  padding: 11px 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.streakLeft {}
+.streakNumber {
+  font-family: 'Sora', sans-serif;
+  font-weight: 800;
+  font-size: 24px;
+  color: #FF6644;
+  line-height: 1;
+}
+.streakLabel {
+  font-family: 'Figtree', sans-serif;
+  font-size: 8px;
+  color: rgba(240,234,214,0.22);
+  margin-top: 2px;
+}
+.streakDivider {
+  width: 1px;
+  height: 32px;
+  background: rgba(240,234,214,0.08);
+}
+.streakRight {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.streakDots {
+  display: flex;
+  gap: 3px;
+}
+.streakDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+}
+.streakDotsLabel {
+  font-family: 'Figtree', sans-serif;
+  font-size: 7px;
+  color: rgba(240,234,214,0.20);
+}
+
+/* ── Section 4: Insights ────────────────────── */
+.insightsLabel {
+  font-family: 'Figtree', sans-serif;
+  font-weight: 600;
+  font-size: 9px;
+  color: rgba(240,234,214,0.22);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 7px;
+}
+.insightsStack {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+.insightCard {
+  background: #3E3228;
+  border-radius: 8px;
+  padding: 10px 11px;
+  border-left: 3px solid transparent;
+}
+.insightHeader {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.insightTypeLabel {
+  font-family: 'Figtree', sans-serif;
+  font-weight: 600;
+  font-size: 9px;
+}
+.insightBody {
+  font-family: 'Figtree', sans-serif;
+  font-size: 11px;
+  color: rgba(240,234,214,0.55);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ── Section 5: Area/line chart ─────────────── */
+.chartCard {
+  background: #3E3228;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.chartHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.chartHeaderLeft {}
+.chartTitle {
+  font-family: 'Figtree', sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  color: #F0EAD6;
+}
+.chartSubtitle {
+  font-family: 'Figtree', sans-serif;
+  font-size: 9px;
+  color: rgba(240,234,214,0.22);
+  margin-top: 2px;
+}
+.chartHeaderRight {
+  text-align: right;
+}
+.chartTotal {
+  font-family: 'Sora', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  color: #FF6644;
+  line-height: 1;
+}
+.chartTotalLabel {
+  font-family: 'Figtree', sans-serif;
+  font-size: 8px;
+  color: rgba(240,234,214,0.22);
+  margin-top: 0;
+}
+.chartDelta {
+  font-family: 'Figtree', sans-serif;
+  font-size: 8px;
+  margin-top: 2px;
+}
+.chartDeltaUp { composes: chartDelta; color: #4CAF50; }
+.chartDeltaDown { composes: chartDelta; color: #E8321A; }
+
+.chartSvg {
+  width: 100%;
+  display: block;
+  overflow: visible;
+}
+
+/* Chart line animation */
+.chartLineAnim {
+  stroke-dasharray: 700;
+  animation: lineIn 1.2s ease 0.2s both;
+}
+@keyframes lineIn {
+  from { stroke-dashoffset: 700; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* Today dot animation */
+.todayDot { animation: fadeIn 0.3s ease 1.3s both; }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Day labels */
+.dayLabels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding: 0 2px;
+}
+.dayLabel {
+  font-family: 'Figtree', sans-serif;
+  font-size: 8px;
+  color: rgba(240,234,214,0.25);
+}
+.dayLabelToday {
+  composes: dayLabel;
+  color: #FF6644;
+  font-weight: 600;
+}
+.dayLabelFuture {
+  composes: dayLabel;
+  color: rgba(240,234,214,0.18);
+}
+
+/* Legend */
+.chartLegend {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(240,234,214,0.06);
+}
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.legendLabel {
+  font-family: 'Figtree', sans-serif;
+  font-size: 8px;
+  color: rgba(240,234,214,0.22);
+}
+
+/* ── Section 6: Heatmap ─────────────────────── */
+.heatmapCard {
+  background: #3E3228;
+  border-radius: 12px;
+  padding: 14px;
+}
+.heatmapHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.heatmapTitle {
+  font-family: 'Figtree', sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  color: #F0EAD6;
+}
+.heatmapSub {
+  font-family: 'Figtree', sans-serif;
+  font-size: 9px;
+  color: rgba(240,234,214,0.22);
+  margin-top: 2px;
+}
+.heatmapLegend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.heatmapLegendLabel {
+  font-family: 'Figtree', sans-serif;
+  font-size: 8px;
+  color: rgba(240,234,214,0.22);
+}
+.heatmapSwatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 1.5px;
+}
+.heatmapGrid {
+  display: flex;
+  gap: 3px;
+}
+.heatmapDayLabels {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-right: 1px;
+}
+.heatmapDayLabel {
+  height: 11px;
+  line-height: 11px;
+  font-family: 'Figtree', sans-serif;
+  font-size: 7px;
+  color: rgba(240,234,214,0.22);
+}
+.heatmapCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.heatmapCell {
+  height: 11px;
+  border-radius: 2px;
+}
+.heatmapCellToday {
+  composes: heatmapCell;
+  outline: 1px solid rgba(255,102,68,0.60);
+  outline-offset: 1px;
+}
+
+/* ── Loading skeleton ───────────────────────── */
+.skeleton {
+  background: rgba(240,234,214,0.06);
+  border-radius: 8px;
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
