@@ -1,0 +1,480 @@
+/* TabDashboard — home screen */
+
+/* ── Outer ─────────────────────────────────────────────── */
+.wrap {
+  padding: 14px 14px 80px;
+  overflow-y: auto;
+  height: 100%;
+}
+
+/* ── Row 1: Greeting + Streak ──────────────────────────── */
+.greetRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.greetLeft {}
+
+.greetDate {
+  font-family: 'Figtree', sans-serif;
+  font-size: 9px;
+  color: rgba(240,234,214,0.22);
+  letter-spacing: 0.06em;
+  margin-bottom: 2px;
+}
+
+.greetName {
+  font-family: 'Sora', sans-serif;
+  font-weight: 800;
+  font-size: 19px;
+  color: #F0EAD6;
+  letter-spacing: -0.02em;
+}
+
+.streakBlock {
+  background: #3E3228;
+  border-radius: 10px;
+  padding: 8px 14px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.streakNum {
+  font-family: 'Sora', sans-serif;
+  font-weight: 900;
+  font-size: 28px;
+  color: #FF6644;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.streakLabel {
+  font-family: 'Figtree', sans-serif;
+  font-size: 7px;
+  color: rgba(240,234,214,0.22);
+  margin-top: 1px;
+}
+
+/* ── Row 2: Coach message ──────────────────────────────── */
+.coachCard {
+  padding: 10px 12px;
+  background: #3E3228;
+  border-radius: 10px;
+  border-left: 2px solid #FF6644;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.coachMark {
+  flex-shrink: 0;
+}
+
+.coachText {
+  font-family: 'Figtree', sans-serif;
+  font-weight: 400;
+  font-size: 11.5px;
+  color: rgba(240,234,214,0.55);
+  line-height: 1.6;
+}
+
+/* ── Row 3: Stats strip ────────────────────────────────── */
+.statsStrip {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.statPill {
+  flex: 1;
+  background: #3E3228;
+  border-radius: 8px;
+  padding: 8px 0;
+  text-align: center;
+}
+
+.statVal {
+  font-family: 'Sora', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.statLbl {
+  font-family: 'Figtree', sans-serif;
+  font-size: 7px;
+  color: rgba(240,234,214,0.22);
+  margin-top: 2px;
+}
+
+/* ── Row 4: Rings + Priority/Insight ───────────────────── */
+.row4 {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* Rings block */
+.ringsBlock {
+  background: #3E3228;
+  border-radius: 12px;
+  padding: 11px;
+  width: 140px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ringsTop {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.ringWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ringSvg {
+  transform: rotate(-90deg);
+}
+
+.ringTrack {
+  fill: none;
+  stroke: rgba(240,234,214,0.07);
+  stroke-width: 4;
+}
+
+.ringFill {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s ease;
+}
+
+.ringCenter {
+  font-family: 'Sora', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.ringLabel {
+  font-family: 'Figtree', sans-serif;
+  font-size: 7px;
+  color: rgba(240,234,214,0.22);
+  margin-top: 3px;
+  text-align: center;
+}
+
+/* Habit dots */
+.habitDotsSection {
+  border-top: 1px solid rgba(240,234,214,0.06);
+  padding-top: 8px;
+}
+
+.habitDots {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.habitDotDone {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4CAF50;
+}
+
+.habitDotUndone {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,102,68,0.28);
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.habitDotsLabel {
+  font-family: 'Figtree', sans-serif;
+  font-size: 7px;
+  color: rgba(240,234,214,0.20);
+  text-align: center;
+  margin-top: 3px;
+}
+
+/* Right column: priority + insight */
+.rightCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Priority card */
+.priorityCard {
+  background: #3E3228;
+  border-radius: 10px;
+  padding: 11px 12px;
+  border-left: 2px solid #FF6644;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.priorityHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.priorityLabel {
+  font-family: 'Figtree', sans-serif;
+  font-weight: 700;
+  font-size: 8px;
+  color: #FF6644;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.priorityCountdown {
+  font-family: 'Sora', sans-serif;
+  font-size: 8px;
+  color: #FF6644;
+  background: rgba(255,102,68,0.10);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.priorityName {
+  font-family: 'Figtree', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  color: #F0EAD6;
+  line-height: 1.3;
+  margin-bottom: 9px;
+}
+
+.priorityBtns {
+  display: flex;
+  gap: 6px;
+}
+
+.priorityFocusBtn {
+  flex: 1;
+  padding: 6px 0;
+  background: rgba(255,102,68,0.12);
+  border: 1px solid rgba(255,102,68,0.25);
+  border-radius: 6px;
+  font-family: 'Figtree', sans-serif;
+  font-weight: 600;
+  font-size: 10px;
+  color: #FF6644;
+  cursor: pointer;
+  text-align: center;
+}
+
+.priorityDoneBtn {
+  padding: 6px 10px;
+  background: rgba(240,234,214,0.05);
+  border: 1px solid rgba(240,234,214,0.08);
+  border-radius: 6px;
+  font-family: 'Figtree', sans-serif;
+  font-size: 10px;
+  color: rgba(240,234,214,0.22);
+  cursor: pointer;
+}
+
+.priorityDoneBtnCheck {
+  composes: priorityDoneBtn;
+  background: rgba(76,175,80,0.15);
+  border-color: rgba(76,175,80,0.30);
+  color: #4CAF50;
+}
+
+/* Insight card */
+.insightCard {
+  background: #3E3228;
+  border-radius: 10px;
+  padding: 11px 12px;
+  border: 1px solid rgba(255,102,68,0.10);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.insightLabel {
+  font-family: 'Figtree', sans-serif;
+  font-weight: 700;
+  font-size: 8px;
+  color: #FF6644;
+  letter-spacing: 0.04em;
+  margin-bottom: 5px;
+}
+
+.insightText {
+  font-family: 'Figtree', sans-serif;
+  font-size: 11px;
+  color: rgba(240,234,214,0.55);
+  line-height: 1.55;
+  margin-bottom: 7px;
+}
+
+.insightCta {
+  font-family: 'Figtree', sans-serif;
+  font-weight: 600;
+  font-size: 10px;
+  color: #FF6644;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+}
+
+/* ── Row 5: Up next + Bills ────────────────────────────── */
+.row5 {
+  display: flex;
+  gap: 8px;
+}
+
+.sectionLabel {
+  font-family: 'Figtree', sans-serif;
+  font-weight: 600;
+  font-size: 8px;
+  color: rgba(240,234,214,0.22);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 5px;
+}
+
+.upNextCol {
+  flex: 1;
+  min-width: 0;
+}
+
+.billsCol {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Up next rows */
+.upNextOverdue {
+  background: rgba(232,50,26,0.07);
+  border: 1px solid rgba(232,50,26,0.16);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+}
+
+.upNextRegular {
+  background: #3E3228;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+}
+
+.upNextTitle {
+  font-family: 'Figtree', sans-serif;
+  font-weight: 500;
+  font-size: 11px;
+  color: #F0EAD6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.upNextSub {
+  font-family: 'Figtree', sans-serif;
+  font-size: 9px;
+  color: rgba(240,234,214,0.22);
+  margin-top: 1px;
+}
+
+.upNextSubOverdue {
+  composes: upNextSub;
+  color: #E8321A;
+}
+
+/* Bills rows */
+.billRow {
+  background: #3E3228;
+  border-left: 2px solid #E8321A;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+}
+
+.billRowAuto {
+  composes: billRow;
+  border-left-color: rgba(232,50,26,0.30);
+}
+
+.billName {
+  font-family: 'Figtree', sans-serif;
+  font-weight: 500;
+  font-size: 11px;
+  color: #F0EAD6;
+}
+
+.billSub {
+  font-family: 'Figtree', sans-serif;
+  font-size: 9px;
+  color: rgba(240,234,214,0.22);
+  margin-top: 1px;
+}
+
+.billPayLink {
+  font-family: 'Figtree', sans-serif;
+  font-weight: 600;
+  font-size: 9px;
+  color: #FF6644;
+  cursor: pointer;
+  margin-top: 5px;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.billAutoBadge {
+  font-family: 'Figtree', sans-serif;
+  font-size: 8px;
+  color: #4CAF50;
+  background: rgba(76,175,80,0.10);
+  padding: 1px 6px;
+  border-radius: 3px;
+  display: inline-block;
+  margin-top: 5px;
+}
+
+/* ── No-priority placeholder ───────────────────────────── */
+.noPriority {
+  font-family: 'Figtree', sans-serif;
+  font-size: 11px;
+  color: rgba(240,234,214,0.22);
+  padding: 8px 0;
+}
+
+/* ── Keyframes ─────────────────────────────────────────── */
+@keyframes ringIn {
+  from { stroke-dashoffset: 119.4; }
+  to   { stroke-dashoffset: var(--ring-offset); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animateIn {
+  animation: fadeUp 0.3s ease both;
+}

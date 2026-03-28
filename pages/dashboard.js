@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 import styles from '../styles/Dashboard.module.css'
-import { CheckSquare, ChatCircle, Target, CalendarBlank, Wallet, ChartLineUp, Gear, ArrowCounterClockwise, UsersThree, BowlFood, Books } from '@phosphor-icons/react'
+import { House, CheckSquare, ChatCircle, Target, CalendarBlank, Wallet, ChartLineUp, Gear, ArrowCounterClockwise, UsersThree, BowlFood, Books } from '@phosphor-icons/react'
 import { showToast as libShowToast, ToastContainer } from '../lib/toast.js'
 import { applyAccentColor } from '../lib/accentColor'
 import CinisMark from '../lib/CinisMark'
@@ -24,9 +24,11 @@ import TabNutrition from '../components/tabs/TabNutrition'
 import TabProgress from '../components/tabs/TabProgress'
 import TabGuide from '../components/tabs/TabGuide'
 import TabSettings from '../components/tabs/TabSettings'
+import TabDashboard from '../components/tabs/TabDashboard'
 
 // ── Nav config ──────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
+  { id: 'home', label: 'Home', icon: <House size={22} /> },
   { id: 'tasks', label: 'Tasks', icon: <CheckSquare size={22} /> },
   { id: 'checkin', label: 'Check-in', icon: <ChatCircle size={22} /> },
   { id: 'focus', label: 'Focus', icon: <Target size={22} /> },
@@ -39,7 +41,7 @@ const NAV_ITEMS = [
   { id: 'guide', label: 'Guide', icon: <Books size={22} /> },
   { id: 'settings', label: 'Settings', icon: <Gear size={22} /> },
 ]
-const NAV_PRIMARY_IDS = ['tasks', 'checkin', 'focus', 'calendar']
+const NAV_PRIMARY_IDS = ['home', 'tasks', 'checkin', 'focus', 'calendar']
 const NAV_MORE_IDS = ['habits', 'tagteam', 'finance', 'nutrition', 'progress', 'guide', 'settings']
 
 export default function Dashboard() {
@@ -48,7 +50,7 @@ export default function Dashboard() {
   const [profile, setProfile] = useState(null)
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('tasks')
+  const [activeTab, setActiveTab] = useState('home')
   const [greeting, setGreeting] = useState('')
   const [activeTheme, setActiveTheme] = useState(THEMES[0])
   const [showMoreDrawer, setShowMoreDrawer] = useState(false)
@@ -262,6 +264,7 @@ export default function Dashboard() {
 
         {/* MAIN */}
         <main className={styles.main}>
+          {activeTab === 'home' && <TabErrorBoundary tabName="Home"><TabDashboard {...tabProps} /></TabErrorBoundary>}
           {activeTab === 'tasks' && <TabErrorBoundary tabName="Tasks"><TabTasks {...tabProps} /></TabErrorBoundary>}
           {activeTab === 'checkin' && <TabErrorBoundary tabName="Check-in"><TabCheckin {...tabProps} /></TabErrorBoundary>}
           {activeTab === 'focus' && <TabErrorBoundary tabName="Focus"><TabFocus {...tabProps} /></TabErrorBoundary>}
@@ -287,8 +290,8 @@ export default function Dashboard() {
 
         {/* BOTTOM NAV (mobile) */}
         <nav className={styles.bottomNav} aria-label="Mobile navigation">
-          {/* Left: tasks, checkin */}
-          {['tasks', 'checkin'].map(id => {
+          {/* Left: home, tasks */}
+          {['home', 'tasks'].map(id => {
             const item = NAV_ITEMS.find(i => i.id === id)
             return (
               <button key={id} onClick={() => switchTab(id)}
@@ -316,7 +319,7 @@ export default function Dashboard() {
           {/* More (calendar + secondary items) */}
           <button
             onClick={() => setShowMoreDrawer(true)}
-            className={`${styles.bottomNavItem} ${['calendar', ...NAV_MORE_IDS].includes(activeTab) ? styles.bottomNavItemActive : ''}`}>
+            className={`${styles.bottomNavItem} ${['checkin', 'calendar', ...NAV_MORE_IDS].includes(activeTab) ? styles.bottomNavItemActive : ''}`}>
             <span className={styles.bottomNavIcon}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
@@ -347,7 +350,7 @@ export default function Dashboard() {
           <div className={styles.moreDrawerOverlay} onClick={() => setShowMoreDrawer(false)}>
             <div className={styles.moreDrawer} onClick={e => e.stopPropagation()}>
               <div className={styles.moreDrawerHandle} />
-              {NAV_ITEMS.filter(i => ['calendar', ...NAV_MORE_IDS].includes(i.id)).map(item => (
+              {NAV_ITEMS.filter(i => ['checkin', 'calendar', ...NAV_MORE_IDS].includes(i.id)).map(item => (
                 <button key={item.id} onClick={() => switchTab(item.id)}
                   className={`${styles.moreDrawerItem} ${activeTab === item.id ? styles.moreDrawerItemActive : ''}`}>
                   <span className={styles.navIcon}>{item.icon}</span>
